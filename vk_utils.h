@@ -20,9 +20,9 @@ using namespace std;
 }																						
 
 namespace VKEngine{
-	vector<VkPhysicalDevice> enumerateGPU();
+	vector<VkPhysicalDevice> enumerateGPU(VkInstance instance);
 	vector<VkLayerProperties> enumerateValidations();
-	vector<VkQueueFamilyProperties> enumerateQueueFamilyProperties();
+	vector<VkQueueFamilyProperties> enumerateQueueFamilyProperties(VkPhysicalDevice gpu);
 	//vector<VkPhysicalDeviceProperties> enumerateGPUProperties();
 	//VkShaderModule loadShader(const string file_path);
 };

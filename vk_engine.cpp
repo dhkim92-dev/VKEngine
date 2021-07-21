@@ -28,6 +28,17 @@ namespace VKEngine{
 				   const vector<const char * > _validations
 				   ) : app_name(_app_name), engine_name(_engine_name), extensions(_extensions), validations(_validations){};
 
+	Engine::~Engine(){
+		destroy();
+	}
+
+	void Engine::destroy(){
+		if(debugMessenger != VK_NULL_HANDLE){
+			vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+		}
+		vkDestroyInstance(instance, nullptr);
+	}
+
 	void Engine::init(){
 		createInstance();
 		setupDebugMessenger();

@@ -27,10 +27,9 @@ namespace VKEngine{
 		public :
 		const string app_name;
 		const string engine_name;
-
-		VkDebugUtilsMessengerEXT debugMessenger;
+		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 		private :
-		VkInstance instance;
+		VkInstance instance = VK_NULL_HANDLE;
 		const vector<const char *> validations;
 		const vector<const char *> extensions;
 		
@@ -40,22 +39,22 @@ namespace VKEngine{
 						const vector< const char* > _extensions, 
 						const vector< const char* > _validations
 		);
+		~Engine();
 		void init();
+		void destroy();
 		operator VkInstance() const {
 			return instance;
 		}
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData){
-			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-			return VK_FALSE;
-		};
-
-		void destroy();
-
 		private :
 		void createInstance();
 		bool checkValidationSupport();
 		bool checkDeviceFeaturesSupport();
 		void setupDebugMessenger();
+		
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData){
+			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+			return VK_FALSE;
+		};
 	};
 }
 

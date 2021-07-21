@@ -9,11 +9,10 @@ namespace VKEngine{
 	Context::Context( const VkInstance _instance, const uint32_t gpu_id, VkQueueFlags _queue_family_flags) : instance(_instance){
 		queue_family_flags = _queue_family_flags;
 		gpu = selectGPU(instance, gpu_id);
-		
 	}
 
 	VkPhysicalDevice Context::selectGPU(const VkInstance instance, const uint32_t gpu_id){
-		vector<VkPhysicalDevice> gpus = enumerateGPU();
+		vector<VkPhysicalDevice> gpus = enumerateGPU(instance);
 
 		return gpus[gpu_id];
 	}
