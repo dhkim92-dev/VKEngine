@@ -10,22 +10,41 @@
 
 #include "vk_core.h"
 #include "vk_application.h"
+
 using namespace std;
 using namespace VKEngine;
 
+vector<const char *> getRequiredExtensions(  ){
+	glfwInit();
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+	if(validationEnable) {
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+	glfwTerminate();
+	return extensions;
+}
+
 class App : public VKEngine::Application{
 	public :
-	explicit App(string app_name, string engine_name, int h, int w, const vector<const char*>exts, const vector<const char *>valids) : Application(app_name, engine_name, h, w, exts, valids){};
+	explicit App(string app_name, string engine_name, int h, int w, vector<const char*>instance_exts, vector<const char*>device_exts , vector<const char *>valids) : Application(app_name, engine_name, h, w, instance_exts, device_exts, valids){
+	};
 	protected:
+	CommandQueue graphics_queue, transfer_queue;
+	
 	virtual void initWindow(){
+		LOG("App Init Window\n");
 		glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
-		mainLoop();
-		destroy();
 	}
 
 	virtual void createSurface(){
+		LOG("createSurface()\n");
 		VK_CHECK_RESULT(glfwCreateWindowSurface(VkInstance(*engine), window, nullptr, &surface));
 	}
 
@@ -37,34 +56,35 @@ class App : public VKEngine::Application{
 	public:
 	void run(){
 		Application::run();
-		int a ;
-		return ;
+		mainLoop();
+	}
+
+	virtual void setupCommandQueue(){
+		LOG("setup CommandQueue called\n");
+		graphics_queue = context->createCommandQueue(VK_QUEUE_GRAPHICS_BIT);
+		LOG("graphics command queue created !\n");
+		transfer_queue = context->createCommandQueue(VK_QUEUE_TRANSFER_BIT);
+		LOG("transfer command queue created !\n");
 	}
 };
 
-vector<const char *> getRequiredExtensions(  ){
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-	return extensions;
-}
 
 int main(int argc, char *argv[])	
 {
-	vector<const char *> extensions= getRequiredExtensions();
-	extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	vector<const char*> instance_extensions(getRequiredExtensions());
 	vector<const char *> validations={"VK_LAYER_KHRONOS_validation"};
+	vector<const char *>device_extensions={VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 	string _name = "vulkan";
 	string engine_name = "engine";
-	
-	App app(_name, engine_name, 600, 800, extensions, validations);
+
 	try {
+		App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
 		app.run();
 	}catch(std::runtime_error& e){
-		cout << "error occured : " << e.what()  << "\n";
+		cout << "error occured : " << e.what()  <<  "on File " << __FILE__ << " line : " << __LINE__ << "\n";
 		exit(EXIT_FAILURE);
-	}
+	};
 
+	
 	return 0;
 }

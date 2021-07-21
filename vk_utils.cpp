@@ -46,6 +46,26 @@ namespace VKEngine{
 
 		return properties;
 	}
+
+	SwapChainSupportDetail querySwapChainSupport(VkPhysicalDevice gpu, VkSurfaceKHR surface){
+		SwapChainSupportDetail detail;
+		uint32_t nr_formats;
+		uint32_t nr_present_modes;
+
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, &detail.capabilities);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &nr_formats, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &nr_present_modes, nullptr);
+
+		if(nr_formats > 0)
+			detail.formats.resize(nr_formats);
+		if(nr_present_modes > 0)
+			detail.present_modes.resize(nr_present_modes);
+
+		vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &nr_formats, detail.formats.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &nr_present_modes, detail.present_modes.data());
+		return detail;		
+	}
+
 };
 
 #endif

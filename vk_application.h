@@ -12,6 +12,9 @@
 namespace VKEngine{
 	class Application{
 		public :
+		vector<const char *>instance_extension_names;
+		vector<const char *>device_extension_names;
+		vector<const char *>validation_names;
 		#if defined(GLFW_INCLUDE_VULKAN)
 		GLFWwindow *window;
 		#endif
@@ -19,8 +22,9 @@ namespace VKEngine{
 		explicit Application(
 			string app_name, string engine_name,
 			int _height, int _width, 
-			const vector<const char *>instance_extensions,
-			const vector<const char*>validations);
+			vector<const char *>_instance_extension_names,
+			vector<const char *> device_extension_names,
+			vector<const char *>_validation_names);
 		~Application();
 		void initVulkan();
 		void run();
@@ -30,9 +34,12 @@ namespace VKEngine{
 		Context *context;
 		VkSurfaceKHR surface;
 		void destroy();
-		virtual void initWindow();
-		virtual void createSurface();
-		virtual void mainLoop();
+		virtual void initWindow(){LOG("Application::initWindow()\n");};
+		virtual void createSurface(){LOG("Application::initSurface()\n");};
+		virtual void setupCommandQueue(){LOG("Application::setupCommandQueue()\n");};
+		virtual void mainLoop(){};
+		virtual void setupDepthStencil(){};
+		virtual void setupFramebuffer(){};
 	};
 };
 #endif

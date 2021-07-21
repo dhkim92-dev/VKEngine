@@ -19,11 +19,17 @@ using namespace std;
 	}																									\
 }																						
 
+struct SwapChainSupportDetail{
+	VkSurfaceCapabilitiesKHR capabilities;
+	vector<VkSurfaceFormatKHR> formats;
+	vector<VkPresentModeKHR> present_modes;
+};
+
 namespace VKEngine{
 	vector<VkPhysicalDevice> enumerateGPU(VkInstance instance);
 	vector<VkLayerProperties> enumerateValidations();
 	vector<VkQueueFamilyProperties> enumerateQueueFamilyProperties(VkPhysicalDevice gpu);
-	//vector<VkPhysicalDeviceProperties> enumerateGPUProperties();
+	SwapChainSupportDetail querySwapChainSupport(VkPhysicalDevice gpu, VkSurfaceKHR surface);
 	//VkShaderModule loadShader(const string file_path);
 };
 

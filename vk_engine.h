@@ -28,6 +28,7 @@ namespace VKEngine{
 		const string app_name;
 		const string engine_name;
 		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+		vector<VkQueueFamilyProperties> queue_family_properties;
 		private :
 		VkInstance instance = VK_NULL_HANDLE;
 		const vector<const char *> validations;
