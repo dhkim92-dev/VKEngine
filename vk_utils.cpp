@@ -45,7 +45,22 @@ namespace VKEngine{
 		}
 
 		return properties;
+	}	
+	
+	vector<VkImage> getSwapchainImages(VkDevice device, VkSwapchainKHR swapchain){
+		uint32_t nr_images;
+		vector<VkImage> images; 
+		vkGetSwapchainImagesKHR(device, swapchain, &nr_images, nullptr);
+		if(nr_images > 0){
+			images.resize(nr_images);
+			vkGetSwapchainImagesKHR(device, swapchain, &nr_images, images.data());
+		}
+		
+		return images;
 	}
+
+
+
 
 	SwapChainSupportDetail querySwapChainSupport(VkPhysicalDevice gpu, VkSurfaceKHR surface){
 		SwapChainSupportDetail detail;

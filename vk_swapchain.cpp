@@ -15,18 +15,20 @@ namespace VKEngine{
 	}
 
 	void SwapChain::create(uint32_t h, uint32_t w, bool vsync){
-		present_mode = chooseSwapPresentMode(detail.present_modes);
+		VkSurfaceFormatKHR _surface_format = chooseSwapSurfaceFormat(detail.formats);
+		VkExtent2D _extent = chooseSwapExtent(detail.capabilities);
+		VkPresentModeKHR _present_mode = chooseSwapPresentMode(detail.present_modes);
 		uint32_t nr_images = detail.capabilities.minImageCount + 1;
-		if(detail.capabilities.maxImageCount > 0 && nr_images > detail.capabilities.maxImageCount){
-			nr_images = detail.capabilities.maxImageCount;
-		}
 
+		if(detail.capabilities.maxImageCount > 0 && nr_images > detail.capabilities.maxImageCount)
+			nr_images = detail.capabilities.maxImageCount;
+		
 		VkSwapchainCreateInfoKHR swapchain_CI = infos::swapchainCreateInfo();
 		swapchain_CI.surface = surface;
 		swapchain_CI.minImageCount = nr_images;
-		swapchain_CI.imageFormat = surface_format.format;
-		swapchain_CI.imageColorSpace = surface_format.colorSpace;
-		swapchain_CI.imageExtent = extent;
+		swapchain_CI.imageFormat = _surface_format.format;
+		swapchain_CI.imageColorSpace = _surface_format.colorSpace;
+		swapchain_CI.imageExtent = _extent;
 		swapchain_CI.imageArrayLayers = 1;
 		swapchain_CI.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		swapchain_CI.oldSwapchain=swapchain;
@@ -43,18 +45,18 @@ namespace VKEngine{
 		}
 		swapchain_CI.preTransform = detail.capabilities.currentTransform;
 		swapchain_CI.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		swapchain_CI.presentMode = present_mode;
+		swapchain_CI.presentMode = _present_mode;
 		swapchain_CI.clipped = VK_TRUE;
 
 		VK_CHECK_RESULT(vkCreateSwapchainKHR(device, &swapchain_CI, nullptr, &swapchain));
-		surface_format = chooseSwapSurfaceFormat(detail.formats);
-		extent = chooseSwapExtent(detail.capabilities);
-	}
-
-	void SwapChain::setupSwapchainBuffers(){
-		setupImages();
-		setupImageViews();
-		setupFramebuffers();
+		vector<VkImage> images = getSwapchainImages(device, swapchain);
+		buffers.resize(images.size());
+		for(uint32_t i = 0 ; i < images.size() ; ++i){
+			buffers[i].image = images[i];
+		}
+	
+		image_format = _surface_format.format;
+		extent = _extent;
 	}
 
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats){
@@ -75,12 +77,27 @@ namespace VKEngine{
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities){
+	VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities){
 		// TODO : should be redesign for user input.
 		if(capabilities.currentExtent.width != UINT32_MAX){
 			return {-1, -1};
 		}
 		return capabilities.currentExtent;
+	}
+
+	void SwapChain::setupImageViews(){
+		for(uint32_t i = 0 ; i < buffers.size() ; ++i){
+			VkImageViewCreateInfo image_view_CI = infos::imageViewCreateInfo();
+			image_view_CI.image = buffers[i].image;
+			image_view_CI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			image_view_CI.format = image_format;
+			image_view_CI.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+			image_view_CI.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+			image_view_CI.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+			image_view_CI.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+			image_view_CI.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+			VK_CHECK_RESULT(vkCreateImageView(device, &image_view_CI, nullptr, &buffers[i].view));
+		}
 	}
 }
 

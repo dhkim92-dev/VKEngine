@@ -19,6 +19,7 @@ namespace VKEngine{
 
 
 
+
 	class SwapChain{
 		private:
 		VkInstance instance;
@@ -28,7 +29,7 @@ namespace VKEngine{
 		public:
 		VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 		SwapChainSupportDetail detail;
-		VkSurfaceFormatKHR surface_format;
+		VkFormat image_format;
 		VkPresentModeKHR present_mode;
 		VkExtent2D extent;
 		vector<SwapChainBuffer> buffers;

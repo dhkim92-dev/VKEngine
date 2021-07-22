@@ -29,7 +29,9 @@ namespace VKEngine{
 	vector<VkPhysicalDevice> enumerateGPU(VkInstance instance);
 	vector<VkLayerProperties> enumerateValidations();
 	vector<VkQueueFamilyProperties> enumerateQueueFamilyProperties(VkPhysicalDevice gpu);
+	vector<VkImage> getSwapchainImages(VkDevice device, VkSwapchainKHR swapchain);
 	SwapChainSupportDetail querySwapChainSupport(VkPhysicalDevice gpu, VkSurfaceKHR surface);
+	
 	//VkShaderModule loadShader(const string file_path);
 };
 
