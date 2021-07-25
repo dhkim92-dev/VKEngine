@@ -6,7 +6,7 @@
 using namespace std;
 
 namespace VKEngine{
-	Framebuffer::Framebuffer(VkDevice _device) : device(_device){};
+	Framebuffer::Framebuffer(Context *context) : gpu(VkPhysicalDevice(*context)), device(VkDevice(*context)){};
 	Framebuffer::~Framebuffer(){
 		destroy();
 	}

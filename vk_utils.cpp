@@ -1,11 +1,6 @@
 #ifndef __VK_UTILS_CPP__
 #define __VK_UTILS_CPP__
 
-#include <vulkan/vulkan.h>
-#include <cstdio>
-#include <iostream>
-#include <vector>
-#include <set>
 #include "vk_utils.h"
 
 using namespace std;
@@ -78,8 +73,29 @@ namespace VKEngine{
 		return detail;		
 	}
 
-	VkMemoryType getMemoryType(VkDevice device, uint32_t type, VkMemoryPropertyFlags properties, VkBool32 *mem_found){
-		for(uint32_t i = 0 ; i < properties)
+	uint32_t getMemoryType(VkPhysicalDevice gpu, VkDevice device, uint32_t type, VkMemoryPropertyFlags properties, VkBool32 *mem_found){
+		VkPhysicalDeviceMemoryProperties mem_properties;
+		vkGetPhysicalDeviceMemoryProperties(gpu, &mem_properties);
+
+		for(uint32_t i = 0 ; i < mem_properties.memoryTypeCount ; ++i){
+			if((type & 1) == 1){
+				if( (mem_properties.memoryTypes[i].propertyFlags & properties)  == properties ){
+					if(mem_found){
+						*mem_found = true;
+					}
+
+					return i;
+				}
+			}
+			type>>=1;
+		}
+
+		if(mem_found){
+			*mem_found = false;
+			return 0;
+		}else{
+			std::runtime_error("can not find a matching memory type!\n");
+		}
 	}
 };
 

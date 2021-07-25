@@ -31,7 +31,7 @@ namespace VKEngine{
 	vector<VkQueueFamilyProperties> enumerateQueueFamilyProperties(VkPhysicalDevice gpu);
 	vector<VkImage> getSwapchainImages(VkDevice device, VkSwapchainKHR swapchain);
 	SwapChainSupportDetail querySwapChainSupport(VkPhysicalDevice gpu, VkSurfaceKHR surface);
-	VkMemoryType getMemoryType(VkDevice device, uint32_t type, VkMemoryPropertyFlags properties, VkBool32 *mem_found = nullptr );
+	uint32_t getMemoryType(VkPhysicalDevice gpu, VkDevice device, uint32_t type, VkMemoryPropertyFlags properties, VkBool32 *mem_found = nullptr );
 	//VkShaderModule loadShader(const string file_path);
 };
 
