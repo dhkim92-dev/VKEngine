@@ -14,11 +14,7 @@ namespace VKEngine{
 	struct SwapChainBuffer{
 		VkImage image;
 		VkImageView view;
-		VkFramebuffer framebuffer;
 	};
-
-
-
 
 	class SwapChain{
 		private:
@@ -39,7 +35,7 @@ namespace VKEngine{
 		void connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device, VkSurfaceKHR _surface);
 		void create(uint32_t height, uint32_t width, bool vsync=false);
 		void acquiredNextImage(VkSemaphore present_complete_semaphore, uint32_t image_index);
-		void queuePresent(VkQueue queue, uint32_t image_index, VkSemaphore wait_semaphore);
+		void queuePresent(VkQueue queue, uint32_t image_index, VkSemaphore wait_semaphore = VK_NULL_HANDLE);
 		void destroy();
 		void recreate();
 
@@ -47,10 +43,7 @@ namespace VKEngine{
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats);
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& available_present_modes);
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-		void setupSwapchainBuffers();
-		void setupImages();
 		void setupImageViews();
-		void setupFramebuffers();
 	};
 }
 

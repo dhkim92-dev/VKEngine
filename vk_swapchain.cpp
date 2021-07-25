@@ -57,6 +57,7 @@ namespace VKEngine{
 	
 		image_format = _surface_format.format;
 		extent = _extent;
+		setupImageViews();
 	}
 
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats){

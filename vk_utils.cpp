@@ -59,9 +59,6 @@ namespace VKEngine{
 		return images;
 	}
 
-
-
-
 	SwapChainSupportDetail querySwapChainSupport(VkPhysicalDevice gpu, VkSurfaceKHR surface){
 		SwapChainSupportDetail detail;
 		uint32_t nr_formats;
@@ -81,6 +78,9 @@ namespace VKEngine{
 		return detail;		
 	}
 
+	VkMemoryType getMemoryType(VkDevice device, uint32_t type, VkMemoryPropertyFlags properties, VkBool32 *mem_found){
+		for(uint32_t i = 0 ; i < properties)
+	}
 };
 
 #endif
