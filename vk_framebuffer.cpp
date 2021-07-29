@@ -6,7 +6,9 @@
 using namespace std;
 
 namespace VKEngine{
-	Framebuffer::Framebuffer(Context *context) : gpu(VkPhysicalDevice(*context)), device(VkDevice(*context)){};
+	Framebuffer::Framebuffer(Context *context) : gpu(VkPhysicalDevice(*context)), device(VkDevice(*context)){
+
+	};
 	Framebuffer::~Framebuffer(){
 		destroy();
 	}
@@ -50,6 +52,7 @@ namespace VKEngine{
 		VK_CHECK_RESULT(vkCreateImage(device, &image_CI, nullptr, &fb_attachment.image)); 
 		vkGetImageMemoryRequirements(device, fb_attachment.image, &mem_reqs);
 		mem_AI.allocationSize = mem_reqs.size;
+		mem_AI.memoryTypeIndex = getMemoryType(gpu, device, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		
 	}
 }

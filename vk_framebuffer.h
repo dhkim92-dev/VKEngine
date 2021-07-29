@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include "vk_context.h"
 #include "vk_swapchain.h"
 #include "vk_infos.h"
 #include "vk_utils.h"
@@ -56,7 +57,8 @@ namespace VKEngine{
 	};
 
 	struct Framebuffer{
-		private : 
+		private :
+		VkPhysicalDevice gpu; 
 		VkDevice device;
 		public : 
 		uint32_t height, width;
@@ -65,7 +67,7 @@ namespace VKEngine{
 		VkSampler sampler;
 		vector<FramebufferAttachment> attachments;
 
-		explicit Framebuffer(VkDevice _device);
+		explicit Framebuffer(Context *context);
 		~Framebuffer();
 		uint32_t addAttachment(AttachmentCreateInfo info);
 		void createSampler(VkFilter mag_filter, VkFilter min_filter, VkSamplerAddressMode address_mode);

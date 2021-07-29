@@ -24,6 +24,8 @@ namespace VKEngine{
 		const vector<const char *> extension_names;
 		VkQueue graphics_queue, compute_queue, transfer_queue, present_queue;
 		VkPhysicalDeviceFeatures device_features;
+
+		
 		
 		private :
 		void setupDevice();
