@@ -53,7 +53,40 @@ namespace VKEngine{
 		vkGetImageMemoryRequirements(device, fb_attachment.image, &mem_reqs);
 		mem_AI.allocationSize = mem_reqs.size;
 		mem_AI.memoryTypeIndex = getMemoryType(gpu, device, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		
+		VK_CHECK_RESULT( vkAllocateMemory(device, &mem_AI, nullptr, &fb_attachment.memory) );
+		VK_CHECK_RESULT( vkBindImageMemory(device, fb_attachment.image, fb_attachment.memory, 0) );
+
+		fb_attachment.subresource_range = {};
+		fb_attachment.subresource_range.aspectMask = aspect_mask;
+		fb_attachment.subresource_range.levelCount = 1;
+		fb_attachment.subresource_range.layerCount = info.nr_layers;
+
+		VkImageViewCreateInfo image_view_CI = infos::imageViewCreateInfo();
+		image_view_CI.viewType = (info.nr_layers==1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		image_view_CI.format = info.format;
+		image_view_CI.subresourceRange = fb_attachment.subresource_range;
+		image_view_CI.subresourceRange.aspectMask = fb_attachment.hasDepth() ? VK_IMAGE_ASPECT_DEPTH_BIT : aspect_mask;
+		image_view_CI.image = fb_attachment.image;
+		VK_CHECK_RESULT( vkCreateImageView(device, &image_view_CI, nullptr, &fb_attachment.view) );
+
+		fb_attachment.description = {};
+		fb_attachment.description.samples = info.sample_count;
+		fb_attachment.description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		fb_attachment.description.storeOp = (info.usage & VK_IMAGE_USAGE_SAMPLED_BIT) ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		fb_attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		fb_attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		fb_attachment.description.format = info.format;
+		fb_attachment.description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		if(fb_attachment.isDepthStencil()){
+			fb_attachment.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		}else{
+			fb_attachment.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
+
+		attachments.push_back(fb_attachment);
+
+		return static_cast<uint32_t>(attachments.size() - 1);
 	}
 }
 

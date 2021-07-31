@@ -2,14 +2,15 @@
 #define __VK_QUEUE_CPP__
 
 #include "vk_queue.h"
-
 namespace VKEngine{
-	CommandQueue::CommandQueue(){};
-	CommandQueue::CommandQueue(VkDevice _device,
-							   VkQueue _queue, 
-							   VkQueueFlagBits _type,
-							   VkCommandPool _pool)
-	: device(_device), type(_type), queue(_queue), pool(_pool){
+	CommandQueue::CommandQueue(
+		Context *_context,
+		VkQueueFlagBits _type,
+		VkCommandPool _pool)
+	{
+		context = _context;
+		type = _type;
+		pool = _pool;
 	}
 
 	CommandQueue::~CommandQueue(){
@@ -27,5 +28,4 @@ namespace VKEngine{
 		}
 	}
 }
-
 #endif

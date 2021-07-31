@@ -28,6 +28,7 @@ namespace VKEngine{
 		}
 		LOG("logical Device will set\n");
 		setupDevice();
+		setupMemoryProperties();
 	}
 
 	Context::~Context(){
@@ -98,6 +99,13 @@ namespace VKEngine{
 		VK_CHECK_RESULT( vkCreateDevice(gpu, &device_CI, nullptr, &device) );
 	}
 
+	void Context::setupMemoryProperties(){
+		vkGetPhysicalDeviceMemoryProperties(gpu, &mem_properties);
+	}
+
+	
+
+	/*
 	CommandQueue Context::createCommandQueue(VkQueueFlagBits type){
 		uint32_t index;
 		QueueFamilyIndice indice = findQueueFamilies();
@@ -130,6 +138,7 @@ namespace VKEngine{
 		CommandQueue command_queue(device, queue, type, pool);
 		return command_queue;
 	}
+	*/
 
 	bool Context::isSuitableGPU(VkPhysicalDevice _gpu){
 		bool result = false;

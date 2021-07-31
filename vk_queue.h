@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
+#include "vk_context.h"
 #include "vk_buffer.h"
 #include "vk_image.h"
 #include "vk_queue.h"
@@ -16,14 +17,15 @@ namespace VKEngine{
 	class CommandQueue{
 		public:
 		private:
+		Context *context = nullptr;
 		VkDevice device = VK_NULL_HANDLE;
 		VkQueueFlagBits type;
 		VkCommandPool pool = VK_NULL_HANDLE;
 		VkQueue queue = VK_NULL_HANDLE;
 		
 		public:
-		CommandQueue();
-		CommandQueue(VkDevice _device, VkQueue _queue, VkQueueFlagBits _type, VkCommandPool _pool);
+		//explicit CommandQueue();
+		explicit CommandQueue(Context *_context, VkQueueFlagBits _type, VkCommandPool _pool);
 		~CommandQueue();
 		void destroy();
 		void enqueueCopy(void *src, Buffer *dst, VkDeviceSize from, VkDeviceSize to);

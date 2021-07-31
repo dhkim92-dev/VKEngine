@@ -58,6 +58,7 @@ namespace VKEngine{
 
 	struct Framebuffer{
 		private :
+		Context *context = nullptr; 
 		VkPhysicalDevice gpu; 
 		VkDevice device;
 		public : 

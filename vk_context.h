@@ -8,7 +8,6 @@
 #include "vk_infos.h"
 #include "vk_utils.h"
 #include "vk_queue_family.h"
-#include "vk_queue.h"
 
 using namespace std;
 
@@ -24,12 +23,12 @@ namespace VKEngine{
 		const vector<const char *> extension_names;
 		VkQueue graphics_queue, compute_queue, transfer_queue, present_queue;
 		VkPhysicalDeviceFeatures device_features;
-
-		
+		VkPhysicalDeviceMemoryProperties mem_properties;
 		
 		private :
 		void setupDevice();
 		void destroy();
+		void setupMemoryProperties();
 		bool isSuitableGPU(VkPhysicalDevice _gpu);
 		public :
 		explicit Context(const VkInstance instance,
@@ -42,7 +41,7 @@ namespace VKEngine{
 		void selectGPU(const uint32_t gpu_id);
 		QueueFamilyIndice findQueueFamilies();
 		static QueueFamilyIndice findQueueFamilies(VkPhysicalDevice _gpu, VkSurfaceKHR _surface);
-		CommandQueue createCommandQueue( VkQueueFlagBits type );
+		//CommandQueue createCommandQueue( VkQueueFlagBits type );
 		operator VkSurfaceKHR() const {
 			return surface;
 		}
