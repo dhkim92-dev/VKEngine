@@ -103,7 +103,13 @@ namespace VKEngine{
 		vkGetPhysicalDeviceMemoryProperties(gpu, &mem_properties);
 	}
 
-	
+	VkCommandPool Context::createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags){
+		VkCommandPoolCreateInfo command_pool_CI = infos::commandPoolCreateInfo(
+			queue_index,
+			flags
+		);
+		VK_CHECK_RESULT( vkCreateCommandPool() )
+	}
 
 	/*
 	CommandQueue Context::createCommandQueue(VkQueueFlagBits type){

@@ -100,6 +100,42 @@ namespace VKEngine{
 			VK_CHECK_RESULT(vkCreateImageView(device, &image_view_CI, nullptr, &buffers[i].view));
 		}
 	}
+
+
+
+	void SwapChain::destroy(){
+		assert(device);
+		if(swapchain){
+			vkDestroySwapchainKHR(device, swapchain, nullptr);
+			for(auto buffer : buffers){
+				vkDestroyImageView(device, buffer.view, nullptr);
+			}
+		}
+		if(surface) vkDestroySurfaceKHR(instance, surface, nullptr);
+		swapchain = VK_NULL_HANDLE;
+		surface = VK_NULL_HANDLE;
+	}
+
+	void SwapChain::acquiredNextImage(VkSemaphore present_complete_semaphore, uint32_t *image_index){
+		VK_CHECK_RESULT(vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, present_complete_semaphore, 
+									 (VkFence)nullptr, image_index));
+	}
+
+	void SwapChain::queuePresent(VkQueue queue, uint32_t image_index, VkSemaphore wait_semaphore){
+		VkPresentInfoKHR present_info = {};
+		present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		present_info.swapchainCount = 1;
+		present_info.pSwapchains = &swapchain;
+		present_info.pImageIndices = &image_index;
+		present_info.pNext = NULL;
+
+		if(wait_semaphore){
+			present_info.pWaitSemaphores = &wait_semaphore;
+			present_info.waitSemaphoreCount = 1;
+		}
+
+		VK_CHECK_RESULT(vkQueuePresentKHR(queue, &present_info));
+	}
 }
 
 

@@ -61,9 +61,9 @@ class App : public VKEngine::Application{
 
 	virtual void setupCommandQueue(){
 		LOG("setup CommandQueue called\n");
-		graphics_queue = context->createCommandQueue(VK_QUEUE_GRAPHICS_BIT);
+		//graphics_queue = context->createCommandQueue(VK_QUEUE_GRAPHICS_BIT);
 		LOG("graphics command queue created !\n");
-		transfer_queue = context->createCommandQueue(VK_QUEUE_TRANSFER_BIT);
+		//transfer_queue = context->createCommandQueue(VK_QUEUE_TRANSFER_BIT);
 		LOG("transfer command queue created !\n");
 	}
 };

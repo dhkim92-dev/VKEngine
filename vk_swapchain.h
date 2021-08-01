@@ -34,10 +34,12 @@ namespace VKEngine{
 		void connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device);
 		void connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device, VkSurfaceKHR _surface);
 		void create(uint32_t height, uint32_t width, bool vsync=false);
-		void acquiredNextImage(VkSemaphore present_complete_semaphore, uint32_t image_index);
-		void queuePresent(VkQueue queue, uint32_t image_index, VkSemaphore wait_semaphore = VK_NULL_HANDLE);
+		void acquiredNextImage(VkSemaphore present_complete_semaphore, 
+							   uint32_t *image_index);
+		void queuePresent(VkQueue queue, 
+						  uint32_t image_index, 
+						  VkSemaphore wait_semaphore = VK_NULL_HANDLE);
 		void destroy();
-		void recreate();
 
 		private:
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats);

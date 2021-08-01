@@ -9,6 +9,7 @@ namespace VKEngine{
 		VkCommandPool _pool)
 	{
 		context = _context;
+		device = VkDevice(*context);
 		type = _type;
 		pool = _pool;
 	}

@@ -63,9 +63,9 @@ namespace VKEngine{
 		VkDevice device;
 		public : 
 		uint32_t height, width;
-		VkFramebuffer framebuffer;
-		VkRenderPass render_pass;
-		VkSampler sampler;
+		VkFramebuffer framebuffer = VK_NULL_HANDLE;
+		VkRenderPass render_pass = VK_NULL_HANDLE;
+		VkSampler sampler = VK_NULL_HANDLE;
 		vector<FramebufferAttachment> attachments;
 
 		explicit Framebuffer(Context *context);
@@ -76,8 +76,6 @@ namespace VKEngine{
 		void createFramebuffer();
 		void destroy();
 	};
-
-
 }
 
 #endif
