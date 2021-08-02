@@ -28,6 +28,9 @@ namespace VKEngine{
 		}
 		LOG("logical Device will set\n");
 		setupDevice();
+		QueueFamilyIndice indices = findQueueFamilies(gpu, surface);
+		graphics_pool = createCommandPool(indices.graphics.value());
+		compute_pool = createCommandPool(indices.compute.value());
 		setupMemoryProperties();
 	}
 
@@ -35,8 +38,41 @@ namespace VKEngine{
 		destroy();
 	}
 
+	void Context::setupMemoryProperties(){
+		vkGetPhysicalDeviceMemoryProperties(gpu, &memory_properties);
+	}
+
+	uint32_t Context::getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found){
+		*found = false;
+
+		for(uint32_t i = 0 ; memory_properties.memoryTypeCount ; ++i){
+			if(type&1){
+				if((memory_properties.memoryTypes[i].propertyFlags&property)==property){
+					if(found){
+						*found = true;
+					}
+					return i;
+				}
+			}
+			type>>=1;
+		}
+
+		if(found){
+			*found = false;
+			return 0;
+		}else{
+			std::runtime_error("can not found matched memory type");
+		}
+	}
+
 	void Context::destroy(){
-		vkDestroyDevice(device, nullptr);
+		if(graphics_pool) vkDestroyCommandPool(device, graphics_pool, nullptr);
+		graphics_pool = VK_NULL_HANDLE;
+		if(compute_pool) vkDestroyCommandPool(device, compute_pool, nullptr);
+		compute_pool = VK_NULL_HANDLE;
+		if(surface) vkDestroySurfaceKHR(instance, surface, nullptr);
+		if(device) vkDestroyDevice(device, nullptr);
+		device = VK_NULL_HANDLE;
 	}
 
 	void Context::selectGPU(const uint32_t gpu_id){
@@ -57,7 +93,6 @@ namespace VKEngine{
 			}
 			++i;
 		}
-		
 		
 		gpu = (gpu == VK_NULL_HANDLE) ? selected_gpu : VK_NULL_HANDLE;
 	}
@@ -99,52 +134,28 @@ namespace VKEngine{
 		VK_CHECK_RESULT( vkCreateDevice(gpu, &device_CI, nullptr, &device) );
 	}
 
-	void Context::setupMemoryProperties(){
-		vkGetPhysicalDeviceMemoryProperties(gpu, &mem_properties);
-	}
-
 	VkCommandPool Context::createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags){
-		VkCommandPoolCreateInfo command_pool_CI = infos::commandPoolCreateInfo(
-			queue_index,
-			flags
-		);
-		VK_CHECK_RESULT( vkCreateCommandPool() )
+		VkCommandPool pool;
+		VkCommandPoolCreateInfo command_pool_CI = infos::commandPoolCreateInfo(queue_index,flags);
+		VK_CHECK_RESULT( vkCreateCommandPool(device, &command_pool_CI, nullptr, &pool) );
+		return pool;
 	}
 
-	/*
-	CommandQueue Context::createCommandQueue(VkQueueFlagBits type){
-		uint32_t index;
-		QueueFamilyIndice indice = findQueueFamilies();
-		VkQueue queue;
-		VkCommandPool pool;
-		VkCommandPoolCreateInfo pool_CI;
-		
+	VkCommandPool Context::getCommandPool(VkQueueFlagBits type){
+		VkCommandPool ret = VK_NULL_HANDLE;
 		switch(type){
-			case VK_QUEUE_GRAPHICS_BIT :
-				index = indice.graphics.value();
-				break;
-			case VK_QUEUE_TRANSFER_BIT :
-				index = indice.transfer.value();
+			case VK_QUEUE_GRAPHICS_BIT : 
+				ret = graphics_pool;
 				break;
 			case VK_QUEUE_COMPUTE_BIT :
-				index = indice.compute.value(); 
+				ret = compute_pool;
 				break;
 			default :
-				index = -1;
+				ret = graphics_pool;
 		}
-
-		if(index < 0){
-			throw runtime_error("no suitable queue family to make command_queue\n");
-		}
-
-		vkGetDeviceQueue(device, index, 0, &queue);
-		pool_CI = infos::commandPoolCreateInfo(index, 0);
-		VK_CHECK_RESULT(vkCreateCommandPool(device, &pool_CI, nullptr, &pool));
-
-		CommandQueue command_queue(device, queue, type, pool);
-		return command_queue;
+		assert(ret!=VK_NULL_HANDLE);
+		return ret;
 	}
-	*/
 
 	bool Context::isSuitableGPU(VkPhysicalDevice _gpu){
 		bool result = false;

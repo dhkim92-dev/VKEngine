@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <set>
+#include "vk_engine.h"
 #include "vk_context.h"
 #include "vk_utils.h"
 #include "vk_infos.h"
@@ -31,9 +32,10 @@ namespace VKEngine{
 		vector<SwapChainBuffer> buffers;
 
 		public:
+		void connect(Engine *engine, Context * context, VkSurfaceKHR _surface);
 		void connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device);
 		void connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device, VkSurfaceKHR _surface);
-		void create(uint32_t height, uint32_t width, bool vsync=false);
+		void create(uint32_t *_height, uint32_t* _width, bool vsync=false);
 		void acquiredNextImage(VkSemaphore present_complete_semaphore, 
 							   uint32_t *image_index);
 		void queuePresent(VkQueue queue, 
@@ -44,7 +46,7 @@ namespace VKEngine{
 		private:
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats);
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& available_present_modes);
-		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, uint32_t *h , uint32_t *w);
 		void setupImageViews();
 	};
 }

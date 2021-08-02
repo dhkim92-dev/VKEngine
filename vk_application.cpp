@@ -8,7 +8,7 @@ using namespace std;
 namespace VKEngine{
 	Application::Application(
 		string app_name, string engine_name,
-		int _height, int _width, 
+		uint32_t _height, uint32_t _width, 
 		const vector<const char *> _instance_extension_names,
 		const vector<const char *> _device_extension_names,
 		const vector<const char *> _validation_names)
@@ -32,7 +32,18 @@ namespace VKEngine{
 		createSurface();
 		context = new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
 		LOG("context created\n");
+		LOG("connect swapchain\n");
+		swapchain.connect(engine, context, surface);
+		LOG("create swapchain.\n");
+		swapchain.create(&height, &width, false);
 		setupCommandQueue();
+	}
+
+
+	void Application::setupCommandQueue(){
+		LOG("Apllication::setupCommandQueue called\n");
+		graphics_queue = new CommandQueue(context, VK_QUEUE_GRAPHICS_BIT);
+		compute_queue = new CommandQueue(context, VK_QUEUE_COMPUTE_BIT);
 	}
 	
 	void Application::run(){
@@ -45,6 +56,11 @@ namespace VKEngine{
 	}
 
 	void Application::destroy(){
+		delete graphics_queue;
+		delete compute_queue;
+		LOG("swapchain destroy\n");
+		swapchain.destroy();
+		LOG("swapchain destroyed\n");
 		delete context;
 		delete engine;
 	}

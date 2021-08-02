@@ -34,7 +34,7 @@ class App : public VKEngine::Application{
 	explicit App(string app_name, string engine_name, int h, int w, vector<const char*>instance_exts, vector<const char*>device_exts , vector<const char *>valids) : Application(app_name, engine_name, h, w, instance_exts, device_exts, valids){
 	};
 	protected:
-	CommandQueue graphics_queue, transfer_queue;
+	CommandQueue *graphics_queue, *compute_queue;
 	
 	virtual void initWindow(){
 		LOG("App Init Window\n");
@@ -57,14 +57,6 @@ class App : public VKEngine::Application{
 	void run(){
 		Application::run();
 		mainLoop();
-	}
-
-	virtual void setupCommandQueue(){
-		LOG("setup CommandQueue called\n");
-		//graphics_queue = context->createCommandQueue(VK_QUEUE_GRAPHICS_BIT);
-		LOG("graphics command queue created !\n");
-		//transfer_queue = context->createCommandQueue(VK_QUEUE_TRANSFER_BIT);
-		LOG("transfer command queue created !\n");
 	}
 };
 

@@ -12,6 +12,15 @@ namespace VKEngine{
 		device = VkDevice(*context);
 		type = _type;
 		pool = _pool;
+		createCommandQueue();
+	}
+
+	CommandQueue::CommandQueue(Context * _context, VkQueueFlagBits _type){
+		context = _context;
+		device = VkDevice(*_context);
+		type = _type;
+		pool = context->getCommandPool(type);
+		createCommandQueue();
 	}
 
 	CommandQueue::~CommandQueue(){
@@ -19,8 +28,24 @@ namespace VKEngine{
 	}
 
 	void CommandQueue::destroy(){
-		if(!pool)
-			vkDestroyCommandPool(device, pool, nullptr);
+	}
+
+	void CommandQueue::createCommandQueue(){
+		VkDeviceQueueCreateInfo queue_CI = infos::deviceQueueCreateInfo();
+		QueueFamilyIndice indices = context->findQueueFamilies();
+		uint32_t index = 0;
+
+		switch(type){
+			case VK_QUEUE_GRAPHICS_BIT : 
+				index = indices.graphics.value();
+				break;
+			case VK_QUEUE_COMPUTE_BIT :
+				index = indices.compute.value();
+				break;
+			default :
+				index = 0;
+		}
+		vkGetDeviceQueue(device, index, 0, &queue);
 	}
 
 	void CommandQueue::free( VkCommandBuffer command_buffer ){

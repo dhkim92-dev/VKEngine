@@ -21,12 +21,11 @@ namespace VKEngine{
 		const VkQueueFlags queue_family_flags;
 		const vector<const char *> validation_names;
 		const vector<const char *> extension_names;
-		VkQueue graphics_queue, compute_queue, transfer_queue, present_queue;
+		//VkQueue graphics_queue, compute_queue, transfer_queue, present_queue;
 		VkPhysicalDeviceFeatures device_features;
-		VkPhysicalDeviceMemoryProperties mem_properties;
-		VkCommandPool graphics_pool;
-		VkCommandPool compute_pool;
-
+		VkPhysicalDeviceMemoryProperties memory_properties;
+		VkCommandPool graphics_pool = VK_NULL_HANDLE; // default command pool for graphics.
+		VkCommandPool compute_pool = VK_NULL_HANDLE; // default command pool for compute.
 		private :
 		void setupDevice();
 		void destroy();
@@ -45,7 +44,7 @@ namespace VKEngine{
 		static QueueFamilyIndice findQueueFamilies(VkPhysicalDevice _gpu, VkSurfaceKHR _surface);
 		//CommandQueue createCommandQueue( VkQueueFlagBits type );
 		VkCommandPool createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-		void getCommandPool(uint32_t queue_index);
+		VkCommandPool getCommandPool(VkQueueFlagBits type);
 		operator VkSurfaceKHR() const {
 			return surface;
 		}

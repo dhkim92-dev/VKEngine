@@ -1,4 +1,4 @@
-#ifndef __VK_FRAMEABUFFER_CPP__
+#ifndef __VK_FRAMEBUFFER_CPP__
 #define __VK_FRAMEBUFFER_CPP__
 
 #include "vk_framebuffer.h"

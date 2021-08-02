@@ -23,9 +23,13 @@ namespace VKEngine{
 		VkCommandPool pool = VK_NULL_HANDLE;
 		VkQueue queue = VK_NULL_HANDLE;
 		
+		private :
+		void createCommandQueue();
+
 		public:
 		//explicit CommandQueue();
 		explicit CommandQueue(Context *_context, VkQueueFlagBits _type, VkCommandPool _pool);
+		explicit CommandQueue(Context *_context, VkQueueFlagBits _type);
 		~CommandQueue();
 		void destroy();
 		void enqueueCopy(void *src, Buffer *dst, VkDeviceSize from, VkDeviceSize to);

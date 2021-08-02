@@ -6,6 +6,11 @@
 using namespace std;
 
 namespace VKEngine{
+
+	void SwapChain::connect(Engine *engine, Context *context, VkSurfaceKHR _surface){
+		connect( VkInstance(*engine), VkPhysicalDevice(*context), VkDevice(*context), _surface );
+	}
+
 	void SwapChain::connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device, VkSurfaceKHR _surface){
 		instance = _instance;
 		device=_device;
@@ -14,9 +19,9 @@ namespace VKEngine{
 		detail = querySwapChainSupport(gpu, surface);
 	}
 
-	void SwapChain::create(uint32_t h, uint32_t w, bool vsync){
+	void SwapChain::create(uint32_t* h, uint32_t* w, bool vsync){
 		VkSurfaceFormatKHR _surface_format = chooseSwapSurfaceFormat(detail.formats);
-		VkExtent2D _extent = chooseSwapExtent(detail.capabilities);
+		VkExtent2D _extent = chooseSwapExtent(detail.capabilities, h, w);
 		VkPresentModeKHR _present_mode = chooseSwapPresentMode(detail.present_modes);
 		uint32_t nr_images = detail.capabilities.minImageCount + 1;
 
@@ -78,11 +83,13 @@ namespace VKEngine{
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities){
+	VkExtent2D SwapChain::chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, uint32_t *h, uint32_t *w){
 		// TODO : should be redesign for user input.
-		if(capabilities.currentExtent.width != UINT32_MAX){
-			return {-1, -1};
+		if(capabilities.currentExtent.width == UINT32_MAX){
+			capabilities.currentExtent.width = *w;
+			capabilities.currentExtent.height = *h;
 		}
+
 		return capabilities.currentExtent;
 	}
 
@@ -105,15 +112,25 @@ namespace VKEngine{
 
 	void SwapChain::destroy(){
 		assert(device);
-		if(swapchain){
-			vkDestroySwapchainKHR(device, swapchain, nullptr);
+		LOG("SwapChain::destroy\n");
+		if(swapchain!=VK_NULL_HANDLE){
+			LOG("if(swapchain)\n");
 			for(auto buffer : buffers){
 				vkDestroyImageView(device, buffer.view, nullptr);
 			}
 		}
-		if(surface) vkDestroySurfaceKHR(instance, surface, nullptr);
+
+		if(surface!=VK_NULL_HANDLE){
+			LOG("if(surface)\n");
+			vkDestroySwapchainKHR(device, swapchain, nullptr);
+			#ifndef GLFW_INCLUDE_VULKAN
+			vkDestroySurfaceKHR(instance, surface, nullptr);
+			#endif
+		}
 		swapchain = VK_NULL_HANDLE;
+		#ifndef GLFW_INCLUDE_VULKAN
 		surface = VK_NULL_HANDLE;
+		#endif
 	}
 
 	void SwapChain::acquiredNextImage(VkSemaphore present_complete_semaphore, uint32_t *image_index){

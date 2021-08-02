@@ -1,4 +1,4 @@
-#ifndef __VK_FRAMEABUFFER_H__
+#ifndef __VK_FRAMEBUFFER_H__
 #define __VK_FRAMEBUFFER_H__
 
 #include <vulkan/vulkan.h>
