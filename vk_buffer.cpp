@@ -30,10 +30,16 @@ namespace VKEngine{
 		buffer_CI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		VK_CHECK_RESULT( vkCreateBuffer(device, &buffer_CI, nullptr, &buffer) );
 		allocate(0, _size);
+		bind(0);
+		
 	}
 
-	void Buffer::bind(VkDeviceSize ){
-		vkBindBufferMemory(device, buffer, memory, 0);
+	Buffer::~Buffer(){
+		destroy();
+	}
+
+	void Buffer::bind(VkDeviceSize offset){
+		vkBindBufferMemory(device, buffer, memory, offset);
 	}
 
 	void Buffer::allocate(VkDeviceSize _offest = 0, VkDeviceSize _size = 0){
@@ -51,6 +57,88 @@ namespace VKEngine{
 		VK_CHECK_RESULT(vkAllocateMemory(device, &malloc_CI, nullptr, &memory));
 	}
 
+	void Buffer::setupDescriptor(VkDeviceSize offset, VkDeviceSize _size){
+		descriptor.offset = offset;
+		descriptor.buffer = buffer;
+		descriptor.range = _size;
+	}
+
+	void Buffer::map(VkDeviceSize offset, VkDeviceSize _size){
+		VK_CHECK_RESULT(vkMapMemory(device, memory, offset, size, 0, &data));
+	}
+
+	void Buffer::unmap(){
+		vkUnmapMemory(device, memory);
+		data = nullptr;
+	}
+
+	void Buffer::flush(VkDeviceSize offset, VkDeviceSize _size){
+		VkMappedMemoryRange range = {};
+		range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		range.offset = offset;
+		range.size = _size;
+		range.memory = memory;
+		VK_CHECK_RESULT(vkFlushMappedMemoryRanges(device, 1, &range));
+	}
+
+	void Buffer::invalidate(VkDeviceSize offset, VkDeviceSize _size){
+		VkMappedMemoryRange range = {};
+		range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		range.offset = offset;
+		range.size = _size;
+		range.memory = memory;
+		VK_CHECK_RESULT(vkInvalidateMappedMemoryRanges(device, 1, &range));
+	}
+
+	void Buffer::copyTo(void* dst, VkDeviceSize _size){
+		map(0, _size);
+		assert(data);
+		invalidate(0, _size);
+		memcpy(dst, data, _size);
+		unmap();
+	}
+
+	void Buffer::copyFrom(void *src, VkDeviceSize _size){
+		assert(src);
+		map(0, _size);
+		flush(0,_size);
+		memcpy(data, src, _size);
+		unmap();
+	}
+
+	void Buffer::destroy(){
+		if(buffer){
+			vkDestroyBuffer(device, buffer, nullptr);
+			buffer = VK_NULL_HANDLE;
+		}
+
+		if(memory){
+			vkFreeMemory(device, memory, nullptr);
+			memory = VK_NULL_HANDLE;
+		}
+	}
+
+	void Buffer::barrier(
+		VkCommandBuffer command_buffer, 
+		VkAccessFlags src_access, 
+		VkAccessFlags dst_access, 
+		VkPipelineStageFlags src_stage, 
+		VkPipelineStageFlags dst_stage
+	){	
+		VkBufferMemoryBarrier barrier = infos::bufferMemoryBarrier();
+		barrier.buffer=buffer;
+		barrier.srcAccessMask = src_access;
+		barrier.dstAccessMask = dst_access;
+		barrier.size = size;
+		vkCmdPipelineBarrier(
+			command_buffer,
+			src_stage, dst_stage,
+			0,
+			0, nullptr,
+			1, &barrier,
+			0, nullptr
+		);
+	}
 
 }
 

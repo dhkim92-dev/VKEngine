@@ -42,9 +42,9 @@ namespace VKEngine{
 		void selectGPU(const uint32_t gpu_id);
 		QueueFamilyIndice findQueueFamilies();
 		static QueueFamilyIndice findQueueFamilies(VkPhysicalDevice _gpu, VkSurfaceKHR _surface);
-		//CommandQueue createCommandQueue( VkQueueFlagBits type );
 		VkCommandPool createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 		VkCommandPool getCommandPool(VkQueueFlagBits type);
+		uint32_t getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found=nullptr);
 		operator VkSurfaceKHR() const {
 			return surface;
 		}
