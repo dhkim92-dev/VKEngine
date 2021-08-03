@@ -12,7 +12,7 @@ namespace VKEngine{
 	Framebuffer::~Framebuffer(){
 		destroy();
 	}
-	
+
 	uint32_t Framebuffer::addAttachment(AttachmentCreateInfo info){
 		FramebufferAttachment fb_attachment = {};
 		fb_attachment.format = info.format;

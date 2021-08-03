@@ -69,6 +69,7 @@ namespace VKEngine{
 		vector<FramebufferAttachment> attachments;
 
 		explicit Framebuffer(Context *context);
+		explicit Framebuffer(SwapChain *swapchain);
 		~Framebuffer();
 		uint32_t addAttachment(AttachmentCreateInfo info);
 		void createSampler(VkFilter mag_filter, VkFilter min_filter, VkSamplerAddressMode address_mode);

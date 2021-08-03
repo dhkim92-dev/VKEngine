@@ -60,6 +60,18 @@ namespace VKEngine{
 		VK_CHECK_RESULT( vkCreatePipelineCache(VkDevice(*context), &cache_CI, nullptr, &cache) );
 	}
 
+	void Application::setupDepthStencil(){
+		
+	}
+
+	void Application::setupRenderPass(){
+
+	}
+
+	void Application::setupFramebuffer(){
+
+	}
+	
 	void Application::destroy(){
 		delete graphics_queue;
 		delete compute_queue;
