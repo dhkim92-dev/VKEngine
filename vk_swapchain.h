@@ -43,6 +43,15 @@ namespace VKEngine{
 						  VkSemaphore wait_semaphore = VK_NULL_HANDLE);
 		void destroy();
 
+		operator VkPhysicalDevice() const {
+			return gpu;
+		} 
+
+		operator VkDevice() const {
+			return device;
+		}
+
+
 		private:
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats);
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& available_present_modes);

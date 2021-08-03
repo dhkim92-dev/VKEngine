@@ -26,7 +26,6 @@ namespace VKEngine{
 		CommandQueue *graphics_queue, *compute_queue;
 		SwapChain swapchain;
 		VkPipelineCache cache;
-		vector<VkFramebuffer> framebuffers;
 		
 		public :
 		explicit Application(

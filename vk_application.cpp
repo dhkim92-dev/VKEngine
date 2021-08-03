@@ -61,14 +61,15 @@ namespace VKEngine{
 	}
 
 	void Application::setupDepthStencil(){
-		
+
 	}
 
 	void Application::setupRenderPass(){
-
+		
 	}
 
 	void Application::setupFramebuffer(){
+		VkImageView attachments[2];
 
 	}
 	
