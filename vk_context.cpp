@@ -43,14 +43,11 @@ namespace VKEngine{
 	}
 
 	uint32_t Context::getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found){
-		*found = false;
-
 		for(uint32_t i = 0 ; memory_properties.memoryTypeCount ; ++i){
 			if(type&1){
 				if((memory_properties.memoryTypes[i].propertyFlags&property)==property){
-					if(found){
-						*found = true;
-					}
+					if(found)
+						*found = VK_TRUE;
 					return i;
 				}
 			}
@@ -58,7 +55,7 @@ namespace VKEngine{
 		}
 
 		if(found){
-			*found = false;
+			*found = VK_FALSE;
 			return 0;
 		}else{
 			std::runtime_error("can not found matched memory type");

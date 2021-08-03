@@ -10,9 +10,36 @@
 
 #include "vk_core.h"
 #include "vk_application.h"
+#include "cstdio"
 
 using namespace std;
 using namespace VKEngine;
+
+void printBuffer(Buffer *buffer){
+	VkDeviceSize size = VkDeviceSize(*buffer);
+	float *data = new float[static_cast<uint32_t>( size ) ];
+	buffer->copyTo(data, size);
+
+
+	for(int i = 0 ; i < 3 ; i++){
+		for(int j = 0 ; j < 3 ; j++){
+			printf("%.1f ", data[i*3+j]);
+		}
+		printf("\n");
+	}
+
+	delete [] data;
+}
+
+void printPtr(float *ptr){
+	for(int i = 0 ; i < 3 ; i++){
+		for(int j = 0 ; j < 3 ; j++){
+			printf("%.1f ", ptr[i*3+j]);
+		}
+		printf("\n");
+	}
+
+}
 
 vector<const char *> getRequiredExtensions(  ){
 	glfwInit();
@@ -34,7 +61,6 @@ class App : public VKEngine::Application{
 	explicit App(string app_name, string engine_name, int h, int w, vector<const char*>instance_exts, vector<const char*>device_exts , vector<const char *>valids) : Application(app_name, engine_name, h, w, instance_exts, device_exts, valids){
 	};
 	protected:
-	CommandQueue *graphics_queue, *compute_queue;
 	
 	virtual void initWindow(){
 		LOG("App Init Window\n");
@@ -49,13 +75,35 @@ class App : public VKEngine::Application{
 	}
 
 	virtual void mainLoop(){
+		float data[9] = {
+			1.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 1.0f
+		};
+
+		float output[9] = {};
+		Buffer h_output(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 36, nullptr);
+		Buffer d_output(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 9*4, nullptr);
+		graphics_queue->enqueueCopy(data, &d_output, 0, 0, 36);
+		graphics_queue->enqueueCopy(&d_output, output, 0, 0, 36);
+		graphics_queue->enqueueCopy(&d_output, &h_output, 0, 0, 36);
+		//printBuffer(&h_output);
+		printPtr(output);
+
+		h_output.destroy();
+		d_output.destroy();
+
 		while(!glfwWindowShouldClose(window)){
 			glfwPollEvents();
 		}
+		glfwDestroyWindow(window);
+		glfwTerminate();
 	}
 	public:
 	void run(){
-		Application::run();
+		Application::init();
 		mainLoop();
 	}
 };

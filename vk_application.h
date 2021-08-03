@@ -19,6 +19,15 @@ namespace VKEngine{
 		GLFWwindow *window;
 		#endif
 		uint32_t height, width;
+		protected :
+		Engine *engine;
+		Context *context;
+		VkSurfaceKHR surface;
+		CommandQueue *graphics_queue, *compute_queue;
+		SwapChain swapchain;
+		VkPipelineCache cache;
+		
+		public :
 		explicit Application(
 			string app_name, string engine_name,
 			uint32_t _height, uint32_t _width, 
@@ -26,19 +35,16 @@ namespace VKEngine{
 			vector<const char *> device_extension_names,
 			vector<const char *>_validation_names);
 		~Application();
-		void initVulkan();
-		void run();
+		virtual void initVulkan();
+		virtual void init();
+		
 		protected :
-		Engine *engine;
-		Context *context;
-		VkSurfaceKHR surface;
-		CommandQueue *graphics_queue, *compute_queue;
-		SwapChain swapchain;
 		void destroy();
 		virtual void initWindow(){LOG("Application::initWindow()\n");};
 		virtual void createSurface(){LOG("Application::initSurface()\n");};
-		virtual void setupCommandQueue();
 		virtual void mainLoop(){};
+		virtual void setupCommandQueue();
+		virtual void setupPipelineCache();
 		virtual void setupDepthStencil(){};
 		virtual void setupFramebuffer(){};
 	};

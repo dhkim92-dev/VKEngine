@@ -31,7 +31,9 @@ namespace VKEngine{
 		VK_CHECK_RESULT( vkCreateBuffer(device, &buffer_CI, nullptr, &buffer) );
 		allocate(0, _size);
 		bind(0);
-		
+		if(ptr != nullptr){
+			copyFrom(ptr, size);
+		}
 	}
 
 	Buffer::~Buffer(){
@@ -42,7 +44,7 @@ namespace VKEngine{
 		vkBindBufferMemory(device, buffer, memory, offset);
 	}
 
-	void Buffer::allocate(VkDeviceSize _offest = 0, VkDeviceSize _size = 0){
+	void Buffer::allocate(VkDeviceSize _offest, VkDeviceSize _size){
 		VkMemoryAllocateInfo malloc_CI = infos::memoryAllocateInfo();		
 		vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
 		malloc_CI.allocationSize = size;
@@ -64,15 +66,18 @@ namespace VKEngine{
 	}
 
 	void Buffer::map(VkDeviceSize offset, VkDeviceSize _size){
+		// LOG("map called\n");
 		VK_CHECK_RESULT(vkMapMemory(device, memory, offset, size, 0, &data));
 	}
 
 	void Buffer::unmap(){
+		// LOG("unmap called");
 		vkUnmapMemory(device, memory);
 		data = nullptr;
 	}
 
 	void Buffer::flush(VkDeviceSize offset, VkDeviceSize _size){
+		// LOG("flush called\n");
 		VkMappedMemoryRange range = {};
 		range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		range.offset = offset;
@@ -82,6 +87,7 @@ namespace VKEngine{
 	}
 
 	void Buffer::invalidate(VkDeviceSize offset, VkDeviceSize _size){
+		// LOG("invalidate called\n");
 		VkMappedMemoryRange range = {};
 		range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		range.offset = offset;
@@ -99,9 +105,11 @@ namespace VKEngine{
 	}
 
 	void Buffer::copyFrom(void *src, VkDeviceSize _size){
+		// LOG("copyFrom called\n");
 		assert(src);
 		map(0, _size);
-		flush(0,_size);
+		if( !(memory_properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) )
+			flush(0,_size);
 		memcpy(data, src, _size);
 		unmap();
 	}

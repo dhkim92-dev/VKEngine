@@ -25,18 +25,21 @@ namespace VKEngine{
 		engine = new Engine(app_name, engine_name, instance_extension_names, validation_names);
 	}	
 
+	Application::~Application(){
+		destroy();
+	}
+
 	void Application::initVulkan(){
 		engine->init();
 		LOG("engine init\n");
 		VkInstance instance = VkInstance(*engine);
 		createSurface();
 		context = new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
-		LOG("context created\n");
-		LOG("connect swapchain\n");
 		swapchain.connect(engine, context, surface);
-		LOG("create swapchain.\n");
 		swapchain.create(&height, &width, false);
 		setupCommandQueue();
+		setupPipelineCache();
+		
 	}
 
 
@@ -46,21 +49,21 @@ namespace VKEngine{
 		compute_queue = new CommandQueue(context, VK_QUEUE_COMPUTE_BIT);
 	}
 	
-	void Application::run(){
+	void Application::init(){
 		initWindow();
 		initVulkan();
 	}	
 
-	Application::~Application(){
-		destroy();
+	void Application::setupPipelineCache(){
+		VkPipelineCacheCreateInfo cache_CI = {};
+		cache_CI.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+		VK_CHECK_RESULT( vkCreatePipelineCache(VkDevice(*context), &cache_CI, nullptr, &cache) );
 	}
 
 	void Application::destroy(){
 		delete graphics_queue;
 		delete compute_queue;
-		LOG("swapchain destroy\n");
 		swapchain.destroy();
-		LOG("swapchain destroyed\n");
 		delete context;
 		delete engine;
 	}
