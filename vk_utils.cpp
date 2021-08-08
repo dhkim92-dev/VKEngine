@@ -32,15 +32,32 @@ namespace VKEngine{
 	vector<VkQueueFamilyProperties> enumerateQueueFamilyProperties(VkPhysicalDevice gpu){
 		uint32_t size;
 		vector<VkQueueFamilyProperties> properties;
-
 		vkGetPhysicalDeviceQueueFamilyProperties(gpu, &size, nullptr);
 		if(size > 0){
 			properties.resize(size);
 			vkGetPhysicalDeviceQueueFamilyProperties(gpu, &size, properties.data());
 		}
-
 		return properties;
-	}	
+	}
+
+	VkBool32 getDepthFormat(VkPhysicalDevice gpu, VkFormat *format){
+		vector<VkFormat> depth_formats = {
+			VK_FORMAT_D32_SFLOAT_S8_UINT,
+			VK_FORMAT_D32_SFLOAT,
+			VK_FORMAT_D24_UNORM_S8_UINT,
+			VK_FORMAT_D16_UNORM_S8_UINT,
+			VK_FORMAT_D16_UNORM
+		};
+		for(VkFormat depth_format : depth_formats){
+			VkFormatProperties properties;
+			vkGetPhysicalDeviceFormatProperties(gpu, depth_format, &properties);
+			if(properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT){
+				*format = depth_format;
+				return VK_TRUE;
+			}
+		}
+		return VK_FALSE;
+	}
 	
 	vector<VkImage> getSwapchainImages(VkDevice device, VkSwapchainKHR swapchain){
 		uint32_t nr_images;
@@ -50,7 +67,6 @@ namespace VKEngine{
 			images.resize(nr_images);
 			vkGetSwapchainImagesKHR(device, swapchain, &nr_images, images.data());
 		}
-		
 		return images;
 	}
 
@@ -96,6 +112,32 @@ namespace VKEngine{
 		}else{
 			std::runtime_error("can not find a matching memory type!\n");
 		}
+	}
+
+	VkShaderModule loadShader(const string &file_path, VkDevice device){
+		VkShaderModule shader_module = VK_NULL_HANDLE;
+		std::ifstream is(file_path, std::ios::binary | std::ios::in | std::ios::ate);
+			if (is.is_open())		{
+				size_t size = is.tellg();
+				is.seekg(0, std::ios::beg);
+				char* shader_code = new char[size];
+				is.read(shader_code, size);
+				is.close();
+
+				assert(size > 0);
+				VkShaderModule shaderModule;
+				VkShaderModuleCreateInfo moduleCreateInfo{};
+				moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+				moduleCreateInfo.codeSize = size;
+				moduleCreateInfo.pCode = (uint32_t*)shader_code;
+				VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shaderModule));
+
+				delete[] shader_code;
+			}
+			else{
+				std::cerr << "Error: Could not open shader file \"" << file_path << "\"" << "\n";
+			}
+		return shader_module;
 	}
 };
 

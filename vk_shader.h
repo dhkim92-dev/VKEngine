@@ -18,6 +18,7 @@ struct Shader{
 
 	public:
 	explicit Shader(Context *context, const string file_path, VkShaderStageFlagBits _stage);
+	~Shader();
 	void setShader(const string file_path);
 	void destroy();
 };

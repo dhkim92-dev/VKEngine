@@ -39,7 +39,14 @@ namespace VKEngine{
 		swapchain.create(&height, &width, false);
 		setupCommandQueue();
 		setupPipelineCache();
-		
+		front_framebuffer = new Framebuffer(context);
+		front_framebuffer->height = height;
+		front_framebuffer->width = width;
+		setupColorAttachment();
+		setupDepthStencilAttachment();
+		setupRenderPass();
+		setupFramebuffer();
+
 	}
 
 
@@ -60,23 +67,56 @@ namespace VKEngine{
 		VK_CHECK_RESULT( vkCreatePipelineCache(VkDevice(*context), &cache_CI, nullptr, &cache) );
 	}
 
-	void Application::setupDepthStencil(){
+	void Application::setupDepthStencilAttachment(){
+		LOG("Application::setupDepthStencilAttachment\n");
+		AttachmentCreateInfo info;
+		VkBool32 found = getDepthFormat( VkPhysicalDevice(*context), &depth_format);
+		info.height = height;
+		info.width = width;
+		info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		info.sample_count = VK_SAMPLE_COUNT_1_BIT;
+		info.nr_layers = 1;
+		info.format = depth_format;
+		front_framebuffer->addAttachment(info);
+		LOG("end Application::setupDepthStencilAttachment\n");
+	}
 
+	void Application::setupColorAttachment(){
+		LOG("Application::setupColorAttachment\n");
+		FramebufferAttachment attachment = {};
+		attachment.image = swapchain.buffers[0].image;
+		attachment.view = swapchain.buffers[0].view;
+		attachment.format = swapchain.image_format;
+		attachment.subresource_range = {1, 0, 1, 0};
+		attachment.description.format = swapchain.image_format;
+		attachment.description.samples = VK_SAMPLE_COUNT_1_BIT;
+		attachment.description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachment.description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachment.description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachment.description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		front_framebuffer->attachments.push_back(attachment);
+		LOG("end Application::setupColorAttachment\n");
 	}
 
 	void Application::setupRenderPass(){
-		
+		LOG("Application::setupRenderPass\n");
+		front_framebuffer->createRenderPass();
+		LOG("end Application::setupRenderPass\n");
 	}
 
 	void Application::setupFramebuffer(){
-		VkImageView attachments[2];
-
+		LOG("Application::setupFramebuffer\n");
+		front_framebuffer->createFramebuffer();
+		LOG("end Application::setupFramebuffer\n");
 	}
 	
 	void Application::destroy(){
 		delete graphics_queue;
 		delete compute_queue;
 		swapchain.destroy();
+		delete front_framebuffer;
 		delete context;
 		delete engine;
 	}

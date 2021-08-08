@@ -39,6 +39,7 @@ namespace VKEngine{
 	SwapChainSupportDetail querySwapChainSupport(VkPhysicalDevice gpu, VkSurfaceKHR surface);
 	uint32_t getMemoryType(VkPhysicalDevice gpu, VkDevice device, uint32_t type, VkMemoryPropertyFlags properties, VkBool32 *mem_found = nullptr );
 	VkShaderModule loadShader(const string& file_path, VkDevice device);
+	VkBool32 getDepthFormat(VkPhysicalDevice gpu, VkFormat *format);
 };
 
 #endif

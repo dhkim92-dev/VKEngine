@@ -26,6 +26,8 @@ namespace VKEngine{
 		CommandQueue *graphics_queue, *compute_queue;
 		SwapChain swapchain;
 		VkPipelineCache cache;
+		Framebuffer *front_framebuffer;
+		VkFormat depth_format;
 		
 		public :
 		explicit Application(
@@ -45,7 +47,8 @@ namespace VKEngine{
 		virtual void mainLoop(){};
 		virtual void setupCommandQueue();
 		virtual void setupPipelineCache();
-		virtual void setupDepthStencil(){};
+		virtual void setupDepthStencilAttachment();
+		virtual void setupColorAttachment();
 		virtual void setupRenderPass();
 		virtual void setupFramebuffer();
 	};

@@ -45,22 +45,28 @@ namespace VKEngine{
 		image_CI.samples = info.sample_count;
 		image_CI.tiling = VK_IMAGE_TILING_OPTIMAL;
 		image_CI.usage = info.usage;
+		image_CI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		image_CI.mipLevels = 1;
 
 		VkMemoryAllocateInfo mem_AI = infos::memoryAllocateInfo();
 		VkMemoryRequirements mem_reqs;
 
+		LOG("Framebuffer::addAttachment, vkCreateImage\n");
 		VK_CHECK_RESULT(vkCreateImage(device, &image_CI, nullptr, &fb_attachment.image)); 
+		LOG("Framebuffer::addAttachment, vkCreateImage\n");
+
+		LOG("memory allocation\n");
 		vkGetImageMemoryRequirements(device, fb_attachment.image, &mem_reqs);
 		mem_AI.allocationSize = mem_reqs.size;
 		mem_AI.memoryTypeIndex = getMemoryType(gpu, device, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		VK_CHECK_RESULT( vkAllocateMemory(device, &mem_AI, nullptr, &fb_attachment.memory) );
 		VK_CHECK_RESULT( vkBindImageMemory(device, fb_attachment.image, fb_attachment.memory, 0) );
-
+		LOG("memory allocation\n");
 		fb_attachment.subresource_range = {};
 		fb_attachment.subresource_range.aspectMask = aspect_mask;
 		fb_attachment.subresource_range.levelCount = 1;
 		fb_attachment.subresource_range.layerCount = info.nr_layers;
-
+		LOG("viewCreate\n");
 		VkImageViewCreateInfo image_view_CI = infos::imageViewCreateInfo();
 		image_view_CI.viewType = (info.nr_layers==1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		image_view_CI.format = info.format;
@@ -69,6 +75,7 @@ namespace VKEngine{
 		image_view_CI.image = fb_attachment.image;
 		VK_CHECK_RESULT( vkCreateImageView(device, &image_view_CI, nullptr, &fb_attachment.view) );
 
+		LOG("viewCreate\n");
 		fb_attachment.description = {};
 		fb_attachment.description.samples = info.sample_count;
 		fb_attachment.description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
