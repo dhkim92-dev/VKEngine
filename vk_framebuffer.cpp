@@ -179,6 +179,7 @@ namespace VKEngine{
 	}		
 
 	void Framebuffer::createFramebuffer(){
+		LOG("Framebuffer::createFramebuffer()\n");
 		VkFramebufferCreateInfo framebuffer_CI = {};
 		vector<VkImageView> attachment_views;
 		uint32_t max_layers = 0;

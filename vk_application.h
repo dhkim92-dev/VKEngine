@@ -28,7 +28,7 @@ namespace VKEngine{
 		VkPipelineCache cache;
 		Framebuffer *front_framebuffer;
 		VkFormat depth_format;
-		
+		VkGraphicsPipelineCreateInfo graphics_pipeline_CI_preset;
 		public :
 		explicit Application(
 			string app_name, string engine_name,
@@ -51,6 +51,7 @@ namespace VKEngine{
 		virtual void setupColorAttachment();
 		virtual void setupRenderPass();
 		virtual void setupFramebuffer();
+		virtual void setupGraphicsPipeline();
 	};
 };
 #endif

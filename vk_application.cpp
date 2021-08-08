@@ -111,6 +111,20 @@ namespace VKEngine{
 		front_framebuffer->createFramebuffer();
 		LOG("end Application::setupFramebuffer\n");
 	}
+
+	void Application::setupGraphicsPipeline(){
+		graphics_pipeline_CI_preset = infos::graphicsPipelineCreateInfo(front_framebuffer->render_pass);
+		VkPipelineInputAssemblyStateCreateInfo input_assembly_CI = infos::inputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+		VkPipelineRasterizationStateCreateInfo rasterization_CI = infos::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+		VkPipelineColorBlendAttachmentState blend_attachment_state = infos::colorBlendAttachmentState(0xf, VK_FALSE);
+		VkPipelineColorBlendStateCreateInfo blend_state_CI = infos::colorBlendStateCreateInfo(1, &blend_attachment_state);
+		VkPipelineDepthStencilStateCreateInfo depth_stencil_state_CI = infos::depthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+		VkPipelineViewportStateCreateInfo viewport_state_CI = infos::viewportStateCreateInfo(1, 1, 0);
+		VkPipelineMultisampleStateCreateInfo multisample_CI = infos::multisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
+		vector<VkDynamicState> dynamic_state_enabled = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamic_state_CI = infos::dynamicStateCreateInfo( dynamic_state_enabled );
+				
+	}
 	
 	void Application::destroy(){
 		delete graphics_queue;
