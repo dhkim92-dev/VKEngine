@@ -466,6 +466,29 @@ namespace VKEngine
 			info.basePipelineIndex = -1;
 			return info;
 		}
+
+		inline VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo(vector<VkVertexInputAttributeDescription>& attributes, vector<VkVertexInputBindingDescription>& bindings){
+			VkPipelineVertexInputStateCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+			info.flags = 0;
+			info.pNext = nullptr;
+			
+			if(attributes.size() == 0){
+				info.pVertexAttributeDescriptions = nullptr;
+			}else{
+				info.pVertexAttributeDescriptions = attributes.data() ;
+			}
+			
+			if(bindings.size() == 0 ){
+				info.pVertexBindingDescriptions = nullptr;
+			}else{
+				info.pVertexBindingDescriptions = bindings.data();
+			}
+
+			info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+			info.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+			return info;
+		}
 		
 		inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo(VkRenderPass render_pass){
 			VkGraphicsPipelineCreateInfo info = {};

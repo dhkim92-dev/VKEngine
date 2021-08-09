@@ -51,7 +51,7 @@ namespace VKEngine{
 		virtual void setupColorAttachment();
 		virtual void setupRenderPass();
 		virtual void setupFramebuffer();
-		virtual void setupGraphicsPipeline();
+		virtual void setupGraphicsPipeline(){};
 	};
 };
 #endif

@@ -6,19 +6,19 @@
 using namespace std;
 
 namespace VKEngine{
-	Shader::Shader(Context *_context, const string file_path, VkShaderStageFlagBits _stage){
+	Shader::Shader(Context *_context, const string _file_path, VkShaderStageFlagBits _stage){
 		assert(_context);
 		context = _context;
 		device = VkDevice(*context);
+		file_path = _file_path;
 		stage = _stage;
-		setShader(file_path);
 	}
 
 	Shader::~Shader(){
 		destroy();
 	}
 
-	void Shader::setShader(const string file_path){
+	void Shader::createShaderModule(){
 		module = loadShader(file_path, device);
 	}
 

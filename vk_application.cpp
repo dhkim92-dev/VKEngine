@@ -49,7 +49,6 @@ namespace VKEngine{
 
 	}
 
-
 	void Application::setupCommandQueue(){
 		LOG("Apllication::setupCommandQueue called\n");
 		graphics_queue = new CommandQueue(context, VK_QUEUE_GRAPHICS_BIT);
@@ -68,7 +67,6 @@ namespace VKEngine{
 	}
 
 	void Application::setupDepthStencilAttachment(){
-		LOG("Application::setupDepthStencilAttachment\n");
 		AttachmentCreateInfo info;
 		VkBool32 found = getDepthFormat( VkPhysicalDevice(*context), &depth_format);
 		info.height = height;
@@ -78,11 +76,9 @@ namespace VKEngine{
 		info.nr_layers = 1;
 		info.format = depth_format;
 		front_framebuffer->addAttachment(info);
-		LOG("end Application::setupDepthStencilAttachment\n");
 	}
 
 	void Application::setupColorAttachment(){
-		LOG("Application::setupColorAttachment\n");
 		FramebufferAttachment attachment = {};
 		attachment.image = swapchain.buffers[0].image;
 		attachment.view = swapchain.buffers[0].view;
@@ -97,33 +93,14 @@ namespace VKEngine{
 		attachment.description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		attachment.description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		front_framebuffer->attachments.push_back(attachment);
-		LOG("end Application::setupColorAttachment\n");
 	}
 
 	void Application::setupRenderPass(){
-		LOG("Application::setupRenderPass\n");
 		front_framebuffer->createRenderPass();
-		LOG("end Application::setupRenderPass\n");
 	}
 
 	void Application::setupFramebuffer(){
-		LOG("Application::setupFramebuffer\n");
 		front_framebuffer->createFramebuffer();
-		LOG("end Application::setupFramebuffer\n");
-	}
-
-	void Application::setupGraphicsPipeline(){
-		graphics_pipeline_CI_preset = infos::graphicsPipelineCreateInfo(front_framebuffer->render_pass);
-		VkPipelineInputAssemblyStateCreateInfo input_assembly_CI = infos::inputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-		VkPipelineRasterizationStateCreateInfo rasterization_CI = infos::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
-		VkPipelineColorBlendAttachmentState blend_attachment_state = infos::colorBlendAttachmentState(0xf, VK_FALSE);
-		VkPipelineColorBlendStateCreateInfo blend_state_CI = infos::colorBlendStateCreateInfo(1, &blend_attachment_state);
-		VkPipelineDepthStencilStateCreateInfo depth_stencil_state_CI = infos::depthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
-		VkPipelineViewportStateCreateInfo viewport_state_CI = infos::viewportStateCreateInfo(1, 1, 0);
-		VkPipelineMultisampleStateCreateInfo multisample_CI = infos::multisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
-		vector<VkDynamicState> dynamic_state_enabled = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-		VkPipelineDynamicStateCreateInfo dynamic_state_CI = infos::dynamicStateCreateInfo( dynamic_state_enabled );
-				
 	}
 	
 	void Application::destroy(){

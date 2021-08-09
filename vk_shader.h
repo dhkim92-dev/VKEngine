@@ -15,11 +15,12 @@ struct Shader{
 	public :
 	VkShaderModule module = VK_NULL_HANDLE;
 	VkShaderStageFlagBits stage = VK_SHADER_STAGE_ALL_GRAPHICS;
+	string file_path;
 
 	public:
 	explicit Shader(Context *context, const string file_path, VkShaderStageFlagBits _stage);
 	~Shader();
-	void setShader(const string file_path);
+	void createShaderModule();
 	void destroy();
 };
 
