@@ -76,16 +76,22 @@ namespace VKEngine{
 		protected :
 		Context *context = nullptr;
 		VkDevice device = VK_NULL_HANDLE;
+		VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 		
 		public :
 		explicit Program(Context *_context);
 		~Program();
 		void attachShader(const string file_path, VkShaderStageFlagBits stage);
 		virtual void build(VkRenderPass render_pass, VkPipelineCache cache = VK_NULL_HANDLE);
-		void createDescriptorPool(vector<VkDescriptorPoolSize> pool_size, uint32_t max_set = 1);
-		void createDescriptorSet();
+		VkResult createDescriptorPool(vector<VkDescriptorPoolSize> pool_size, uint32_t max_set = 1);
+		VkResult allocDescriptorSet(VkDescriptorSet *descriptor_set, uint32_t set_idx, uint32_t nr_alloc=1);
+		void releaseDescriptorSet(VkDescriptorSet *descriptor_set);
 		void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> descriptor_set_layout_bindings);
-		void uniformUpdate();
+		void uniformUpdate(VkDescriptorSet descriptor_set, 
+						   VkDescriptorType type, 
+						   uint32_t binding_idx, 
+						   VkDescriptorBufferInfo *buffer_info,
+						   VkDescriptorImageInfo *image_info);
 		void destroy();
 	};
 }

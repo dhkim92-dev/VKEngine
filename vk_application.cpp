@@ -46,7 +46,6 @@ namespace VKEngine{
 		setupDepthStencilAttachment();
 		setupRenderPass();
 		setupFramebuffer();
-
 	}
 
 	void Application::setupCommandQueue(){

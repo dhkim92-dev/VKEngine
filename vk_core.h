@@ -5,6 +5,8 @@
 #include "vk_queue.h"
 #include "vk_swapchain.h"
 #include "vk_framebuffer.h"
+#include "vk_program.h"
+#include "vk_buffer.h"
 #include "vk_utils.h"
 #include "vk_infos.h"
 #endif
