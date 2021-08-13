@@ -122,9 +122,6 @@ class App : public VKEngine::Application{
 		programs["triangle"]->attachShader("./shaders/triangles/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		programs["triangle"]->attachShader("./shaders/triangles/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 		LOG("attach Shader done\n");
-		VkPipelineCacheCreateInfo cache_CI = {};
-		cache_CI.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		vkCreatePipelineCache(VkDevice(*context), &cache_CI, nullptr, &cache);
 		LOG("cache create Done\n");
 		programs["triangle"]->setupDescriptorSetLayout({});
 		LOG("setupLayoutDone\n");
