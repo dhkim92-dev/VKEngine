@@ -7,6 +7,8 @@ using namespace std;
 
 namespace VKEngine{
 	Program::Program(Context *_context){
+		LOG("Program::Program!\n");
+		LOG("context : %p\n", context);
 		context = _context;
 		device = VkDevice(*context);
 	}
@@ -23,19 +25,24 @@ namespace VKEngine{
 	void Program::build(VkRenderPass render_pass, VkPipelineCache cache){
 		LOG("Program::build start\n");
 		vector<VkPipelineShaderStageCreateInfo> stages; 
+		//vector<VkShaderModule> modules;
 		for(Shader shader : shaders){
 			shader.createShaderModule();
 			VkPipelineShaderStageCreateInfo stage_CI = infos::shaderStageCreateInfo("main", shader.module, shader.stage);
-			LOG("Program::build stage_CI added : %p %d\n", shader.module, shader.stage);
 			stages.push_back(stage_CI);
 		}
+				
 		VkPipelineLayoutCreateInfo pipeline_layout_CI = infos::pipelineLayoutCreateInfo(descriptors.layouts.data(), static_cast<uint32_t>(descriptors.layouts.size()));
 		VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipeline_layout_CI, nullptr, &pipeline_layout));
 		LOG("Program::build done create pipeline layout done\n");
-		graphics_CI.color_blend = infos::colorBlendStateCreateInfo(static_cast<uint32_t>(graphics_CI.color_blend_states.size()), graphics_CI.color_blend_states.data());
-		graphics_CI.dynamic_state = infos::dynamicStateCreateInfo(graphics_CI.dynamic_state_enabled);
+		graphics.color_blend = infos::colorBlendStateCreateInfo(static_cast<uint32_t>(graphics.color_blend_states.size()), graphics.color_blend_states.data());
+		graphics.dynamic_state = infos::dynamicStateCreateInfo(graphics.dynamic_state_enabled);
+		VkGraphicsPipelineCreateInfo graphics_pipeline_CI = graphics.pipelineCreateInfo(render_pass, pipeline_layout);
+		graphics_pipeline_CI.stageCount =static_cast<uint32_t>(stages.size());
+		graphics_pipeline_CI.pStages = stages.data();
+
 		LOG("Program::build graphics pipeline\n");
-		//VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, cache, 1, &graphics_pipeline_CI, nullptr, &pipeline));
+		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, cache, 1, &graphics_pipeline_CI, nullptr, &pipeline))
 		LOG("Program::build graphics pipeline done\n");
 
 		for(Shader shader : shaders){

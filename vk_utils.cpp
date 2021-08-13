@@ -124,13 +124,13 @@ namespace VKEngine{
 				is.read(shader_code, size);
 				is.close();
 
+				LOG("shader read info : %s\n", file_path.c_str());
 				assert(size > 0);
 				VkShaderModuleCreateInfo moduleCreateInfo{};
 				moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 				moduleCreateInfo.codeSize = size;
 				moduleCreateInfo.pCode = (uint32_t*)shader_code;
 				VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shader_module));
-
 				delete[] shader_code;
 			}
 			else{

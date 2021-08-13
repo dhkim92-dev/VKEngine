@@ -25,9 +25,29 @@ namespace VKEngine{
 		VkPipelineRasterizationStateCreateInfo rasterization = infos::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
 		VkPipelineMultisampleStateCreateInfo multisample=infos::multisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
 		vector<VkPipelineColorBlendAttachmentState> color_blend_states = {infos::colorBlendAttachmentState(0xf, VK_FALSE)};
-		VkPipelineDynamicStateCreateInfo dynamic_state;
-		VkPipelineColorBlendStateCreateInfo color_blend;
+		VkPipelineDepthStencilStateCreateInfo depth_stencil= infos::depthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+		VkPipelineDynamicStateCreateInfo dynamic_state = infos::dynamicStateCreateInfo(dynamic_state_enabled);
+		VkPipelineColorBlendStateCreateInfo color_blend = infos::colorBlendStateCreateInfo(static_cast<uint32_t>(color_blend_states.size()), color_blend_states.data());
+		VkPipelineTessellationStateCreateInfo tesselation={};
 		VkPipelineVertexInputStateCreateInfo vertex_input;
+		uint32_t subpass = 0;
+
+		VkGraphicsPipelineCreateInfo pipelineCreateInfo(VkRenderPass renderpass, VkPipelineLayout layout){
+			VkGraphicsPipelineCreateInfo info = infos::graphicsPipelineCreateInfo(renderpass);
+			info.layout = layout;
+			info.pInputAssemblyState = &input_assembly;
+			info.pColorBlendState = &color_blend;
+			info.pMultisampleState = &multisample;
+			info.pViewportState = &viewport;
+			info.pRasterizationState = &rasterization;
+			info.pDynamicState = &dynamic_state;
+			info.pDepthStencilState = &depth_stencil;
+			info.pColorBlendState = &color_blend;
+			info.pTessellationState = &tesselation;
+			info.subpass = subpass;
+
+			return info;
+		}
 	};
 
 	class Program{
@@ -36,7 +56,7 @@ namespace VKEngine{
 		VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
 		vector<Shader> shaders;
 		DescriptorsInfo descriptors;
-		GraphicsPipelineCreateInfo graphics_CI;
+		GraphicsPipelineCreateInfo graphics;
 
 		protected :
 		Context *context = nullptr;
@@ -60,5 +80,4 @@ namespace VKEngine{
 		void destroy();
 	};
 }
-
 #endif

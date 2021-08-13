@@ -44,11 +44,13 @@ struct Vertex{
 	glm::vec2 pos;
 	glm::vec3 color;
 	
-	static VkVertexInputBindingDescription vertexInputBinding(){
-		VkVertexInputBindingDescription bindings = {};
-		bindings.binding = 0;
-		bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		bindings.stride = sizeof(Vertex);
+	static vector<VkVertexInputBindingDescription> vertexInputBinding(){
+		vector <VkVertexInputBindingDescription> bindings;
+		VkVertexInputBindingDescription binding = {};
+		binding.binding = 0;
+		binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		binding.stride = sizeof(Vertex);
+		bindings.push_back(binding);
 		return bindings;
 	}
 
@@ -59,10 +61,10 @@ struct Vertex{
 		attributes[0].format = VK_FORMAT_R32G32_SFLOAT;
 		attributes[0].offset = offsetof(Vertex, pos);
 
-		attributes[0].binding = 1;
-		attributes[0].location = 0;
-		attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributes[0].offset = offsetof(Vertex, color);
+		attributes[1].binding = 1;
+		attributes[1].location = 0;
+		attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributes[1].offset = offsetof(Vertex, color);
 
 		return attributes;
 	}
@@ -119,12 +121,20 @@ class App : public VKEngine::Application{
 	void preparePrograms(){
 		LOG("prepare Programs start\n");
 		programs.insert({"triangle" , new Program(context) });
+		LOG("prepare Program:: insert Program\n");
 		programs["triangle"]->attachShader("./shaders/triangles/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		programs["triangle"]->attachShader("./shaders/triangles/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		LOG("attach Shader done\n");
-		LOG("cache create Done\n");
+		LOG("attachShader!\n");
+		LOG("setupDescriptorSetLayout()\n");
 		programs["triangle"]->setupDescriptorSetLayout({});
-		LOG("setupLayoutDone\n");
+		LOG("setupDescriptorSetLayout end()\n");
+		LOG("attributes()\n");
+		auto attributes = Vertex::vertexInputAttributes();
+		LOG("bindings()\n");
+		auto bindings = Vertex::vertexInputBinding();
+		LOG("setup vertex input state\n");
+		programs["triangle"]->graphics.vertex_input=infos::vertexInputStateCreateInfo(attributes, bindings);
+		LOG("prepare Programs start\n");
 		programs["triangle"]->build(front_framebuffer->render_pass, cache);
 		LOG("prepare Programs end\n");
 	}
