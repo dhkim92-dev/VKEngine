@@ -25,6 +25,7 @@ namespace VKEngine{
 		VkPipelineRasterizationStateCreateInfo rasterization = infos::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
 		VkPipelineMultisampleStateCreateInfo multisample=infos::multisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
 		vector<VkPipelineColorBlendAttachmentState> color_blend_states = {infos::colorBlendAttachmentState(0xf, VK_FALSE)};
+		VkPipelineDynamicStateCreateInfo dynamic_state;
 		VkPipelineColorBlendStateCreateInfo color_blend;
 		VkPipelineVertexInputStateCreateInfo vertex_input;
 	};
@@ -35,12 +36,12 @@ namespace VKEngine{
 		VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
 		vector<Shader> shaders;
 		DescriptorsInfo descriptors;
+		GraphicsPipelineCreateInfo graphics_CI;
 
 		protected :
 		Context *context = nullptr;
 		VkDevice device = VK_NULL_HANDLE;
 		VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-		GraphicsPipelineCreateInfo graphics_CI;
 
 		public :
 		explicit Program(Context *_context);
