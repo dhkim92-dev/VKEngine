@@ -125,12 +125,11 @@ namespace VKEngine{
 				is.close();
 
 				assert(size > 0);
-				VkShaderModule shaderModule;
 				VkShaderModuleCreateInfo moduleCreateInfo{};
 				moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 				moduleCreateInfo.codeSize = size;
 				moduleCreateInfo.pCode = (uint32_t*)shader_code;
-				VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shaderModule));
+				VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shader_module));
 
 				delete[] shader_code;
 			}

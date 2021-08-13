@@ -381,6 +381,7 @@ namespace VKEngine
 			info.cullMode = cull_mode;
 			info.frontFace = face;
 			info.flags = flags;
+			info.rasterizerDiscardEnable = VK_FALSE;
 			info.depthClampEnable = VK_FALSE;
 			info.lineWidth = 1.0f;
 			return info;

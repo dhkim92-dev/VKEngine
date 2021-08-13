@@ -21,14 +21,17 @@ namespace VKEngine{
 	}
 
 	void Program::build(VkRenderPass render_pass, VkPipelineCache cache){
+		LOG("Program::build start\n");
 		vector<VkPipelineShaderStageCreateInfo> stages; 
 		for(Shader shader : shaders){
 			shader.createShaderModule();
 			VkPipelineShaderStageCreateInfo stage_CI = infos::shaderStageCreateInfo("main", shader.module, shader.stage);
+			LOG("Program::build stage_CI added : %p %d\n", shader.module, shader.stage);
 			stages.push_back(stage_CI);
 		}
 		VkPipelineLayoutCreateInfo pipeline_layout_CI = infos::pipelineLayoutCreateInfo(descriptors.layouts.data(), static_cast<uint32_t>(descriptors.layouts.size()));
 		VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipeline_layout_CI, nullptr, &pipeline_layout));
+		LOG("Program::build done create pipeline layout done\n");
 
 		VkPipelineInputAssemblyStateCreateInfo input_assembly_state_CI = infos::inputAssemblyStateCreateInfo(input_assembly_state.topology,input_assembly_state.flags,input_assembly_state.primitive_restart);
 		VkPipelineRasterizationStateCreateInfo rasterization_state_CI = infos::rasterizationStateCreateInfo(rasterization_state.polygon,rasterization_state.cull,rasterization_state.face,rasterization_state.flags);
@@ -39,19 +42,27 @@ namespace VKEngine{
 		VkPipelineMultisampleStateCreateInfo multisample_state_CI = infos::multisampleStateCreateInfo(multisample_state.rasterization_samples, multisample_state.flags);
 		VkPipelineDynamicStateCreateInfo dynamic_state_CI = infos::dynamicStateCreateInfo(dynamic_state_enabled);
 		VkPipelineVertexInputStateCreateInfo vertex_input_state_CI = infos::vertexInputStateCreateInfo(vertex_input_state.attributes, vertex_input_state.bindings);
-	
 		VkGraphicsPipelineCreateInfo graphics_pipeline_CI = infos::graphicsPipelineCreateInfo(pipeline_layout, render_pass);
 		graphics_pipeline_CI.pStages = stages.data();
-		graphics_pipeline_CI.renderPass = render_pass;
-		graphics_pipeline_CI.pInputAssemblyState = &input_assembly_state_CI;
-		graphics_pipeline_CI.pRasterizationState = &rasterization_state_CI;
-		graphics_pipeline_CI.pDepthStencilState = &depth_stencil_state_CI;
-		graphics_pipeline_CI.pMultisampleState = &multisample_state_CI;
-		graphics_pipeline_CI.pDynamicState = &dynamic_state_CI;
 		graphics_pipeline_CI.stageCount = static_cast<uint32_t>(stages.size());
-		graphics_pipeline_CI.pStages = stages.data();
+		graphics_pipeline_CI.renderPass = render_pass;
 		graphics_pipeline_CI.pVertexInputState = &vertex_input_state_CI;
+		graphics_pipeline_CI.pInputAssemblyState = &input_assembly_state_CI;
+		graphics_pipeline_CI.pViewportState = &viewport_state_CI;
+		graphics_pipeline_CI.pRasterizationState = &rasterization_state_CI;
+		graphics_pipeline_CI.pMultisampleState = &multisample_state_CI;
+		graphics_pipeline_CI.pColorBlendState = &color_blend_state_CI;
+		graphics_pipeline_CI.pDepthStencilState = &depth_stencil_state_CI;
+		graphics_pipeline_CI.pDynamicState = &dynamic_state_CI;
+		graphics_pipeline_CI.subpass = 0;
+		graphics_pipeline_CI.basePipelineHandle = VK_NULL_HANDLE;
+
+
+
+
+		LOG("Program::build graphics pipeline\n");
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, cache, 1, &graphics_pipeline_CI, nullptr, &pipeline));
+		LOG("Program::build graphics pipeline done\n");
 
 		for(Shader shader : shaders){
 			shader.destroy();
