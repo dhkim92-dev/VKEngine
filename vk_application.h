@@ -29,6 +29,9 @@ namespace VKEngine{
 		Framebuffer *front_framebuffer;
 		VkFormat depth_format;
 		VkGraphicsPipelineCreateInfo graphics_pipeline_CI_preset;
+		VkSubmitInfo render_SI;
+		VkPipelineStageFlags submit_pipeline_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		vector<VkCommandBuffer> draw_command_buffers;
 		
 		struct Semaphores
 		{
@@ -61,6 +64,10 @@ namespace VKEngine{
 		virtual void setupFramebuffer();
 		virtual void setupGraphicsPipeline(){};
 		virtual void setupSemaphores();
+		virtual void setupSubmitInfo();
+		virtual void render();
+		void prepareFrame();
+		void submitFrame();
 	};
 };
 #endif

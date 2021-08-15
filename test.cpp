@@ -95,7 +95,6 @@ class App : public VKEngine::Application{
 
 	Triangle render_object;
 	unordered_map<string, Program*> programs;
-	vector<VkCommandBuffer> draw_command_buffers;
 	protected:
 	
 	virtual void initWindow(){
@@ -120,9 +119,9 @@ class App : public VKEngine::Application{
 	}
 
 	void draw(){
-		graphics_queue->submit(draw_command_buffers[current_frame_index], VK_FALSE);
 		current_frame_index++;
 		current_frame_index%=swapchain.buffers.size();
+		render();
 	}
 
 	void preparePrograms(){

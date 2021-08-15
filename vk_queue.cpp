@@ -76,10 +76,22 @@ namespace VKEngine{
 		VK_CHECK_RESULT(vkEndCommandBuffer(command_buffer));
 	}
 
-	void CommandQueue::submit(VkCommandBuffer command_buffer, VkBool32 fenced){
+	void CommandQueue::submit(VkCommandBuffer command_buffer, VkSemaphore *wait, VkSemaphore *signal, VkPipelineStageFlags *stage, VkBool32 fenced){
 		VkSubmitInfo command_buffer_SI = infos::submitInfo();
 		command_buffer_SI.commandBufferCount = 1;
 		command_buffer_SI.pCommandBuffers = &command_buffer;
+
+		if(wait != nullptr){
+			command_buffer_SI.pWaitSemaphores = wait;
+			command_buffer_SI.waitSemaphoreCount = 1;
+			command_buffer_SI.pWaitDstStageMask = stage;
+		}
+
+		if(signal != nullptr){
+			command_buffer_SI.pSignalSemaphores = signal;
+			command_buffer_SI.signalSemaphoreCount = 1;
+		}
+
 		if(fenced){
 			resetFence();
 			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &command_buffer_SI, fence));
@@ -88,6 +100,16 @@ namespace VKEngine{
 			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &command_buffer_SI, fence));
 		}
 		VK_CHECK_RESULT(vkQueueWaitIdle(queue));
+	}
+
+	void CommandQueue::submit(VkSubmitInfo submit_info, VkBool32 fenced){
+		if(fenced){
+			resetFence();
+			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submit_info, fence));
+			waitFence();
+		}else{
+			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE));
+		}
 	}
 
 	void CommandQueue::resetFence(){
@@ -114,7 +136,7 @@ namespace VKEngine{
 		region.dstOffset = dst_offset;
 		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(*dst),1, &region );
 		endCommandBuffer(command_buffer);
-		submit(command_buffer, VK_FALSE);
+		submit(command_buffer, nullptr, nullptr, nullptr, VK_FALSE);
 		free(command_buffer);
 	}
 

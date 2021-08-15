@@ -47,6 +47,7 @@ namespace VKEngine{
 		setupRenderPass();
 		setupFramebuffer();
 		setupSemaphores();
+		setupSubmitInfo();
 	}
 
 	void Application::setupCommandQueue(){
@@ -108,6 +109,45 @@ namespace VKEngine{
 		VkSemaphoreCreateInfo info = infos::semaphoreCreateInfo();
 		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.render_complete ));
 		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.present_complete ));
+	}
+
+	void Application::setupSubmitInfo(){
+		render_SI = infos::submitInfo();
+		render_SI.pWaitSemaphores = &semaphores.present_complete;
+		render_SI.waitSemaphoreCount = 1;
+		render_SI.pSignalSemaphores = &semaphores.render_complete;
+		render_SI.signalSemaphoreCount = 1;
+		render_SI.pWaitDstStageMask = &submit_pipeline_stages;
+	}
+
+	void Application::prepareFrame(){
+		VkResult result = swapchain.acquiredNextImage(semaphores.present_complete, &current_frame_index);
+		if( (result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)){
+			//TODO window resize
+		}else{
+			VK_CHECK_RESULT(result);
+		}
+	}
+
+	void Application::submitFrame(){
+		VkQueue queue = VkQueue(*graphics_queue);
+		VkResult result = swapchain.queuePresent(queue, current_frame_index, semaphores.render_complete);
+		if(!(result == VK_SUCCESS) || (result == VK_SUBOPTIMAL_KHR)){
+			//TODO window resize
+			return ;
+		}else{
+			VK_CHECK_RESULT(result);
+		}
+
+		VK_CHECK_RESULT(vkQueueWaitIdle(queue));
+	}
+
+	void Application::render(){
+		prepareFrame();
+		render_SI.pCommandBuffers = &draw_command_buffers[current_frame_index];
+		render_SI.commandBufferCount = 1;
+		graphics_queue->submit(render_SI);
+		submitFrame();
 	}
 	
 	void Application::destroy(){

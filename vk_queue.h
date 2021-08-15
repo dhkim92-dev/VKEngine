@@ -42,11 +42,15 @@ namespace VKEngine{
 		VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage=0x0);
 		void beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage=0x0);
 		void endCommandBuffer(VkCommandBuffer command_buffer);
-		void submit(VkCommandBuffer command_buffer, VkBool32 fenced = false);
-		//void submit(VkCommandBuffer command_buffer, VkSubmitInfo submit_info, VkBool32 fenced = false);
+		void submit(VkCommandBuffer command_buffer, VkSemaphore *wait, VkSemaphore *signal, VkPipelineStageFlags *dst_stage, VkBool32 fenced = false);
+		void submit(VkSubmitInfo submit_info, VkBool32 fenced = false);
 		void free(VkCommandBuffer command_buffer);
 		void resetFence();
 		void waitFence();
+
+		operator VkQueue() const {
+			return queue;
+		}
 	};
 }
 
