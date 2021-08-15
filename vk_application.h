@@ -29,6 +29,14 @@ namespace VKEngine{
 		Framebuffer *front_framebuffer;
 		VkFormat depth_format;
 		VkGraphicsPipelineCreateInfo graphics_pipeline_CI_preset;
+		
+		struct Semaphores
+		{
+			VkSemaphore present_complete;
+			VkSemaphore render_complete;	
+		}semaphores;
+		
+		uint32_t current_frame_index = 0;
 		public :
 		explicit Application(
 			string app_name, string engine_name,
@@ -52,6 +60,7 @@ namespace VKEngine{
 		virtual void setupRenderPass();
 		virtual void setupFramebuffer();
 		virtual void setupGraphicsPipeline(){};
+		virtual void setupSemaphores();
 	};
 };
 #endif

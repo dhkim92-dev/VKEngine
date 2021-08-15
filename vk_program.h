@@ -45,6 +45,7 @@ namespace VKEngine{
 			info.pColorBlendState = &color_blend;
 			info.pTessellationState = &tesselation;
 			info.subpass = subpass;
+			info.pVertexInputState = &vertex_input;
 
 			return info;
 		}
@@ -67,7 +68,7 @@ namespace VKEngine{
 		explicit Program(Context *_context);
 		~Program();
 		void attachShader(const string file_path, VkShaderStageFlagBits stage);
-		virtual void build(VkRenderPass render_pass, VkPipelineCache cache = VK_NULL_HANDLE);
+		void build(VkRenderPass render_pass, VkPipelineCache cache = VK_NULL_HANDLE);
 		VkResult createDescriptorPool(vector<VkDescriptorPoolSize> pool_size, uint32_t max_set = 1);
 		VkResult allocDescriptorSet(VkDescriptorSet *descriptor_set, uint32_t set_idx, uint32_t nr_alloc=1);
 		void releaseDescriptorSet(VkDescriptorSet *descriptor_set);

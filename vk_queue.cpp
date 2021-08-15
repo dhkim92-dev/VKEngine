@@ -57,14 +57,14 @@ namespace VKEngine{
 		}
 	}
 
-	VkCommandBuffer CommandQueue::createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlagBits usage){
+	VkCommandBuffer CommandQueue::createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage){
 		VkCommandBuffer command_buffer = VK_NULL_HANDLE;
 		VkCommandBufferAllocateInfo command_buffer_AI = infos::commandBufferAllocateInfo(pool, level, 1);
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &command_buffer_AI, &command_buffer));
 		return command_buffer;
 	}
 
-	void CommandQueue::beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlagBits usage){
+	void CommandQueue::beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage){
 		VkCommandBufferBeginInfo command_buffer_BI = infos::commandBufferBeginInfo();
 		if(usage & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT){
 			command_buffer_BI.flags=usage;

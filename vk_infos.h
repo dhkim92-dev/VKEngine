@@ -479,6 +479,7 @@ namespace VKEngine
 			}else{
 				info.pVertexAttributeDescriptions = attributes.data() ;
 			}
+
 			
 			if(bindings.size() == 0 ){
 				info.pVertexBindingDescriptions = nullptr;
@@ -488,6 +489,9 @@ namespace VKEngine
 
 			info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
 			info.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+
+			LOG("vertexInputStateCreateInfo::info.vertexAttributeDescriptionCount : %d\n", info.vertexAttributeDescriptionCount);
+			LOG("vertexInputStateCreateInfo::info.vertexBindingDescriptionCount : %d\n", info.vertexBindingDescriptionCount);
 			return info;
 		}
 		
@@ -501,6 +505,37 @@ namespace VKEngine
 		inline VkRenderPassCreateInfo renderPassCreateInfo(){
 			VkRenderPassCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			return info;
+		}
+
+		inline VkRenderPassBeginInfo renderPassBeginInfo(){
+			VkRenderPassBeginInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			info.pNext = nullptr;
+			return info;
+		}
+
+		inline VkViewport viewport(float width, float height, float min_depth, float max_depth){
+			VkViewport viewport={};
+			viewport.height = height;
+			viewport.width = width;
+			viewport.minDepth = min_depth;
+			viewport.maxDepth = max_depth;
+			return viewport;
+		}
+
+		inline VkRect2D rect2D(uint32_t width, uint32_t height, uint32_t offset_x, uint32_t offset_y){
+			VkRect2D rect = {};
+			rect.extent.height = height;
+			rect.extent.width = width;
+			rect.offset.x = offset_x;
+			rect.offset.y = offset_y;
+			return rect;
+		}
+
+		inline VkSemaphoreCreateInfo semaphoreCreateInfo(){
+			VkSemaphoreCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			return info;
 		}
 	};

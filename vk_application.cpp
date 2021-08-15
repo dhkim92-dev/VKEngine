@@ -46,6 +46,7 @@ namespace VKEngine{
 		setupDepthStencilAttachment();
 		setupRenderPass();
 		setupFramebuffer();
+		setupSemaphores();
 	}
 
 	void Application::setupCommandQueue(){
@@ -99,10 +100,19 @@ namespace VKEngine{
 	}
 
 	void Application::setupFramebuffer(){
-		front_framebuffer->createFramebuffer();
+		uint32_t nr_framebuffers = static_cast<uint32_t>(swapchain.buffers.size());
+		front_framebuffer->createFramebuffers(nr_framebuffers);
+	}
+
+	void Application::setupSemaphores(){
+		VkSemaphoreCreateInfo info = infos::semaphoreCreateInfo();
+		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.render_complete ));
+		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.present_complete ));
 	}
 	
 	void Application::destroy(){
+		vkDestroySemaphore(VkDevice(*context), semaphores.present_complete, nullptr);
+		vkDestroySemaphore(VkDevice(*context), semaphores.render_complete, nullptr);
 		delete graphics_queue;
 		delete compute_queue;
 		swapchain.destroy();

@@ -63,7 +63,7 @@ namespace VKEngine{
 		VkDevice device;
 		public : 
 		uint32_t height, width;
-		VkFramebuffer framebuffer = VK_NULL_HANDLE;
+		vector<VkFramebuffer> framebuffers;
 		VkRenderPass render_pass = VK_NULL_HANDLE;
 		VkSampler sampler = VK_NULL_HANDLE;
 		vector<FramebufferAttachment> attachments;
@@ -73,7 +73,7 @@ namespace VKEngine{
 		uint32_t addAttachment(AttachmentCreateInfo info);
 		void createSampler(VkFilter mag_filter, VkFilter min_filter, VkSamplerAddressMode address_mode);
 		void createRenderPass();
-		void createFramebuffer();
+		void createFramebuffers(uint32_t size = 1);
 		void destroy();
 	};
 }

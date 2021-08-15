@@ -39,10 +39,11 @@ namespace VKEngine{
 		//void enqueueCopy(Image *src, Buffer *dst, VkDeviceSize from, VkDeviceSize to);
 		//void enqueueCopy(Buffer *src, Image *dst, VkDeviceSize from, VkDeviceSize to);
 		//void enqueueCopy(Image *src, void *dst, VkDeviceSize from, VkDeviceSize to);
-		VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlagBits usage);
-		void beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlagBits usage);
+		VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage=0x0);
+		void beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage=0x0);
 		void endCommandBuffer(VkCommandBuffer command_buffer);
 		void submit(VkCommandBuffer command_buffer, VkBool32 fenced = false);
+		//void submit(VkCommandBuffer command_buffer, VkSubmitInfo submit_info, VkBool32 fenced = false);
 		void free(VkCommandBuffer command_buffer);
 		void resetFence();
 		void waitFence();

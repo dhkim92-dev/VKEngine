@@ -178,9 +178,10 @@ namespace VKEngine{
 		VK_CHECK_RESULT(vkCreateRenderPass(device, &render_pass_CI, nullptr, &render_pass));
 	}		
 
-	void Framebuffer::createFramebuffer(){
+	void Framebuffer::createFramebuffers(uint32_t size ){
 		LOG("Framebuffer::createFramebuffer()\n");
 		VkFramebufferCreateInfo framebuffer_CI = {};
+		framebuffers.resize(size);
 		vector<VkImageView> attachment_views;
 		uint32_t max_layers = 0;
 		
@@ -189,14 +190,16 @@ namespace VKEngine{
 			max_layers = ( attachment.subresource_range.layerCount > max_layers ) ? attachment.subresource_range.layerCount : max_layers; 
 		}
 
-		framebuffer_CI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebuffer_CI.renderPass = render_pass;
-		framebuffer_CI.pAttachments = attachment_views.data();
-		framebuffer_CI.attachmentCount = static_cast<uint32_t>( attachment_views.size() );
-		framebuffer_CI.width = width;
-		framebuffer_CI.height = height;
-		framebuffer_CI.layers = max_layers;
-		VK_CHECK_RESULT(vkCreateFramebuffer(device, &framebuffer_CI, nullptr, &framebuffer));
+		for(uint32_t i = 0 ; i < size ; ++i){
+			framebuffer_CI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebuffer_CI.renderPass = render_pass;
+			framebuffer_CI.pAttachments = attachment_views.data();
+			framebuffer_CI.attachmentCount = static_cast<uint32_t>( attachment_views.size() );
+			framebuffer_CI.width = width;
+			framebuffer_CI.height = height;
+			framebuffer_CI.layers = max_layers;
+			VK_CHECK_RESULT(vkCreateFramebuffer(device, &framebuffer_CI, nullptr, &framebuffers[i]));
+		};
 	}
 
 	void Framebuffer::destroy(){
@@ -207,9 +210,20 @@ namespace VKEngine{
 			vkDestroyImageView(device, attachment.view, nullptr);
 			vkFreeMemory(device, attachment.memory, nullptr);
 		}
-		if(sampler) vkDestroySampler(device, sampler, nullptr);
-		if(render_pass)	vkDestroyRenderPass(device, render_pass, nullptr);
-		if(framebuffer)	vkDestroyFramebuffer(device, framebuffer, nullptr);
+		if(sampler) {
+			vkDestroySampler(device, sampler, nullptr);
+			sampler = VK_NULL_HANDLE;
+		}
+		if(render_pass)	{
+			vkDestroyRenderPass(device, render_pass, nullptr);
+			render_pass = VK_NULL_HANDLE;
+		}
+		for(uint32_t i = 0 ; framebuffers.size() ; i++){
+			if(framebuffers[i])	{
+				vkDestroyFramebuffer(device, framebuffers[i], nullptr);
+				framebuffers[i] = VK_NULL_HANDLE;
+			}
+		}
 	}
 }
 

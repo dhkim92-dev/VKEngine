@@ -61,11 +61,10 @@ struct Vertex{
 		attributes[0].format = VK_FORMAT_R32G32_SFLOAT;
 		attributes[0].offset = offsetof(Vertex, pos);
 
-		attributes[1].binding = 1;
-		attributes[1].location = 0;
+		attributes[1].binding = 0;
+		attributes[1].location = 1;
 		attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributes[1].offset = offsetof(Vertex, color);
-
 		return attributes;
 	}
 };
@@ -96,6 +95,7 @@ class App : public VKEngine::Application{
 
 	Triangle render_object;
 	unordered_map<string, Program*> programs;
+	vector<VkCommandBuffer> draw_command_buffers;
 	protected:
 	
 	virtual void initWindow(){
@@ -113,28 +113,27 @@ class App : public VKEngine::Application{
 	virtual void mainLoop(){
 		while(!glfwWindowShouldClose(window)){
 			glfwPollEvents();
+			//draw();
 		}
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
 
+	void draw(){
+		graphics_queue->submit(draw_command_buffers[current_frame_index], VK_FALSE);
+		current_frame_index++;
+		current_frame_index%=swapchain.buffers.size();
+	}
+
 	void preparePrograms(){
 		LOG("prepare Programs start\n");
 		programs.insert({"triangle" , new Program(context) });
-		LOG("prepare Program:: insert Program\n");
 		programs["triangle"]->attachShader("./shaders/triangles/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		programs["triangle"]->attachShader("./shaders/triangles/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		LOG("attachShader!\n");
-		LOG("setupDescriptorSetLayout()\n");
 		programs["triangle"]->setupDescriptorSetLayout({});
-		LOG("setupDescriptorSetLayout end()\n");
-		LOG("attributes()\n");
 		auto attributes = Vertex::vertexInputAttributes();
-		LOG("bindings()\n");
 		auto bindings = Vertex::vertexInputBinding();
-		LOG("setup vertex input state\n");
-		programs["triangle"]->graphics.vertex_input=infos::vertexInputStateCreateInfo(attributes, bindings);
-		LOG("prepare Programs start\n");
+		programs["triangle"]->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
 		programs["triangle"]->build(front_framebuffer->render_pass, cache);
 		LOG("prepare Programs end\n");
 	}
@@ -142,7 +141,6 @@ class App : public VKEngine::Application{
 	void prepareRenderObjects(){
 		LOG("prepare Render Objects\n");
 		render_object.program = programs["triangle"];
-		//Setup Vertex Buffer
 		render_object.vbo = new Buffer(
 			context,
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -167,11 +165,49 @@ class App : public VKEngine::Application{
 		LOG("prepare Render Objects end\n");
 	}
 
+	void prepareCommandBuffer(){
+		vector<VkClearValue> clear_values(2);
+		clear_values[0].color = {0.0f, 0.0f, 0.2f ,1.0f};
+		clear_values[1].depthStencil = {1.0f, 0};
+		draw_command_buffers.resize(swapchain.buffers.size());
+		
+		VkRenderPassBeginInfo render_pass_BI = infos::renderPassBeginInfo();
+		render_pass_BI.clearValueCount = static_cast<uint32_t>(clear_values.size());
+		render_pass_BI.pClearValues = clear_values.data();
+		render_pass_BI.renderArea.offset = {0,0};
+		render_pass_BI.renderArea.extent.height = height;
+		render_pass_BI.renderArea.extent.width = width;
+		render_pass_BI.renderPass = front_framebuffer->render_pass;
+
+		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
+			draw_command_buffers[i] = graphics_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		}
+
+		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
+			graphics_queue->beginCommandBuffer(draw_command_buffers[i]);
+			render_pass_BI.framebuffer = front_framebuffer->framebuffers[i];
+			VkViewport viewport = infos::viewport(static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f);
+			VkRect2D scissor = infos::rect2D(width, height, 0, 0);
+			vkCmdBeginRenderPass(draw_command_buffers[i], &render_pass_BI, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdSetViewport(draw_command_buffers[i], 0, 1, &viewport);
+			vkCmdSetScissor(draw_command_buffers[i], 0, 1, &scissor);
+			vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, render_object.program->pipeline);
+			VkBuffer buffer[] = {VkBuffer(*render_object.vbo)};
+			VkDeviceSize offsets[] = {0};
+			vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, buffer, offsets);
+			vkCmdBindIndexBuffer(draw_command_buffers[i], VkBuffer(*render_object.ibo), 0, VK_INDEX_TYPE_UINT16);
+			vkCmdDrawIndexed(draw_command_buffers[i], static_cast<uint32_t>(render_object.indices.size()), 1, 0, 0, 0);
+			vkCmdEndRenderPass(draw_command_buffers[i]);
+			graphics_queue->endCommandBuffer(draw_command_buffers[i]);
+		}	
+	}
+
 	public:
 	void run(){
 		Application::init();
 		preparePrograms();
 		prepareRenderObjects();
+		prepareCommandBuffer();
 		mainLoop();
 	}
 };
