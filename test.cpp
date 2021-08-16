@@ -119,8 +119,8 @@ class App : public VKEngine::Application{
 	}
 
 	void draw(){
-		current_frame_index++;
-		current_frame_index%=swapchain.buffers.size();
+		//current_frame_index++;
+		//current_frame_index%=swapchain.buffers.size();
 		render();
 	}
 

@@ -146,7 +146,7 @@ namespace VKEngine{
 		prepareFrame();
 		render_SI.pCommandBuffers = &draw_command_buffers[current_frame_index];
 		render_SI.commandBufferCount = 1;
-		graphics_queue->submit(render_SI);
+		graphics_queue->submit(render_SI, VK_TRUE);
 		submitFrame();
 	}
 	
