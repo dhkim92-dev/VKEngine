@@ -84,6 +84,7 @@ namespace VKEngine{
 		//for(uint32_t i = 0 ; i < swapchain.buffers.size() ; ++i){
 		//attachment.image = swapchain.buffers[i].image;
 		//attachment.view = swapchain.buffers[i].view;
+		LOG("setupColorAttachment::swapchain.image.format : %d\n", swapchain.image_format);
 		attachment.format = swapchain.image_format;
 		attachment.subresource_range = {1, 0, 1, 0};
 		attachment.description.format = swapchain.image_format;
@@ -114,7 +115,6 @@ namespace VKEngine{
 			uint32_t nr_layers = attachment.subresource_range.layerCount;
 			max_layer = (nr_layers > max_layer) ? nr_layers : max_layer;
 		}
-
 		attachments[0] = front_framebuffer->attachments[0].view; // depth stencil attachment
 
 		for(uint32_t i = 0 ; i < swapchain.buffers.size() ; i++){
