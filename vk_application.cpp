@@ -42,8 +42,8 @@ namespace VKEngine{
 		front_framebuffer = new Framebuffer(context);
 		front_framebuffer->height = height;
 		front_framebuffer->width = width;
-		setupColorAttachment();
 		setupDepthStencilAttachment();
+		setupColorAttachment();
 		setupRenderPass();
 		setupFramebuffer();
 		setupSemaphores();
@@ -115,7 +115,7 @@ namespace VKEngine{
 			max_layer = (nr_layers > max_layer) ? nr_layers : max_layer;
 		}
 
-		attachments[0] = front_framebuffer->; // depth stencil attachment
+		attachments[0] = front_framebuffer->attachments[0].view; // depth stencil attachment
 
 		for(uint32_t i = 0 ; i < swapchain.buffers.size() ; i++){
 			attachments[1] = swapchain.buffers[i].view;
@@ -163,11 +163,14 @@ namespace VKEngine{
 	}
 
 	void Application::render(){
+		//LOG("render image frame : %d\n", current_frame_index);
 		prepareFrame();
 		render_SI.pCommandBuffers = &draw_command_buffers[current_frame_index];
 		render_SI.commandBufferCount = 1;
 		graphics_queue->submit(render_SI, VK_TRUE);
 		submitFrame();
+		current_frame_index+=1;
+		current_frame_index%=swapchain.buffers.size();
 	}
 	
 	void Application::destroy(){

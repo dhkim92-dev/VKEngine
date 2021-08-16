@@ -47,7 +47,7 @@ namespace VKEngine{
 	void Buffer::allocate(VkDeviceSize _offest, VkDeviceSize _size){
 		VkMemoryAllocateInfo malloc_CI = infos::memoryAllocateInfo();		
 		vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
-		malloc_CI.allocationSize = size;
+		//malloc_CI.allocationSize = size;
 		malloc_CI.memoryTypeIndex=context->getMemoryType(memory_requirements.memoryTypeBits, memory_properties);
 		malloc_CI.allocationSize = memory_requirements.size;
 		VkMemoryAllocateFlagsInfoKHR malloc_FI = {};
@@ -67,7 +67,7 @@ namespace VKEngine{
 
 	void Buffer::map(VkDeviceSize offset, VkDeviceSize _size){
 		// LOG("map called\n");
-		VK_CHECK_RESULT(vkMapMemory(device, memory, offset, size, 0, &data));
+		VK_CHECK_RESULT(vkMapMemory(device, memory, offset, _size, 0, &data));
 	}
 
 	void Buffer::unmap(){

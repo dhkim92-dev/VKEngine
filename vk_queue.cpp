@@ -143,7 +143,7 @@ namespace VKEngine{
 	void CommandQueue::enqueueCopy(void *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size){
 		Buffer staging(context, 
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 					size, src);
 		enqueueCopy(&staging, dst, src_offset, dst_offset, size);
 		staging.destroy();
@@ -152,7 +152,7 @@ namespace VKEngine{
 	void CommandQueue::enqueueCopy(Buffer* src, void *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size){
 		Buffer staging(context, 
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 					size, nullptr);	
 		enqueueCopy(src, &staging, src_offset, dst_offset, size);
 		staging.copyTo(dst, size);

@@ -138,7 +138,6 @@ class App : public VKEngine::Application{
 	}
 
 	void prepareRenderObjects(){
-		LOG("prepare Render Objects\n");
 		render_object.program = programs["triangle"];
 		render_object.vbo = new Buffer(
 			context,
@@ -155,13 +154,10 @@ class App : public VKEngine::Application{
 			sizeof(uint16_t) * render_object.indices.size(), nullptr
 		);
 
-		graphics_queue->enqueueCopy(render_object.vertices.data(), render_object.vbo,
-									0,0, sizeof(Vertex) * render_object.vertices.size());
-
-		graphics_queue->enqueueCopy(render_object.indices.data(), render_object.ibo,
-									0,0,sizeof(uint16_t) * render_object.indices.size());
-
-		LOG("prepare Render Objects end\n");
+		size_t sz_vertex = sizeof(Vertex) * render_object.vertices.size();
+		size_t sz_indices = sizeof(uint16_t) * render_object.indices.size();
+		graphics_queue->enqueueCopy(render_object.vertices.data(), render_object.vbo, 0, 0, sizeof(Vertex) * render_object.vertices.size());
+		graphics_queue->enqueueCopy(render_object.indices.data(), render_object.ibo, 0, 0, sizeof(uint16_t) * render_object.indices.size());
 	}
 
 	void prepareCommandBuffer(){
