@@ -34,7 +34,6 @@ namespace VKEngine{
 
 		assert(aspect_mask > 0);
 
-
 		VkImageCreateInfo image_CI = infos::imageCreateInfo();
 		image_CI.format = fb_attachment.format;
 		image_CI.imageType = VK_IMAGE_TYPE_2D;
@@ -51,22 +50,20 @@ namespace VKEngine{
 		VkMemoryAllocateInfo mem_AI = infos::memoryAllocateInfo();
 		VkMemoryRequirements mem_reqs;
 
-		LOG("Framebuffer::addAttachment, vkCreateImage\n");
 		VK_CHECK_RESULT(vkCreateImage(device, &image_CI, nullptr, &fb_attachment.image)); 
 		LOG("Framebuffer::addAttachment, vkCreateImage\n");
 
-		LOG("memory allocation\n");
 		vkGetImageMemoryRequirements(device, fb_attachment.image, &mem_reqs);
 		mem_AI.allocationSize = mem_reqs.size;
 		mem_AI.memoryTypeIndex = getMemoryType(gpu, device, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		VK_CHECK_RESULT( vkAllocateMemory(device, &mem_AI, nullptr, &fb_attachment.memory) );
-		VK_CHECK_RESULT( vkBindImageMemory(device, fb_attachment.image, fb_attachment.memory, 0) );
 		LOG("memory allocation\n");
+		VK_CHECK_RESULT( vkBindImageMemory(device, fb_attachment.image, fb_attachment.memory, 0) );
+		LOG("memory bind with image\n");
 		fb_attachment.subresource_range = {};
 		fb_attachment.subresource_range.aspectMask = aspect_mask;
 		fb_attachment.subresource_range.levelCount = 1;
 		fb_attachment.subresource_range.layerCount = info.nr_layers;
-		LOG("viewCreate\n");
 		VkImageViewCreateInfo image_view_CI = infos::imageViewCreateInfo();
 		image_view_CI.viewType = (info.nr_layers==1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		image_view_CI.format = info.format;
@@ -74,8 +71,8 @@ namespace VKEngine{
 		image_view_CI.subresourceRange.aspectMask = fb_attachment.hasDepth() ? VK_IMAGE_ASPECT_DEPTH_BIT : aspect_mask;
 		image_view_CI.image = fb_attachment.image;
 		VK_CHECK_RESULT( vkCreateImageView(device, &image_view_CI, nullptr, &fb_attachment.view) );
-
 		LOG("viewCreate\n");
+
 		fb_attachment.description = {};
 		fb_attachment.description.samples = info.sample_count;
 		fb_attachment.description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -90,6 +87,7 @@ namespace VKEngine{
 		}else{
 			fb_attachment.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
+
 
 		attachments.push_back(fb_attachment);
 
@@ -178,8 +176,7 @@ namespace VKEngine{
 		VK_CHECK_RESULT(vkCreateRenderPass(device, &render_pass_CI, nullptr, &render_pass));
 	}		
 
-	void Framebuffer::createFramebuffers(uint32_t size ){
-		LOG("Framebuffer::createFramebuffer()\n");
+	void Framebuffer::createFramebuffers(uint32_t size){
 		VkFramebufferCreateInfo framebuffer_CI = {};
 		framebuffers.resize(size);
 		vector<VkImageView> attachment_views;
@@ -187,7 +184,7 @@ namespace VKEngine{
 		
 		for(FramebufferAttachment attachment : attachments){
 			attachment_views.push_back(attachment.view);
-			max_layers = ( attachment.subresource_range.layerCount > max_layers ) ? attachment.subresource_range.layerCount : max_layers; 
+			max_layers = ( attachment.subresource_range.layerCount > max_layers ) ? attachment.subresource_range.layerCount : max_layers;
 		}
 
 		for(uint32_t i = 0 ; i < size ; ++i){
@@ -199,8 +196,29 @@ namespace VKEngine{
 			framebuffer_CI.height = height;
 			framebuffer_CI.layers = max_layers;
 			VK_CHECK_RESULT(vkCreateFramebuffer(device, &framebuffer_CI, nullptr, &framebuffers[i]));
-		};
+		}
 	}
+
+	void Framebuffer::createFramebuffer(uint32_t index, uint32_t max_layer, vector<VkImageView> &attachment){
+		VkFramebufferCreateInfo framebuffer_CI = {};
+		LOG("Framebuffer::createFramebuffer()\n");
+		framebuffer_CI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebuffer_CI.attachmentCount = static_cast<uint32_t>(attachment.size());
+		framebuffer_CI.pAttachments = attachment.data();
+		framebuffer_CI.height = height;
+		framebuffer_CI.width = width;
+		framebuffer_CI.layers = max_layer;
+		framebuffer_CI.renderPass = render_pass;
+
+		VK_CHECK_RESULT(vkCreateFramebuffer(device, &framebuffer_CI, nullptr, &framebuffers[index]));
+	}
+
+	void Framebuffer::setFramebufferSize(uint32_t size){
+		framebuffers.clear();
+		framebuffers.resize(size);
+	}
+
+
 
 	void Framebuffer::destroy(){
 		assert(device);

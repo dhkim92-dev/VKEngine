@@ -63,10 +63,10 @@ namespace VKEngine{
 		VkDevice device;
 		public : 
 		uint32_t height, width;
-		vector<VkFramebuffer> framebuffers;
 		VkRenderPass render_pass = VK_NULL_HANDLE;
 		VkSampler sampler = VK_NULL_HANDLE;
 		vector<FramebufferAttachment> attachments;
+		vector<VkFramebuffer> framebuffers;
 
 		explicit Framebuffer(Context *context);
 		~Framebuffer();
@@ -74,6 +74,8 @@ namespace VKEngine{
 		void createSampler(VkFilter mag_filter, VkFilter min_filter, VkSamplerAddressMode address_mode);
 		void createRenderPass();
 		void createFramebuffers(uint32_t size = 1);
+		void createFramebuffer(uint32_t index, uint32_t max_layer, vector<VkImageView> &attachment);
+		void setFramebufferSize(uint32_t size);
 		void destroy();
 	};
 }

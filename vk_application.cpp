@@ -81,8 +81,9 @@ namespace VKEngine{
 
 	void Application::setupColorAttachment(){
 		FramebufferAttachment attachment = {};
-		attachment.image = swapchain.buffers[0].image;
-		attachment.view = swapchain.buffers[0].view;
+		//for(uint32_t i = 0 ; i < swapchain.buffers.size() ; ++i){
+		//attachment.image = swapchain.buffers[i].image;
+		//attachment.view = swapchain.buffers[i].view;
 		attachment.format = swapchain.image_format;
 		attachment.subresource_range = {1, 0, 1, 0};
 		attachment.description.format = swapchain.image_format;
@@ -94,6 +95,7 @@ namespace VKEngine{
 		attachment.description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		attachment.description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		front_framebuffer->attachments.push_back(attachment);
+		//}
 	}
 
 	void Application::setupRenderPass(){
@@ -101,8 +103,24 @@ namespace VKEngine{
 	}
 
 	void Application::setupFramebuffer(){
+		LOG("#######Application::setupFramebuffer\n########");
+		LOG("####### swapchain image size : %d\n", static_cast<int>(swapchain.buffers.size()));
 		uint32_t nr_framebuffers = static_cast<uint32_t>(swapchain.buffers.size());
-		front_framebuffer->createFramebuffers(nr_framebuffers);
+		front_framebuffer->setFramebufferSize(nr_framebuffers);
+		vector<VkImageView> attachments(2);
+		uint32_t max_layer = 0 ;
+
+		for(FramebufferAttachment attachment : front_framebuffer->attachments){
+			uint32_t nr_layers = attachment.subresource_range.layerCount;
+			max_layer = (nr_layers > max_layer) ? nr_layers : max_layer;
+		}
+
+		attachments[0] = front_framebuffer->; // depth stencil attachment
+
+		for(uint32_t i = 0 ; i < swapchain.buffers.size() ; i++){
+			attachments[1] = swapchain.buffers[i].view;
+			front_framebuffer->createFramebuffer(i, max_layer, attachments);
+		}
 	}
 
 	void Application::setupSemaphores(){
@@ -124,6 +142,7 @@ namespace VKEngine{
 		VkResult result = swapchain.acquiredNextImage(semaphores.present_complete, &current_frame_index);
 		if( (result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)){
 			//TODO window resize
+			LOG("Application::preprareFrame result is VK_ERROR_OUT_OF_DATE_KHR or VK_SUBOPTIMAL_KHR\n");
 		}else{
 			VK_CHECK_RESULT(result);
 		}
@@ -133,6 +152,7 @@ namespace VKEngine{
 		VkQueue queue = VkQueue(*graphics_queue);
 		VkResult result = swapchain.queuePresent(queue, current_frame_index, semaphores.render_complete);
 		if(!(result == VK_SUCCESS) || (result == VK_SUBOPTIMAL_KHR)){
+			LOG("Application::submitFrame result is VK_SUCCESS or VK_SUBOPTIMAL_KHR\n");
 			//TODO window resize
 			return ;
 		}else{
