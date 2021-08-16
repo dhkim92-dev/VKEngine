@@ -112,7 +112,7 @@ class App : public VKEngine::Application{
 	virtual void mainLoop(){
 		while(!glfwWindowShouldClose(window)){
 			glfwPollEvents();
-			//draw();
+			draw();
 		}
 		glfwDestroyWindow(window);
 		glfwTerminate();
