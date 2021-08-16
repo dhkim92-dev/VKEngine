@@ -201,7 +201,6 @@ namespace VKEngine{
 
 	void Framebuffer::createFramebuffer(uint32_t index, uint32_t max_layer, vector<VkImageView> &attachment){
 		VkFramebufferCreateInfo framebuffer_CI = {};
-		LOG("Framebuffer::createFramebuffer()\n");
 		framebuffer_CI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebuffer_CI.attachmentCount = static_cast<uint32_t>(attachment.size());
 		framebuffer_CI.pAttachments = attachment.data();

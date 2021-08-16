@@ -163,7 +163,8 @@ namespace VKEngine{
 	}
 
 	void Application::render(){
-		//LOG("render image frame : %d\n", current_frame_index);
+		LOG("framebuffer shape : %d %d\n", height, width);
+		LOG("swapchain shape : %d %d\n", swapchain.detail.capabilities.currentExtent.height, swapchain.detail.capabilities.currentExtent.width);
 		prepareFrame();
 		render_SI.pCommandBuffers = &draw_command_buffers[current_frame_index];
 		render_SI.commandBufferCount = 1;

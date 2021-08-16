@@ -21,6 +21,7 @@ namespace VKEngine{
 
 	void SwapChain::create(uint32_t* h, uint32_t* w, bool vsync){
 		VkSurfaceFormatKHR _surface_format = chooseSwapSurfaceFormat(detail.formats);
+		LOG("swapchain surface format : %d\n", _surface_format.format);
 		VkExtent2D _extent = chooseSwapExtent(detail.capabilities, h, w);
 		VkPresentModeKHR _present_mode = chooseSwapPresentMode(detail.present_modes);
 		uint32_t nr_images = detail.capabilities.minImageCount + 1;

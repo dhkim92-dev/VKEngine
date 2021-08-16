@@ -77,7 +77,7 @@ struct Triangle{
 		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f} }
 	};
 
-	vector<uint32_t> indices = {
+	vector<uint16_t> indices = {
 		0,1,2,2,3,0
 	};
 
@@ -145,28 +145,8 @@ class App : public VKEngine::Application{
 		render_object.vbo = new Buffer( context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT| VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_vertex, nullptr);
 		render_object.ibo = new Buffer(context, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_indices , nullptr);
 
-		//float data[20];
-		
-		float data[20] ;
-		
-		memcpy(data, render_object.vertices.data(), sz_vertex);
-		for(uint32_t i = 0 ; i < render_object.vertices.size() ; ++i){
-			uint32_t offset = i*5;
-			LOG("vertices result : %f %f %f %f %f \n",data[offset+i], data[offset+i+1], data[offset+i+2], data[offset+i+3], data[offset+i+4]);
-		}
-
-		//graphics_queue->enqueueCopy(render_object.vertices.data(), render_object.vbo, 0, 0, sizeof(Vertex) * render_object.vertices.size());
-		//graphics_queue->enqueueCopy(render_object.indices.data(), render_object.ibo, 0, 0, sizeof(uint16_t) * render_object.indices.size());
-
-		//graphics_queue->resetFence();
-		//graphics_queue->enqueueCopy(render_object.vbo, (void *)data, 0, 0, sz_vertex);
-		//graphics_queue->waitFence();
-
-		for(uint32_t i = 0 ; i < 4 ; ++i){
-			uint32_t offset = i*5;
-//			LOG("enqueue copy result : %f %f %f %f %f \n",data[offset+i], data[offset+i+1], data[offset+i+2], data[offset+i+3], data[offset+i+4]);
-		}
-		exit(1);
+		graphics_queue->enqueueCopy(render_object.vertices.data(), render_object.vbo, 0, 0, sz_vertex);
+		graphics_queue->enqueueCopy(render_object.indices.data(), render_object.ibo, 0, 0, sz_indices);
 	}
 
 	void prepareCommandBuffer(){
