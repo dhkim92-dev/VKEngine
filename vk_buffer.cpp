@@ -97,6 +97,8 @@ namespace VKEngine{
 	}
 
 	void Buffer::copyTo(void* dst, VkDeviceSize _size){
+		LOG("Buffer::copyTo : %d\n", _size);
+		LOG("Buffer::allocSize : %d\n", memory_requirements.size);
 		map(0, _size);
 		assert(data);
 		invalidate(0, _size);
