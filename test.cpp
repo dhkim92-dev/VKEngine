@@ -172,14 +172,12 @@ class App : public VKEngine::Application{
 		}
 `
 		render_object.program = programs["triangle"];
-		size_t sz_vertex = sizeof(Vertex) * render_object.vertices.size();
-		size_t sz_indices = sizeof(uint16_t) * render_object.indices.size();
-		LOG("sz_vertex : %d\n", sz_vertex);
-		LOG("sz_indices : %d\n", sz_indices);
-		render_object.vbo = new Buffer( context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT| VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_vertex, nullptr);
-		render_object.ibo = new Buffer(context, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_indices , nullptr);
-		graphics_queue->enqueueCopy(render_object.vertices.data(), render_object.vbo, 0, 0, sz_vertex);
-		graphics_queue->enqueueCopy(render_object.indices.data(), render_object.ibo, 0, 0, sz_indices);
+		size_t sz_vertex = sizeof(Vertex) * cube_vertices.size();
+		size_t sz_indices = sizeof(uint16_t) * cube_indices.size();
+		cube.vbo = new Buffer( context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT| VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_vertex, nullptr);
+		cube.ibo = new Buffer(context, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_indices , nullptr);
+		graphics_queue->enqueueCopy(cube_vertices.data(), cube.vbo, 0, 0, sz_vertex);
+		graphics_queue->enqueueCopy(cube_indices.data(), cube.ibo, 0, 0, sz_indices);
 	}
 
 	void prepareCommandBuffer(){
