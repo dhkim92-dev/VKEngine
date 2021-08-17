@@ -24,7 +24,6 @@ namespace VKEngine{
 	}
 
 	void Program::build(VkRenderPass render_pass, VkPipelineCache cache){
-		LOG("Program::build start\n");
 		vector<VkPipelineShaderStageCreateInfo> stages; 
 		for(Shader& shader : shaders){
 			shader.createShaderModule();
@@ -35,17 +34,11 @@ namespace VKEngine{
 		VkPipelineLayoutCreateInfo pipeline_layout_CI = infos::pipelineLayoutCreateInfo(descriptors.layouts.data(), static_cast<uint32_t>(descriptors.layouts.size()));
 		VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipeline_layout_CI, nullptr, &pipeline_layout));
 		graphics.color_blend = infos::colorBlendStateCreateInfo(static_cast<uint32_t>(graphics.color_blend_states.size()), graphics.color_blend_states.data());
-		LOG("Program::build done create pipeline layout done\n");
 		graphics.dynamic_state = infos::dynamicStateCreateInfo(graphics.dynamic_state_enabled);
-		
 		VkGraphicsPipelineCreateInfo graphics_pipeline_CI = graphics.pipelineCreateInfo(render_pass, pipeline_layout);
 		graphics_pipeline_CI.stageCount =static_cast<uint32_t>(stages.size());
 		graphics_pipeline_CI.pStages = stages.data();
-		LOG("graphicsCI pvertexinputstate : %d %d\n", graphics_pipeline_CI.pVertexInputState->vertexAttributeDescriptionCount, graphics_pipeline_CI.pVertexInputState->vertexBindingDescriptionCount);
-
-		LOG("Program::build graphics pipeline\n");
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, cache, 1, &graphics_pipeline_CI, nullptr, &pipeline))
-		LOG("Program::build graphics pipeline done\n");
 
 		for(Shader shader : shaders){
 			shader.destroy();

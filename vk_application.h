@@ -4,12 +4,14 @@
 #include <vulkan/vulkan.h>
 #include <string>
 #include <vector>
+#include <array>
 #if defined(GLFW_INCLUDE_VULKAN)	
 #include <GLFW/glfw3.h>
 #endif
 #include "vk_core.h"
 
 namespace VKEngine{
+	
 	class Application{
 		public :
 		vector<const char *>instance_extension_names;
@@ -26,12 +28,15 @@ namespace VKEngine{
 		CommandQueue *graphics_queue, *compute_queue;
 		SwapChain swapchain;
 		VkPipelineCache cache;
-		Framebuffer *front_framebuffer;
-		VkFormat depth_format;
+		//Framebuffer *front_framebuffer;
+		//VkFormat depth_format;
 		VkGraphicsPipelineCreateInfo graphics_pipeline_CI_preset;
 		VkSubmitInfo render_SI;
 		VkPipelineStageFlags submit_pipeline_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		vector<VkCommandBuffer> draw_command_buffers;
+		ImageAttachment color_attachment, depth_attachment;
+		VkRenderPass render_pass = VK_NULL_HANDLE;
+		vector<VkFramebuffer> framebuffers;
 		
 		struct Semaphores
 		{
@@ -39,6 +44,7 @@ namespace VKEngine{
 			VkSemaphore render_complete;	
 		}semaphores;
 		
+
 		uint32_t current_frame_index = 0;
 		public :
 		explicit Application(
@@ -52,20 +58,23 @@ namespace VKEngine{
 		virtual void init();
 		
 		protected :
-		void destroy();
+		virtual void destroy();
 		virtual void initWindow(){LOG("Application::initWindow()\n");};
 		virtual void createSurface(){LOG("Application::initSurface()\n");};
+		virtual void createContext();
 		virtual void mainLoop(){};
+		virtual void initSwapchain();
+		virtual void setupSwapchain();
 		virtual void setupCommandQueue();
 		virtual void setupPipelineCache();
 		virtual void setupDepthStencilAttachment();
-		virtual void setupColorAttachment();
 		virtual void setupRenderPass();
 		virtual void setupFramebuffer();
 		virtual void setupGraphicsPipeline(){};
 		virtual void setupSemaphores();
 		virtual void setupSubmitInfo();
 		virtual void render();
+		virtual void destroyFramebuffers();
 		void prepareFrame();
 		void submitFrame();
 	};

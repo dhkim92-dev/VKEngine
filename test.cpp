@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <string>
+#include <array>
 #include <unordered_map>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -40,8 +41,8 @@ struct Camera{
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 };
 
-struct Vertex{
-	glm::vec2 pos;
+struct Vertex {
+	glm::vec3 pos;
 	glm::vec3 color;
 	
 	static vector<VkVertexInputBindingDescription> vertexInputBinding(){
@@ -58,7 +59,7 @@ struct Vertex{
 		vector<VkVertexInputAttributeDescription> attributes(2);
 		attributes[0].binding = 0;
 		attributes[0].location = 0;
-		attributes[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributes[0].offset = offsetof(Vertex, pos);
 
 		attributes[1].binding = 0;
@@ -69,24 +70,48 @@ struct Vertex{
 	}
 };
 
-struct Triangle{
-	vector<Vertex> vertices = {
-		{{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f} }
-	};
-
-	vector<uint16_t> indices = {
-		0,1,2,2,3,0
-	};
-
+struct Cube{
 	Buffer *vbo;
 	Buffer *ibo;
+}cube;
 
-	Program *program = nullptr;
+struct RenderObject{
+	struct Uniform{
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 projection;
+	}uniform;
+
+	glm::vec3 rotation;
+	Buffer *ubo = nullptr;
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
-	
+	Program *program = nullptr;
+};
+
+vector<Vertex> cube_vertices = {
+	{{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}, 
+	{{0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.0f}},
+	{{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.5f, 0.5f}},
+	{{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{0.5f, -0.5f, 0.5f}, {0.0f, 0.5f, 0.5f}},
+	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.0f}}
+};
+
+vector<uint16_t> cube_indices = {
+	0,1,5,
+	5,4,0,
+	1,2,5,
+	5,2,6,
+	6,7,5,
+	5,7,4,
+	1,0,3,
+	3,2,1,
+	2,3,7,
+	7,6,2,
+	7,3,0,
+	0,4,7
 };
 
 class App : public VKEngine::Application{
@@ -94,7 +119,7 @@ class App : public VKEngine::Application{
 	explicit App(string app_name, string engine_name, int h, int w, vector<const char*>instance_exts, vector<const char*>device_exts , vector<const char *>valids) : Application(app_name, engine_name, h, w, instance_exts, device_exts, valids){
 	};
 
-	Triangle render_object;
+	vector<RenderObject> render_objects;
 	unordered_map<string, Program*> programs;
 	protected:
 	
@@ -115,6 +140,7 @@ class App : public VKEngine::Application{
 			glfwPollEvents();
 			draw();
 		}
+		cleanup();
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
@@ -125,18 +151,26 @@ class App : public VKEngine::Application{
 
 	void preparePrograms(){
 		LOG("prepare Programs start\n");
-		programs.insert({"triangle" , new Program(context) });
-		programs["triangle"]->attachShader("./shaders/triangles/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		programs["triangle"]->attachShader("./shaders/triangles/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		programs["triangle"]->setupDescriptorSetLayout({});
+		Program *program = new Program(context);
+		program->attachShader("./shaders/cubes/cube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		program->attachShader("./shaders/cubes/cube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		program->setupDescriptorSetLayout({});
 		auto attributes = Vertex::vertexInputAttributes();
 		auto bindings = Vertex::vertexInputBinding();
-		programs["triangle"]->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
-		programs["triangle"]->build(front_framebuffer->render_pass, cache);
+		program->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
+		program->build(render_pass, cache);
+		programs.insert({"cube", program});
 		LOG("prepare Programs end\n");
 	}
 
 	void prepareRenderObjects(){
+		uint32_t nr_cubes = 1;
+		for(uint32_t i = 0 ; i < nr_cubes ; ++i){
+			RenderObject object;
+			object.program = programs["cube"];
+			object.rotation = 
+		}
+`
 		render_object.program = programs["triangle"];
 		size_t sz_vertex = sizeof(Vertex) * render_object.vertices.size();
 		size_t sz_indices = sizeof(uint16_t) * render_object.indices.size();
@@ -144,14 +178,13 @@ class App : public VKEngine::Application{
 		LOG("sz_indices : %d\n", sz_indices);
 		render_object.vbo = new Buffer( context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT| VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_vertex, nullptr);
 		render_object.ibo = new Buffer(context, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_indices , nullptr);
-
 		graphics_queue->enqueueCopy(render_object.vertices.data(), render_object.vbo, 0, 0, sz_vertex);
 		graphics_queue->enqueueCopy(render_object.indices.data(), render_object.ibo, 0, 0, sz_indices);
 	}
 
 	void prepareCommandBuffer(){
-		vector<VkClearValue> clear_values(2);
-		clear_values[0].color = {0.0f, 0.0f, 0.2f ,1.0f};
+		std::array<VkClearValue, 2> clear_values{};
+		clear_values[0].color = {{0.0f, 1.0f, 0.0f, 1.0f}};
 		clear_values[1].depthStencil = {1.0f, 0};
 		draw_command_buffers.resize(swapchain.buffers.size());
 		
@@ -161,7 +194,7 @@ class App : public VKEngine::Application{
 		render_pass_BI.renderArea.offset = {0,0};
 		render_pass_BI.renderArea.extent.height = height;
 		render_pass_BI.renderArea.extent.width = width;
-		render_pass_BI.renderPass = front_framebuffer->render_pass;
+		render_pass_BI.renderPass = render_pass;
 
 		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
 			draw_command_buffers[i] = graphics_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -169,7 +202,7 @@ class App : public VKEngine::Application{
 
 		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
 			graphics_queue->beginCommandBuffer(draw_command_buffers[i]);
-			render_pass_BI.framebuffer = front_framebuffer->framebuffers[i];
+			render_pass_BI.framebuffer = framebuffers[i];
 			VkViewport viewport = infos::viewport(static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f);
 			VkRect2D scissor = infos::rect2D(width, height, 0, 0);
 			vkCmdBeginRenderPass(draw_command_buffers[i], &render_pass_BI, VK_SUBPASS_CONTENTS_INLINE);
@@ -184,6 +217,30 @@ class App : public VKEngine::Application{
 			vkCmdEndRenderPass(draw_command_buffers[i]);
 			graphics_queue->endCommandBuffer(draw_command_buffers[i]);
 		}	
+	}
+
+	void cleanupRenderObjects(){
+		VkDevice device = VkDevice(*context);
+		if(render_object.descriptor_set != VK_NULL_HANDLE)
+			render_object.program->releaseDescriptorSet(&render_object.descriptor_set);
+		render_object.program = nullptr;
+		render_object.vbo->destroy();
+		render_object.ibo->destroy();
+		delete render_object.vbo;
+		delete render_object.ibo;
+		LOG("cleanup Render objects\n");
+	}
+
+	void cleanupPrograms(){
+		LOG("cleanup Programs\n");
+		for(auto &program : programs){
+			program.second->destroy();
+		}
+	}
+
+	void cleanup(){
+		cleanupRenderObjects();
+		cleanupPrograms();
 	}
 
 	public:

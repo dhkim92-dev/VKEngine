@@ -140,7 +140,6 @@ namespace VKEngine{
 
 	VkResult SwapChain::queuePresent(VkQueue queue, uint32_t image_index, VkSemaphore wait_semaphore){
 		VkPresentInfoKHR present_info = {};
-		LOG("image index : %d\n", image_index);
 		present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		present_info.swapchainCount = 1;
 		VkSwapchainKHR swapchains[] = {swapchain};
