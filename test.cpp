@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -34,12 +35,6 @@ vector<const char *> getRequiredExtensions(  ){
 	glfwTerminate();
 	return extensions;
 }
-
-
-struct Camera{
-	bool updated = true;
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-};
 
 struct Vertex {
 	glm::vec3 pos;
@@ -70,33 +65,28 @@ struct Vertex {
 	}
 };
 
+
 struct Cube{
 	Buffer *vbo;
 	Buffer *ibo;
 }cube;
 
 struct RenderObject{
-	struct Uniform{
-		glm::mat4 model;
-		glm::mat4 view;
-		glm::mat4 projection;
-	}uniform;
-
-	glm::vec3 rotation;
+	glm::mat4 model;
 	Buffer *ubo = nullptr;
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 	Program *program = nullptr;
 };
 
 vector<Vertex> cube_vertices = {
-	{{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}, 
-	{{0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.0f}},
-	{{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.5f, 0.5f}},
-	{{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{0.5f, -0.5f, 0.5f}, {0.0f, 0.5f, 0.5f}},
-	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.0f}}
+	{{-0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, 
+	{{0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, 0.0f}},
+	{{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f, 0.5f}, {0.0f, 0.5f, 0.5f}},
+	{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{0.5f, -0.5f, -0.5f}, {0.0f, 0.5f, 0.5f}},
+	{{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.0f}}
 };
 
 vector<uint16_t> cube_indices = {
@@ -168,7 +158,6 @@ class App : public VKEngine::Application{
 		for(uint32_t i = 0 ; i < nr_cubes ; ++i){
 			RenderObject object;
 			object.program = programs["cube"];
-			object.rotation = 
 		}
 `
 		render_object.program = programs["triangle"];
@@ -206,8 +195,8 @@ class App : public VKEngine::Application{
 			vkCmdBeginRenderPass(draw_command_buffers[i], &render_pass_BI, VK_SUBPASS_CONTENTS_INLINE);
 			vkCmdSetViewport(draw_command_buffers[i], 0, 1, &viewport);
 			vkCmdSetScissor(draw_command_buffers[i], 0, 1, &scissor);
-			vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, render_object.program->pipeline);
-			VkBuffer buffer[] = {VkBuffer(*render_object.vbo)};
+			vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, render_objects[0].program->pipeline);
+			VkBuffer buffer[] = {VkBuffer(*render_objects[0].vbo)};
 			VkDeviceSize offsets[] = {0};
 			vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, buffer, offsets);
 			vkCmdBindIndexBuffer(draw_command_buffers[i], VkBuffer(*render_object.ibo), 0, VK_INDEX_TYPE_UINT16);

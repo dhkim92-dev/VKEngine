@@ -5,10 +5,14 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <glm/glm.hpp>
 #if defined(GLFW_INCLUDE_VULKAN)	
 #include <GLFW/glfw3.h>
 #endif
 #include "vk_core.h"
+#include "tools.h"
+
+using namespace glm;
 
 namespace VKEngine{
 	
@@ -28,8 +32,6 @@ namespace VKEngine{
 		CommandQueue *graphics_queue, *compute_queue;
 		SwapChain swapchain;
 		VkPipelineCache cache;
-		//Framebuffer *front_framebuffer;
-		//VkFormat depth_format;
 		VkGraphicsPipelineCreateInfo graphics_pipeline_CI_preset;
 		VkSubmitInfo render_SI;
 		VkPipelineStageFlags submit_pipeline_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -37,13 +39,13 @@ namespace VKEngine{
 		ImageAttachment color_attachment, depth_attachment;
 		VkRenderPass render_pass = VK_NULL_HANDLE;
 		vector<VkFramebuffer> framebuffers;
-		
+		//Camera camera(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f));	
+		GraphicTools::Camera camera;
 		struct Semaphores
 		{
 			VkSemaphore present_complete;
 			VkSemaphore render_complete;	
 		}semaphores;
-		
 
 		uint32_t current_frame_index = 0;
 		public :
@@ -60,6 +62,7 @@ namespace VKEngine{
 		protected :
 		virtual void destroy();
 		virtual void initWindow(){LOG("Application::initWindow()\n");};
+		virtual void setupCamera();
 		virtual void createSurface(){LOG("Application::initSurface()\n");};
 		virtual void createContext();
 		virtual void mainLoop(){};

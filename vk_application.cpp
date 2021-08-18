@@ -11,8 +11,7 @@ namespace VKEngine{
 		uint32_t _height, uint32_t _width, 
 		const vector<const char *> _instance_extension_names,
 		const vector<const char *> _device_extension_names,
-		const vector<const char *> _validation_names)
-	{
+		const vector<const char *> _validation_names){
 		LOG("application create called!\n");
 		instance_extension_names.resize(_instance_extension_names.size());
 		device_extension_names.resize(_device_extension_names.size());
@@ -23,6 +22,7 @@ namespace VKEngine{
 		height = _height;
 		width = _width;
 		engine = new Engine(app_name, engine_name, instance_extension_names, validation_names);
+		camera.init( glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f) );
 	}	
 
 	Application::~Application(){
@@ -45,13 +45,18 @@ namespace VKEngine{
 		setupSubmitInfo();
 	}
 
-	void Application::initSwapchain(){
-		swapchain.connect(engine, context, surface);
-	}
 
 	void Application::createContext(){
 		VkInstance instance = VkInstance(*engine);
 		context = new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
+	}	
+	
+	void Application::initSwapchain(){
+		swapchain.connect(engine, context, surface);
+	}
+
+	void Application::setupCamera(){
+		
 	}
 
 	void Application::setupSwapchain(){
