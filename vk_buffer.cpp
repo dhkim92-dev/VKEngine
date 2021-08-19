@@ -30,10 +30,11 @@ namespace VKEngine{
 		buffer_CI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		VK_CHECK_RESULT( vkCreateBuffer(device, &buffer_CI, nullptr, &buffer) );
 		allocate(0, _size);
-		bind(0);
 		if(ptr != nullptr){
 			copyFrom(ptr, size);
 		}
+		setupDescriptor(0, _size);
+		bind(0);
 	}
 
 	Buffer::~Buffer(){

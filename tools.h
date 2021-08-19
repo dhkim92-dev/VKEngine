@@ -50,7 +50,7 @@ public :
 
 	Camera(glm::vec3 _position, glm::vec3 target){
 		init(_position, target);
-		updateViewMatrix();
+		//updateViewMatrix();
 	}
 
 	Camera(){};

@@ -21,15 +21,14 @@ namespace VKEngine
 		VkBufferUsageFlags usage;
 		VkMemoryRequirements memory_requirements;
 		VkMemoryPropertyFlags memory_properties;
-		VkDescriptorBufferInfo descriptor;
 
 		public :
 		void *data = nullptr;
+		VkDescriptorBufferInfo descriptor;
 
 		private :
 		void allocate(VkDeviceSize offset = 0, VkDeviceSize size = 0);
 		void bind(VkDeviceSize offset=0);
-		void setupDescriptor(VkDeviceSize offset=0, VkDeviceSize size =VK_WHOLE_SIZE);
 		public:
 		Buffer();
 		Buffer(Context *_context, 
@@ -44,10 +43,11 @@ namespace VKEngine
 					VkDeviceSize _size,
 					void *ptr=nullptr
 					);
-		void map(VkDeviceSize offset, VkDeviceSize size);
+		void map(VkDeviceSize offset = 0 , VkDeviceSize size = VK_WHOLE_SIZE);
 		void unmap();
 		void flush(VkDeviceSize offset, VkDeviceSize size);
 		void invalidate(VkDeviceSize offset, VkDeviceSize size);
+		void setupDescriptor(VkDeviceSize offset, VkDeviceSize size);
 		void copyTo(void* dst, VkDeviceSize size = VK_WHOLE_SIZE);
 		void copyFrom(void* src, VkDeviceSize size = VK_WHOLE_SIZE);
 		void barrier(VkCommandBuffer command_buffer, VkAccessFlags src_access, VkAccessFlags dst_access, VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage);

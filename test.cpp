@@ -9,6 +9,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <chrono>
 
 #ifndef GLFW_INCLUDE_VULKAN
 #define GLFW_INCLUDE_VULKAN 1
@@ -65,20 +66,24 @@ struct Vertex {
 	}
 };
 
-
 struct Cube{
 	Buffer *vbo;
 	Buffer *ibo;
 }cube;
 
 struct RenderObject{
-	glm::mat4 model;
+	struct {
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	}matices;
 	Buffer *ubo = nullptr;
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 	Program *program = nullptr;
 };
 
 vector<Vertex> cube_vertices = {
+	
 	{{-0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, 
 	{{0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, 0.0f}},
 	{{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
@@ -87,9 +92,22 @@ vector<Vertex> cube_vertices = {
 	{{0.5f, -0.5f, -0.5f}, {0.0f, 0.5f, 0.5f}},
 	{{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
 	{{-0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.0f}}
-};
+	
+	/*
+	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
+	*/
+	};
 
 vector<uint16_t> cube_indices = {
+	
 	0,1,5,
 	5,4,0,
 	1,2,5,
@@ -102,6 +120,9 @@ vector<uint16_t> cube_indices = {
 	7,6,2,
 	7,3,0,
 	0,4,7
+	
+    /*0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4*/
 };
 
 class App : public VKEngine::Application{
@@ -129,6 +150,7 @@ class App : public VKEngine::Application{
 		while(!glfwWindowShouldClose(window)){
 			glfwPollEvents();
 			draw();
+			updateUniforms();
 		}
 		cleanup();
 		glfwDestroyWindow(window);
@@ -140,38 +162,59 @@ class App : public VKEngine::Application{
 	}
 
 	void preparePrograms(){
-		LOG("prepare Programs start\n");
+		LOG("-------------Test::preparePrograms() start------------------------\n");
 		Program *program = new Program(context);
 		program->attachShader("./shaders/cubes/cube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		program->attachShader("./shaders/cubes/cube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		program->setupDescriptorSetLayout({});
+		program->setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1)
+		});
+		program->createDescriptorPool({
+			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
+		});
 		auto attributes = Vertex::vertexInputAttributes();
 		auto bindings = Vertex::vertexInputBinding();
 		program->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
 		program->build(render_pass, cache);
 		programs.insert({"cube", program});
-		LOG("prepare Programs end\n");
+		LOG("-------------Test::preparePrograms() end------------------------\n");
 	}
 
 	void prepareRenderObjects(){
+		LOG("-----------------------Test::prepareRenderObjects() start-----------------------\n");
 		uint32_t nr_cubes = 1;
-		for(uint32_t i = 0 ; i < nr_cubes ; ++i){
-			RenderObject object;
-			object.program = programs["cube"];
-		}
-`
-		render_object.program = programs["triangle"];
+		uint32_t sz_mvp = sizeof(render_objects[0].matices);	
 		size_t sz_vertex = sizeof(Vertex) * cube_vertices.size();
-		size_t sz_indices = sizeof(uint16_t) * cube_indices.size();
+		size_t sz_index = sizeof(uint16_t) * cube_indices.size();
+		render_objects.resize(nr_cubes);
+		LOG("sz_mvp : %d\nsz_vertex : %d\nsz_index: % d\n", sz_mvp, sz_vertex, sz_index);
+
+		LOG("descriptorSet : %p \n", render_objects[0].descriptor_set);
+		for(uint32_t i = 0 ; i < nr_cubes ; ++i){
+			render_objects[i].program = programs["cube"];
+			render_objects[i].matices.model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0, 0.0f));
+			render_objects[i].matices.view = camera.matrices.view;
+			render_objects[i].matices.proj = camera.matrices.proj;
+			render_objects[i].ubo = new Buffer(context, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sz_mvp, &render_objects[i].matices);
+			render_objects[i].program->allocDescriptorSet(&render_objects[i].descriptor_set, 0);
+		}
+		LOG("descriptorSet : %p \n", render_objects[0].descriptor_set);
+		writeDescriptors();
+		LOG("index buffer object : %p \n", cube.ibo);
 		cube.vbo = new Buffer( context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT| VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_vertex, nullptr);
-		cube.ibo = new Buffer(context, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_indices , nullptr);
+		cube.ibo = new Buffer(context, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_index , nullptr);
 		graphics_queue->enqueueCopy(cube_vertices.data(), cube.vbo, 0, 0, sz_vertex);
-		graphics_queue->enqueueCopy(cube_indices.data(), cube.ibo, 0, 0, sz_indices);
+		graphics_queue->enqueueCopy(cube_indices.data(), cube.ibo, 0, 0, sz_index);
+
+		LOG("index buffer object : %p \n", cube.ibo);
+		LOG("Index Buffer Object address : %p \n", VkBuffer(*cube.ibo));
+		LOG("-----------------------Test::prepareRenderObjects() end-----------------------\n");
 	}
 
 	void prepareCommandBuffer(){
 		std::array<VkClearValue, 2> clear_values{};
-		clear_values[0].color = {{0.0f, 1.0f, 0.0f, 1.0f}};
+		clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 		clear_values[1].depthStencil = {1.0f, 0};
 		draw_command_buffers.resize(swapchain.buffers.size());
 		
@@ -196,11 +239,18 @@ class App : public VKEngine::Application{
 			vkCmdSetViewport(draw_command_buffers[i], 0, 1, &viewport);
 			vkCmdSetScissor(draw_command_buffers[i], 0, 1, &scissor);
 			vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, render_objects[0].program->pipeline);
-			VkBuffer buffer[] = {VkBuffer(*render_objects[0].vbo)};
+			VkBuffer vertex_buffer[] = {VkBuffer(*cube.vbo)};
+			VkBuffer indices_buffer[] = {VkBuffer(*cube.ibo)};
 			VkDeviceSize offsets[] = {0};
-			vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, buffer, offsets);
-			vkCmdBindIndexBuffer(draw_command_buffers[i], VkBuffer(*render_object.ibo), 0, VK_INDEX_TYPE_UINT16);
-			vkCmdDrawIndexed(draw_command_buffers[i], static_cast<uint32_t>(render_object.indices.size()), 1, 0, 0, 0);
+			vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, vertex_buffer, offsets);
+			vkCmdBindIndexBuffer(draw_command_buffers[i], VkBuffer(*cube.ibo), 0, VK_INDEX_TYPE_UINT16);
+			vkCmdBindDescriptorSets(draw_command_buffers[i], 
+									VK_PIPELINE_BIND_POINT_GRAPHICS,
+									render_objects[0].program->pipeline_layout, 
+									0, 
+									1, &render_objects[0].descriptor_set,
+									0, nullptr);
+			vkCmdDrawIndexed(draw_command_buffers[i], static_cast<uint32_t>(cube_indices.size()), 1, 0, 0, 0);
 			vkCmdEndRenderPass(draw_command_buffers[i]);
 			graphics_queue->endCommandBuffer(draw_command_buffers[i]);
 		}	
@@ -208,13 +258,12 @@ class App : public VKEngine::Application{
 
 	void cleanupRenderObjects(){
 		VkDevice device = VkDevice(*context);
-		if(render_object.descriptor_set != VK_NULL_HANDLE)
-			render_object.program->releaseDescriptorSet(&render_object.descriptor_set);
-		render_object.program = nullptr;
-		render_object.vbo->destroy();
-		render_object.ibo->destroy();
-		delete render_object.vbo;
-		delete render_object.ibo;
+		if(render_objects[0].descriptor_set != VK_NULL_HANDLE)
+			render_objects[0].program->releaseDescriptorSet(&render_objects[0].descriptor_set);
+		render_objects[0].program = nullptr;
+
+		delete cube.vbo;
+		delete cube.ibo;
 		LOG("cleanup Render objects\n");
 	}
 
@@ -228,6 +277,31 @@ class App : public VKEngine::Application{
 	void cleanup(){
 		cleanupRenderObjects();
 		cleanupPrograms();
+	}
+
+	void writeDescriptors(){
+		LOG("Test::writeDescriptors() start \n");
+		for(auto &render_object : render_objects){
+			render_object.program->uniformUpdate(
+				render_object.descriptor_set,
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0,
+				&render_object.ubo->descriptor, nullptr
+			);
+		}
+		LOG("Test::writeDescriptors() end \n");
+	}
+
+	void updateUniforms(){
+		static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		for(auto &obj : render_objects){
+			obj.matices.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));//glm::rotate(obj.matices.model, glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			obj.matices.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));//camera.matrices.view;
+			obj.matices.proj = glm::perspective(glm::radians(45.0f), width / (float)height, 0.1f, 10.0f);//camera.matrices.proj;
+			obj.matices.proj[1][1] *= -1;
+			obj.ubo->copyFrom(&obj.matices, sizeof(obj.matices));
+		}
 	}
 
 	public:
@@ -257,6 +331,5 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	};
 
-	
 	return 0;
 }

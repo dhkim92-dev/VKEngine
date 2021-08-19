@@ -62,7 +62,8 @@ namespace VKEngine{
 	}
 
 	VkResult Program::allocDescriptorSet(VkDescriptorSet *descriptor_set, uint32_t set_idx, uint32_t nr_alloc){
-		assert(descriptor_pool != VK_NULL_HANDLE);
+		LOG("descriptor pool : %p\n", descriptors.pool);
+		assert(descriptor_pool == VK_NULL_HANDLE);
 		VkDescriptorSetAllocateInfo descriptor_AI = infos::descriptorSetAllocateInfo(descriptors.pool, &descriptors.layouts[set_idx], nr_alloc);
 		return vkAllocateDescriptorSets(device, &descriptor_AI, descriptor_set);
 	}
@@ -72,7 +73,11 @@ namespace VKEngine{
 	}
 
 	void Program::uniformUpdate( VkDescriptorSet descriptor_set, VkDescriptorType type, uint32_t binding_idx, VkDescriptorBufferInfo *buffer_info, VkDescriptorImageInfo *image_info){
-		VkWriteDescriptorSet write_info = infos::writeDescriptorSet( descriptor_set, type, binding_idx, buffer_info, image_info);
+		LOG("Program::uniformUpdate\n");
+		VkWriteDescriptorSet write_info = infos::writeDescriptorSet( descriptor_set, type, 
+																	 binding_idx, 
+																	buffer_info, 
+																	image_info);
 		vkUpdateDescriptorSets(device, 1, &write_info, 0, nullptr);
 	}
 
