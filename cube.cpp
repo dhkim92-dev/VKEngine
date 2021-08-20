@@ -182,6 +182,31 @@ class App : public VKEngine::Application{
 
 	void prepareRenderObjects(){
 		LOG("-----------------------Test::prepareRenderObjects() start-----------------------\n");
+		uint32_t nr_cubes = 1;
+		uint32_t sz_mvp = sizeof(render_objects[0].matices);	
+		size_t sz_vertex = sizeof(Vertex) * cube_vertices.size();
+		size_t sz_index = sizeof(uint16_t) * cube_indices.size();
+		render_objects.resize(nr_cubes);
+		LOG("sz_mvp : %d\nsz_vertex : %d\nsz_index: % d\n", sz_mvp, sz_vertex, sz_index);
+
+		LOG("descriptorSet : %p \n", render_objects[0].descriptor_set);
+		for(uint32_t i = 0 ; i < nr_cubes ; ++i){
+			render_objects[i].program = programs["cube"];
+			render_objects[i].matices.model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0, 0.0f));
+			render_objects[i].matices.view = camera.matrices.view;
+			render_objects[i].matices.proj = camera.matrices.proj;
+			render_objects[i].ubo = new Buffer(context, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sz_mvp, &render_objects[i].matices);
+			render_objects[i].program->allocDescriptorSet(&render_objects[i].descriptor_set, 0);
+		}
+		LOG("descriptorSet : %p \n", render_objects[0].descriptor_set);
+		writeDescriptors();
+		LOG("index buffer object : %p \n", cube.ibo);
+		cube.vbo = new Buffer( context, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT| VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_vertex, nullptr);
+		cube.ibo = new Buffer(context, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sz_index , nullptr);
+		graphics_queue->enqueueCopy(cube_vertices.data(), cube.vbo, 0, 0, sz_vertex);
+		graphics_queue->enqueueCopy(cube_indices.data(), cube.ibo, 0, 0, sz_index);
+
 		LOG("index buffer object : %p \n", cube.ibo);
 		LOG("Index Buffer Object address : %p \n", VkBuffer(*cube.ibo));
 		LOG("-----------------------Test::prepareRenderObjects() end-----------------------\n");
