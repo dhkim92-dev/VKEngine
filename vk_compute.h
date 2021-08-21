@@ -18,12 +18,15 @@ struct KernelCreateInfo{
 	VkSpecializationInfo specialized_info;
 };
 
-struct Kernel{
+class Kernel{
 	private :
 	Context *context = nullptr;
 	VkDevice device = VK_NULL_HANDLE;
 	public : 
-	VkDescriptorSet descriptor_set;
+	struct{
+		VkDescriptorSetLayout layout;
+		VkDescriptorSet set;
+	}descriptors;
 	VkPipelineLayout layout;
 	VkPipeline pipeline;
 	VkShaderModule module;
@@ -34,33 +37,13 @@ struct Kernel{
 	Kernel(Context *_context, const string _file_path);
 	~Kernel();
 	void create(Context *_context, const string _file_path);
+	void build(VkPipelineCache cache);
 	void loadShaderModule();
 	void destroyShaderModule();
 	void setupDescriptorSet();
-	void setupDescriptorSetLayout();
+	void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> &bindings);
 	void updateDescriptors();
 	void destroy();
 };
-
-class ComputeProgram{
-	private :
-	VkDevice device = VK_NULL_HANDLE;
-	Context *context = nullptr;
-	VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-	unordered_map<string, Kernel> kernels;
-	public :
-	ComputeProgram();
-	ComputeProgram(Context *_context);
-	void createDescriptorPool();
-	void attachKernel();
-	void allocateDescriptorSet(string kernel_name);
-	void build();
-	void destroy();
-
-	Kernel operator [](string kernel_name) {
-		return kernels[kernel_name.c_str()];
-	}
-};
-
 }
 #endif
