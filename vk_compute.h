@@ -25,7 +25,6 @@ class Kernel{
 	public : 
 	struct{
 		VkDescriptorSetLayout layout;
-		VkDescriptorSet set;
 	}descriptors;
 	VkPipelineLayout layout;
 	VkPipeline pipeline;
@@ -40,10 +39,10 @@ class Kernel{
 	void build(VkPipelineCache cache);
 	void loadShaderModule();
 	void destroyShaderModule();
-	void setupDescriptorSet();
 	void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> &bindings);
-	void updateDescriptors();
+	void setKernelArgs(vector<VkWriteDescriptorSet> write_descriptors);
 	void destroy();
 };
+
 }
 #endif
