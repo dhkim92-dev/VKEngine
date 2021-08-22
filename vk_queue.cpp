@@ -129,6 +129,7 @@ namespace VKEngine{
 	void CommandQueue::waitFence(){
 		VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX));
 		vkDestroyFence(device, fence, nullptr);
+		fence = VK_NULL_HANDLE;
 	}
 
 	void CommandQueue::enqueueCopy(Buffer *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size){
@@ -177,6 +178,7 @@ namespace VKEngine{
 		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		vkCmdBindPipeline(command_buffer, point, pipeline);
 		vkCmdBindDescriptorSets(command_buffer, point, layout, 0, 1, &descriptor_set, 0, nullptr);
+		LOG("dispatch size : %d %d %d\n", gw.x, gw.y, gw.z);
 		vkCmdDispatch(command_buffer, gw.x, gw.y, gw.z);
 		endCommandBuffer(command_buffer);
 		submit_info.commandBufferCount =1;

@@ -80,6 +80,7 @@ void Kernel::allocateDescriptorSet(VkDescriptorPool descriptor_pool){
 void Kernel::destroy(){
 	vkDestroyDescriptorSetLayout(device, descriptors.layout, nullptr);
 	vkDestroyPipelineLayout(device, layout, nullptr);
+	vkDestroyPipeline(device, pipeline, nullptr);
 	destroyShaderModule();
 }
 

@@ -18,17 +18,25 @@ layout (binding=3) buffer Shape{
 };
 
 void main(){
+	// dispatch size M, N
+	// 0 <= gid.x < M
+	// 0 <= gid.y < N
+	// gid.y = nr_cols;
+	// gid.x = nr_rows;
+
 	uvec2 gid = gl_GlobalInvocationID.xy;
 	float value = 0.0f;
+	uint M = shape.x;
+	uint N = shape.y;
+	uint K = shape.z;
+	uint target_index  = gid.x * N + gid.y;
 
 	if(gid.x >= gl_NumWorkGroups.x || gid.y >= gl_NumWorkGroups.y){
 		return ;
 	}
 
-	uint target_index = gid.y * gl_NumWorkGroups.x + gid.x;
-	for(uint i = 0 ; i < shape.z ; ++i){
-		//value += m1[i] * m2[i];
-		value = i * 1.0f;
+	for(uint i = 0 ; i < K ; ++i){
+		value += m1[K * gid.x + i] * m2[ i * N + gid.y];
 	}
 	m3[target_index] = value;
 }

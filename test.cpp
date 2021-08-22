@@ -107,6 +107,7 @@ class MatmulTest{
 	}
 
 	void matmul(float *m1, float* m2, uint32_t M, uint32_t N, uint32_t K){
+		LOG("matmul called\n");
 		float *output = new float[M*N];
 
 		for(uint32_t i = 0 ; i < M*N ; ++i){
@@ -165,6 +166,7 @@ class MatmulTest{
 	}
 
 	void batch(){
+		
 		float mat1[9] = {
 			1.0f, 2.0f ,3.0f,
 			2.0f, 3.0f, 4.0f,
@@ -177,6 +179,32 @@ class MatmulTest{
 		};
 
 		matmul(mat1, mat2, 3, 3, 3);
+				
+		float mat3[6] = {
+			// r x c = 3 x 2
+			1.0f, 1.0f,
+			2.0f, 2.0f,
+			3.0f, 3.0f
+			//in GPU
+		};
+
+		float mat4[8] = {
+			// r x c = 2 x 4
+			0.0f, 0.0f, 0.0f, 0.0f, 
+			1.0f, 1.0f, 1.0f, 1.0f 
+		};
+
+		// M N K = 3, 4, 2
+
+		/*
+		answer
+		r x c = 3 x 4
+		1.0f, 1.0f, 1.0f, 1.0f,
+		2.0f, 2.0f, 2.0f, 2.0f,
+		3.0,f 3.0f, 3.0f, 3.0f 
+		*/
+		
+		matmul(mat3, mat4, 3,4, 2);
 	}
 	
 	void run(){
@@ -191,10 +219,12 @@ class MatmulTest{
 
 	~MatmulTest(){
 		for(auto &iter : kernels){
-			vkFreeDescriptorSets(device, descriptor_pool, 1, &iter.second->descriptors.set);
+			//vkFreeDescriptorSets(device, descriptor_pool, 1, &iter.second->descriptors.set);
+			//iter.second->descriptors.set = VK_NULL_HANDLE;
 			iter.second->destroy();
 		}
-
+		vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+		vkDestroyPipelineCache(device, cache, nullptr);
 		delete command_queue;
 		delete context;
 	}
