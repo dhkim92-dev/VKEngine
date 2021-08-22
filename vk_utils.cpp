@@ -115,6 +115,7 @@ namespace VKEngine{
 	}
 
 	VkShaderModule loadShader(const string &file_path, VkDevice device){
+		LOG("read file path : %s\n", file_path.c_str());
 		VkShaderModule shader_module = VK_NULL_HANDLE;
 		std::ifstream is(file_path, std::ios::binary | std::ios::in | std::ios::ate);
 			if (is.is_open())		{
@@ -123,7 +124,6 @@ namespace VKEngine{
 				char* shader_code = new char[size];
 				is.read(shader_code, size);
 				is.close();
-
 				LOG("shader read info : %s\n", file_path.c_str());
 				assert(size > 0);
 				VkShaderModuleCreateInfo moduleCreateInfo{};

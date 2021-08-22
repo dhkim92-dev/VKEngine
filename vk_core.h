@@ -6,8 +6,10 @@
 #include "vk_swapchain.h"
 // #include "vk_framebuffer.h"
 #include "vk_program.h"
+#include "vk_shader.h"
 #include "vk_buffer.h"
 #include "vk_utils.h"
 #include "vk_infos.h"
 #include "vk_image.h"
+#include "vk_compute.h"
 #endif

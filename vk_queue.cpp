@@ -17,9 +17,12 @@ namespace VKEngine{
 
 	CommandQueue::CommandQueue(Context * _context, VkQueueFlagBits _type){
 		context = _context;
-		device = VkDevice(*_context);
+		device = VkDevice(*context);
 		type = _type;
 		pool = context->getCommandPool(type);
+		LOG("CommandQueue::CommandQueue context : %p \n", context);
+		LOG("CommandQueue::CommandQueue device : %p \n", device);
+		LOG("CommandQueue::CommandQueue pool : %p \n", pool);
 		createCommandQueue();
 	}
 
@@ -92,29 +95,32 @@ namespace VKEngine{
 			command_buffer_SI.signalSemaphoreCount = 1;
 		}
 
-		if(fenced){
+		if(fenced == VK_TRUE){
 			resetFence();
 			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &command_buffer_SI, fence));
 			waitFence();
 		}else{
-			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &command_buffer_SI, fence));
+			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &command_buffer_SI, VK_NULL_HANDLE));
 		}
 		VK_CHECK_RESULT(vkQueueWaitIdle(queue));
 	}
 
 	void CommandQueue::submit(VkSubmitInfo submit_info, VkBool32 fenced){
-		if(fenced){
+		if(fenced == VK_TRUE){
+			LOG("with fence!\n");
 			resetFence();
+			LOG("with fence : %p\n", fence);
 			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submit_info, fence));
 			waitFence();
 		}else{
 			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE));
 		}
+		vkQueueWaitIdle(queue);
 	}
 
 	void CommandQueue::resetFence(){
 		if(fence == VK_NULL_HANDLE){
-			VkFenceCreateInfo fence_CI = infos::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+			VkFenceCreateInfo fence_CI = infos::fenceCreateInfo(0);
 			VK_CHECK_RESULT(vkCreateFence(device, &fence_CI, nullptr, &fence));
 		}
 		VK_CHECK_RESULT(vkResetFences(device, 1, &fence));
@@ -122,6 +128,7 @@ namespace VKEngine{
 
 	void CommandQueue::waitFence(){
 		VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX));
+		vkDestroyFence(device, fence, nullptr);
 	}
 
 	void CommandQueue::enqueueCopy(Buffer *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size){
@@ -157,6 +164,25 @@ namespace VKEngine{
 		enqueueCopy(src, &staging, src_offset, dst_offset, size);
 		staging.copyTo(dst, size);
 		staging.destroy();
-	}	
+	}
+
+	void CommandQueue::ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkBool32 fenced)
+	{
+		VkSubmitInfo submit_info = infos::submitInfo();
+		VkPipeline pipeline = kernel->pipeline;
+		VkPipelineLayout layout = kernel->layout;
+		VkPipelineBindPoint point = VK_PIPELINE_BIND_POINT_COMPUTE;
+		VkDescriptorSet descriptor_set = kernel->descriptors.set;
+		VkCommandBuffer command_buffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		vkCmdBindPipeline(command_buffer, point, pipeline);
+		vkCmdBindDescriptorSets(command_buffer, point, layout, 0, 1, &descriptor_set, 0, nullptr);
+		vkCmdDispatch(command_buffer, gw.x, gw.y, gw.z);
+		endCommandBuffer(command_buffer);
+		submit_info.commandBufferCount =1;
+		submit_info.pCommandBuffers = &command_buffer;
+		submit(submit_info, fenced);
+		free(command_buffer);
+	}
 }
 #endif

@@ -14,8 +14,14 @@ namespace VKEngine{
 
 struct KernelCreateInfo{
 	string file_path;
-
 	VkSpecializationInfo specialized_info;
+};
+
+struct KernelArgs{
+	uint32_t binding_idx;
+	VkDescriptorType type;
+	VkDescriptorBufferInfo *buffer_info = nullptr;
+	VkDescriptorImageInfo *image_info = nullptr;
 };
 
 class Kernel{
@@ -24,11 +30,12 @@ class Kernel{
 	VkDevice device = VK_NULL_HANDLE;
 	public : 
 	struct{
-		VkDescriptorSetLayout layout;
+		VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+		VkDescriptorSet set = VK_NULL_HANDLE;
 	}descriptors;
-	VkPipelineLayout layout;
-	VkPipeline pipeline;
-	VkShaderModule module;
+	VkPipelineLayout layout = VK_NULL_HANDLE;
+	VkPipeline pipeline = VK_NULL_HANDLE;
+	VkShaderModule module = VK_NULL_HANDLE;
 	string file_path;
 
 	public : 
@@ -39,10 +46,10 @@ class Kernel{
 	void build(VkPipelineCache cache);
 	void loadShaderModule();
 	void destroyShaderModule();
-	void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> &bindings);
-	void setKernelArgs(vector<VkWriteDescriptorSet> write_descriptors);
+	void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings);
+	void allocateDescriptorSet(VkDescriptorPool pool);
+	void setKernelArgs(vector<KernelArgs> args);
 	void destroy();
 };
-
 }
 #endif

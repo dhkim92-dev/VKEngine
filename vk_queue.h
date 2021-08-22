@@ -10,10 +10,18 @@
 #include "vk_image.h"
 #include "vk_buffer.h"
 #include "vk_infos.h"
+#include "vk_compute.h"
 
 using namespace std;
 
 namespace VKEngine{
+
+	struct WorkGroupSize{
+		uint32_t x=1;
+		uint32_t y=1;
+		uint32_t z=1;
+	};
+
 	class CommandQueue{
 		public:
 		private:
@@ -42,8 +50,10 @@ namespace VKEngine{
 		VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage=0x0);
 		void beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage=0x0);
 		void endCommandBuffer(VkCommandBuffer command_buffer);
-		void submit(VkCommandBuffer command_buffer, VkSemaphore *wait, VkSemaphore *signal, VkPipelineStageFlags *dst_stage, VkBool32 fenced = false);
+		void submit(VkCommandBuffer command_buffer, VkSemaphore *wait, VkSemaphore *signal, VkPipelineStageFlags *dst_stage, VkBool32 fenced = VK_FALSE);
 		void submit(VkSubmitInfo submit_info, VkBool32 fenced = false);
+		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, WorkGroupSize lw, VkBool32 fenced = false);
+		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkBool32 fenced = false);
 		void free(VkCommandBuffer command_buffer);
 		void resetFence();
 		void waitFence();
