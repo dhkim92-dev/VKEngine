@@ -120,15 +120,16 @@ class App : public VKEngine::Application{
 			Buffer raw;
 			Buffer e_test;
 			Buffer v_test;
+			Buffer c_test;
+			Buffer vertices;
+			Buffer indices;
 		}device;
 
 		void destroy(){
 			host.raw.destroy();
-			device.volume_test.destroy();
-			device.edge_test.destroy();
-			device.scan_result.destroy();
-			device.ibo.destroy();
-			device.vbo.destroy();
+			device.raw.destroy();
+			device.e_test.destroy();
+			device.v_test.destroy();
 		};
 	}volume;
 
@@ -167,24 +168,20 @@ class App : public VKEngine::Application{
 	void prepareComputeBuffers(){
 		size_t volume_size = Volume.size.x * Volume.size.y * Volume.size.z;
 		volume.host.raw.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-						 	   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-						  	   volume_size * sizeof(float),Volume.raw);
-		volume.device.raw.create(context, VK_BUFFER_USAGE_STORAGE | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+						 	   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+						  	   volume_size * sizeof(float), Volume.data);
+		volume.device.raw.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 								 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(float), nullptr);
 		volume.device.v_test.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(bool), nullptr);
 	}
 
 	void prepareComputeKernels(){
-		VkDescriptorPoolCreateInfo pool_info = infos::descriptorPoolCreateInfo(
-			{
-				infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2);
-			}
-		);
-
+		VkDevice device = VkDevice(*context);
+		vector<VkDescriptorPoolSize> pool_sizes({infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2)});
+		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo( static_cast<uint32_t>(pool_sizes.size()), pool_sizes.data(), 1 );
+		VK_CHECK_RESULT(vkCreateDescriptorPool( device,  &pool_CI, nullptr, &compute.pool));
 		compute.volume_test.create(context, "shaders/marching_cube/volume_test.comp.spv");
-		compute.volume_test.
-		compute.volume_test.build();
 	}
 
 	void buildComputeCommandBuffers(){
@@ -192,22 +189,22 @@ class App : public VKEngine::Application{
 	}
 	
 	void preparePrograms(){
-		LOG("-------------Test::preparePrograms() start------------------------\n");
-		Program *program = new Program(context);
-		program->attachShader("./shaders/cubes/cube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		program->attachShader("./shaders/cubes/cube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		program->setupDescriptorSetLayout({
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1)
-		});
-		program->createDescriptorPool({
-			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
-		});
-		auto attributes = Vertex::vertexInputAttributes();
-		auto bindings = Vertex::vertexInputBinding();
-		program->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
-		program->build(render_pass, cache);
-		programs.insert({"cube", program});
-		LOG("-------------Test::preparePrograms() end------------------------\n");
+		// LOG("-------------Test::preparePrograms() start------------------------\n");
+		// Program *program = new Program(context);
+		// program->attachShader("./shaders/cubes/cube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		// program->attachShader("./shaders/cubes/cube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		// program->setupDescriptorSetLayout({
+		// 	infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1)
+		// });
+		// program->createDescriptorPool({
+		// 	infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
+		// });
+		// auto attributes = Vertex::vertexInputAttributes();
+		// auto bindings = Vertex::vertexInputBinding();
+		// program->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
+		// program->build(render_pass, cache);
+		// programs.insert({"cube", program});
+		// LOG("-------------Test::preparePrograms() end------------------------\n");
 	}
 
 	void prepareRenderObjects(){
