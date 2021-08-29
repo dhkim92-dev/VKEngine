@@ -25,27 +25,24 @@ using namespace VKEngine;
 
 struct {
 	string file_path;
-	struct _shape{
-		uint32_t x;
-		uint32_t y;
-		uint32_t z;
-	}shape;
-	float target_isovalue;
-}VolumeMetaInfo;
+	struct{
+		size_t x,y,z;
+	}size;
+	float isovalue;
+	float *data;
+}Volume;
 
-float* loadVolume(){
-	char *data;
-	std::ifstream is(VolumeMetaInfo.file_path, std::ios::binary | std::ios::in | std::ios::ate);
+void loadVolume(string file_path, size_t x, size_t y, size_t z, void *data){
+	printf("load volume!\n");
+	std::ifstream is(file_path, std::ios::binary | std::ios::in | std::ios::ate);
 	if(is.is_open()){
 		size_t size = is.tellg();
 		assert(size > 0);
 		is.seekg(0, std::ios::beg);
-		char *data = new char[size];
-		is.read(data, size);
+		is.read((char *)data, size);
 	}else{
 		cerr << "fail to read volume data. check it first\n";
 	}	
-	return (float *)data;
 };
 
 vector<const char *> getRequiredExtensions(  ){
@@ -98,7 +95,7 @@ struct RenderObject{
 		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
-	}matices;
+	}matrices;
 	Buffer *ubo = nullptr;
 	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 	Program *program = nullptr;
@@ -112,28 +109,33 @@ class App : public VKEngine::Application{
 
 	vector<RenderObject> render_objects;
 	unordered_map<string, Program*> programs;
-	Kernel volume_test, cube_test, edge_test;
+	Kernel volume_test, ,edge_test, cube_test;
 
-	struct {
+	struct{
 		struct{
 			Buffer raw;
 		}host;
+
 		struct{
-			Buffer volume_test;
-			Buffer edge_test;
-			Buffer scan_result;
-			Buffer ibo;
-			Buffer vbo;
+			Buffer raw;
+			Buffer e_test;
+			Buffer v_test;
 		}device;
+
 		void destroy(){
 			host.raw.destroy();
-			volume_test.destroy();
-			edge_test.destroy();
-			scan_result.destroy();
-			ibo.destroy();
-			vbo.destroy();
+			device.volume_test.destroy();
+			device.edge_test.destroy();
+			device.scan_result.destroy();
+			device.ibo.destroy();
+			device.vbo.destroy();
 		};
 	}volume;
+
+	struct {
+		Kernel volume_test;
+		VkDescriptorPool pool = VK_NULL_HANDLE;
+	}compute;
 
 	protected:
 	
@@ -162,12 +164,31 @@ class App : public VKEngine::Application{
 		render();
 	}
 
-	void prepareVolume(){
-		volume.raw.create(context, VK_BUFFER_USAGE_)
+	void prepareComputeBuffers(){
+		size_t volume_size = Volume.size.x * Volume.size.y * Volume.size.z;
+		volume.host.raw.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+						 	   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+						  	   volume_size * sizeof(float),Volume.raw);
+		volume.device.raw.create(context, VK_BUFFER_USAGE_STORAGE | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+								 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(float), nullptr);
+		volume.device.v_test.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(bool), nullptr);
 	}
 
-	void prepareCompute(){
-		Kernel 
+	void prepareComputeKernels(){
+		VkDescriptorPoolCreateInfo pool_info = infos::descriptorPoolCreateInfo(
+			{
+				infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2);
+			}
+		);
+
+		compute.volume_test.create(context, "shaders/marching_cube/volume_test.comp.spv");
+		compute.volume_test.
+		compute.volume_test.build();
+	}
+
+	void buildComputeCommandBuffers(){
+
 	}
 	
 	void preparePrograms(){
@@ -211,30 +232,29 @@ class App : public VKEngine::Application{
 		}
 		
 		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
-			/*
-			graphics_queue->beginCommandBuffer(draw_command_buffers[i]);
-			render_pass_BI.framebuffer = framebuffers[i];
-			VkViewport viewport = infos::viewport(static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f);
-			VkRect2D scissor = infos::rect2D(width, height, 0, 0);
-			vkCmdBeginRenderPass(draw_command_buffers[i], &render_pass_BI, VK_SUBPASS_CONTENTS_INLINE);
-			vkCmdSetViewport(draw_command_buffers[i], 0, 1, &viewport);
-			vkCmdSetScissor(draw_command_buffers[i], 0, 1, &scissor);
-			vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, render_objects[0].program->pipeline);
-			VkBuffer vertex_buffer[] = {VkBuffer(*cube.vbo)};
-			VkBuffer indices_buffer[] = {VkBuffer(*cube.ibo)};
-			VkDeviceSize offsets[] = {0};
-			vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, vertex_buffer, offsets);
-			vkCmdBindIndexBuffer(draw_command_buffers[i], VkBuffer(*cube.ibo), 0, VK_INDEX_TYPE_UINT16);
-			vkCmdBindDescriptorSets(draw_command_buffers[i], 
-									VK_PIPELINE_BIND_POINT_GRAPHICS,
-									render_objects[0].program->pipeline_layout, 
-									0, 
-									1, &render_objects[0].descriptor_set,
-									0, nullptr);
-			vkCmdDrawIndexed(draw_command_buffers[i], static_cast<uint32_t>(cube_indices.size()), 1, 0, 0, 0);
-			vkCmdEndRenderPass(draw_command_buffers[i]);
-			graphics_queue->endCommandBuffer(draw_command_buffers[i]);
-			*/
+			
+			// graphics_queue->beginCommandBuffer(draw_command_buffers[i]);
+			// render_pass_BI.framebuffer = framebuffers[i];
+			// VkViewport viewport = infos::viewport(static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f);
+			// VkRect2D scissor = infos::rect2D(width, height, 0, 0);
+			// vkCmdBeginRenderPass(draw_command_buffers[i], &render_pass_BI, VK_SUBPASS_CONTENTS_INLINE);
+			// vkCmdSetViewport(draw_command_buffers[i], 0, 1, &viewport);
+			// vkCmdSetScissor(draw_command_buffers[i], 0, 1, &scissor);
+			// vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, render_objects[0].program->pipeline);
+			// VkBuffer vertex_buffer[] = {VkBuffer(*cube.vbo)};
+			// VkBuffer indices_buffer[] = {VkBuffer(*cube.ibo)};
+			// VkDeviceSize offsets[] = {0};
+			// vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, vertex_buffer, offsets);
+			// vkCmdBindIndexBuffer(draw_command_buffers[i], VkBuffer(*cube.ibo), 0, VK_INDEX_TYPE_UINT16);
+			// vkCmdBindDescriptorSets(draw_command_buffers[i], 
+			// 						VK_PIPELINE_BIND_POINT_GRAPHICS,
+			// 						render_objects[0].program->pipeline_layout, 
+			// 						0, 
+			// 						1, &render_objects[0].descriptor_set,
+			// 						0, nullptr);
+			// vkCmdDrawIndexed(draw_command_buffers[i], static_cast<uint32_t>(cube_indices.size()), 1, 0, 0, 0);
+			// vkCmdEndRenderPass(draw_command_buffers[i]);
+			// graphics_queue->endCommandBuffer(draw_command_buffers[i]);
 		}	
 	}
 
@@ -242,6 +262,7 @@ class App : public VKEngine::Application{
 	public:
 	void run(){
 		Application::init();
+		preprareComputeBuffers();
 		preparePrograms();
 		prepareRenderObjects();
 		prepareCommandBuffer();
@@ -258,15 +279,12 @@ int main(int argc, char *argv[])
 	string engine_name = "engine";
 
 	string file_path(argv[1]);
-	int x = atoi(argv[2]);
-	int y = atoi(argv[3]);
-	int z = atoi(argv[4]);
+	size_t x = atoi(argv[2]);
+	size_t y = atoi(argv[3]);
+	size_t z = atoi(argv[4]);
 	float isovalue = atof(argv[5]);
-	VolumeMetaInfo.file_path = file_path;
-	VolumeMetaInfo.shape.x = x;
-	VolumeMetaInfo.shape.y = y;
-	VolumeMetaInfo.shape.z = z;
-	VolumeMetaInfo.target_isovalue = isovalue;
+	Volume = {file_path, {x,y,z}, isovalue};
+	loadVolume(file_path, x,y,z , (void *)Volume.data)
 
 	try {
 		App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
@@ -276,5 +294,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	};
 
+	delete [] Volume.data;
 	return 0;
 }

@@ -2,7 +2,7 @@ CC=g++
 CFLAGS += -std=c++17 -DDEBUG -DVKENGINE_GRAPHICS_MODE -DGLFW_INCLUDE_VULKAN
 LDFLAGS += -lvulkan -ldl -lpthread -lglfw -I/usr/local/include -L/usr/local/lib
 DEPENDENCIES += vk_engine.o vk_context.o vk_utils.o vk_infos.o vk_queue_family.o vk_application.o vk_queue.o vk_swapchain.o vk_buffer.o vk_program.o vk_shader.o vk_compute.o #vk_image.o
-TARGET=cube
+TARGET=test
 
 $(TARGET) : $(DEPENDENCIES)
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cpp $^ $(LDFLAGS)
