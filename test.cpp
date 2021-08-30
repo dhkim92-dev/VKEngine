@@ -24,15 +24,16 @@ using namespace VKEngine;
 
 
 struct {
-	string file_path;
 	struct{
 		size_t x,y,z;
 	}size;
 	float isovalue;
 	float *data;
+	string file_path;
+	uint32_t result;
 }Volume;
 
-void loadVolume(string file_path, size_t x, size_t y, size_t z, void *data){
+void loadVolume(string file_path, void *data){
 	printf("load volume!\n");
 	std::ifstream is(file_path, std::ios::binary | std::ios::in | std::ios::ate);
 	if(is.is_open()){
@@ -109,14 +110,16 @@ class App : public VKEngine::Application{
 
 	vector<RenderObject> render_objects;
 	unordered_map<string, Program*> programs;
-	Kernel volume_test, ,edge_test, cube_test;
+	Kernel volume_test, edge_test, cube_test;
 
 	struct{
 		struct{
 			Buffer raw;
+			Buffer iso_value;
 		}host;
 
 		struct{
+			Buffer iso_value;
 			Buffer raw;
 			Buffer e_test;
 			Buffer v_test;
@@ -127,19 +130,29 @@ class App : public VKEngine::Application{
 
 		void destroy(){
 			host.raw.destroy();
+			host.iso_value.destroy();
 			device.raw.destroy();
-			device.e_test.destroy();
 			device.v_test.destroy();
+			//device.e_test.destroy();
 		};
 	}volume;
 
 	struct {
 		Kernel volume_test;
 		VkDescriptorPool pool = VK_NULL_HANDLE;
+		VkCommandBuffer command_buffer=VK_NULL_HANDLE;
 	}compute;
 
+	public :
+	~App(){
+		VkDevice device = VkDevice(*context);
+		VkCommandPool command_pool = VkCommandPool(*compute_queue);
+		volume.destroy();
+		vkDestroyDescriptorPool(device, compute.pool, nullptr);
+		vkFreeCommandBuffers(device, command_pool, 1, &compute.command_buffer);
+	}
+
 	protected:
-	
 	virtual void initWindow(){
 		LOG("App Init Window\n");
 		glfwInit();
@@ -172,20 +185,53 @@ class App : public VKEngine::Application{
 						  	   volume_size * sizeof(float), Volume.data);
 		volume.device.raw.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 								 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(float), nullptr);
-		volume.device.v_test.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+		volume.device.v_test.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,  
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(bool), nullptr);
+		volume.host.iso_value.create(context, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+									sizeof(float), &Volume.isovalue);
+		volume.host.iso_value.map(0, 4);
+		compute_queue->enqueueCopy( &volume.host.raw, &volume.device.raw, 0, 0, volume_size*sizeof(float) );
 	}
 
 	void prepareComputeKernels(){
 		VkDevice device = VkDevice(*context);
-		vector<VkDescriptorPoolSize> pool_sizes({infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2)});
-		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo( static_cast<uint32_t>(pool_sizes.size()), pool_sizes.data(), 1 );
+		vector<VkDescriptorPoolSize> pool_sizes({
+			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2),
+			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+		});
+		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo( static_cast<uint32_t>(pool_sizes.size()), pool_sizes.data(), 1);
 		VK_CHECK_RESULT(vkCreateDescriptorPool( device,  &pool_CI, nullptr, &compute.pool));
 		compute.volume_test.create(context, "shaders/marching_cube/volume_test.comp.spv");
+		compute.volume_test.setupDescriptorSetLayout(
+			{
+				infos::descriptorSetLayoutBinding( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER , VK_SHADER_STAGE_COMPUTE_BIT,  0),
+				infos::descriptorSetLayoutBinding( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER , VK_SHADER_STAGE_COMPUTE_BIT,  1),
+				infos::descriptorSetLayoutBinding( VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2)
+			}
+		);
+		compute.volume_test.allocateDescriptorSet( compute.pool );
+		cout << "kernel build start\n";
+		compute.volume_test.build(cache);
+		cout << "kernel build done\n";
+		compute.volume_test.setKernelArgs( { 
+			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &volume.device.raw.descriptor, nullptr},
+			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &volume.device.v_test.descriptor, nullptr},
+			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &volume.host.iso_value.descriptor, nullptr}
+		});
+		cout << "prepare compute kernel complete\n";
 	}
 
 	void buildComputeCommandBuffers(){
+		compute.command_buffer = compute_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		compute_queue->beginCommandBuffer(compute.command_buffer);
+		//compute_queue->ndRangeKernel(&compute.volume_test, {256,256,256}, VK_TRUE);
 
+		vkCmdBindPipeline(compute.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute.volume_test.pipeline);
+		vkCmdBindDescriptorSets(compute.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, 
+								compute.volume_test.layout, 
+								0, 1, &compute.volume_test.descriptors.set, 0, nullptr);
+		vkCmdDispatch(compute.command_buffer, Volume.size.x, Volume.size.y, Volume.size.z);
+		compute_queue->endCommandBuffer(compute.command_buffer);
 	}
 	
 	void preparePrograms(){
@@ -211,24 +257,24 @@ class App : public VKEngine::Application{
 	}
 
 	void prepareCommandBuffer(){
-		std::array<VkClearValue, 2> clear_values{};
-		clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-		clear_values[1].depthStencil = {1.0f, 0};
-		draw_command_buffers.resize(swapchain.buffers.size());
+		// std::array<VkClearValue, 2> clear_values{};
+		// clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+		// clear_values[1].depthStencil = {1.0f, 0};
+		// draw_command_buffers.resize(swapchain.buffers.size());
 		
-		VkRenderPassBeginInfo render_pass_BI = infos::renderPassBeginInfo();
-		render_pass_BI.clearValueCount = static_cast<uint32_t>(clear_values.size());
-		render_pass_BI.pClearValues = clear_values.data();
-		render_pass_BI.renderArea.offset = {0,0};
-		render_pass_BI.renderArea.extent.height = height;
-		render_pass_BI.renderArea.extent.width = width;
-		render_pass_BI.renderPass = render_pass;
+		// VkRenderPassBeginInfo render_pass_BI = infos::renderPassBeginInfo();
+		// render_pass_BI.clearValueCount = static_cast<uint32_t>(clear_values.size());
+		// render_pass_BI.pClearValues = clear_values.data();
+		// render_pass_BI.renderArea.offset = {0,0};
+		// render_pass_BI.renderArea.extent.height = height;
+		// render_pass_BI.renderArea.extent.width = width;
+		// render_pass_BI.renderPass = render_pass;
 
-		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
-			draw_command_buffers[i] = graphics_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		}
+		// for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
+		// 	draw_command_buffers[i] = graphics_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		// }
 		
-		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
+		// for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
 			
 			// graphics_queue->beginCommandBuffer(draw_command_buffers[i]);
 			// render_pass_BI.framebuffer = framebuffers[i];
@@ -252,36 +298,90 @@ class App : public VKEngine::Application{
 			// vkCmdDrawIndexed(draw_command_buffers[i], static_cast<uint32_t>(cube_indices.size()), 1, 0, 0, 0);
 			// vkCmdEndRenderPass(draw_command_buffers[i]);
 			// graphics_queue->endCommandBuffer(draw_command_buffers[i]);
-		}	
+		// }	
+	}
+
+	void executeCompute(){
+		LOG("execute Compute\n");
+		memcpy(volume.host.iso_value.data, &Volume.isovalue, sizeof(float));
+		VkSubmitInfo submit_info = infos::submitInfo();
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &compute.command_buffer;
+		vkQueueSubmit(VkQueue(*compute_queue), 1, &submit_info, VK_NULL_HANDLE);
+		vkQueueWaitIdle(VkQueue(*compute_queue));
+		LOG("execute Compute done\n");
+	}
+
+	void copyResult(){
+		size_t sz_mem = Volume.size.x * Volume.size.y * Volume.size.z * sizeof(bool);
+		Buffer h_volume_test(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+			,VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sz_mem, nullptr);
+		compute_queue->enqueueCopy(&volume.device.v_test, &h_volume_test, 0, 0, sz_mem);
+
+		uint32_t nr_iter = Volume.size.x * Volume.size.y * Volume.size.z;
+		bool *vtest = new bool[sz_mem];
+		h_volume_test.copyTo( vtest, sz_mem );
+		uint32_t vtest_sum = 0;
+
+		for(uint32_t i = 0 ; i < nr_iter ; ++i){
+			vtest_sum += (uint32_t)vtest[i];
+		}
+
+		printf("target_iso_value : %f\n vtest sum : %d\n", Volume.isovalue, vtest_sum);
+		printf("CPU result : %d\n", Volume.result);
+
+		delete[] vtest;
 	}
 
 
 	public:
 	void run(){
 		Application::init();
-		preprareComputeBuffers();
-		preparePrograms();
-		prepareRenderObjects();
-		prepareCommandBuffer();
-		mainLoop();
+		cout << "compute_queue : " << compute_queue << endl;
+		prepareComputeBuffers();
+		prepareComputeKernels();
+		buildComputeCommandBuffers();
+		executeCompute();
+		copyResult();
+		// preparePrograms();
+		// prepareRenderObjects();
+		// prepareCommandBuffer();
+		// mainLoop();
 	}
 };
 
-int main(int argc, char *argv[])	
+int main(int argc, const char *argv[])	
 {
 	vector<const char*> instance_extensions(getRequiredExtensions());
 	vector<const char *> validations={"VK_LAYER_KHRONOS_validation"};
 	vector<const char *>device_extensions={VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 	string _name = "vulkan";
 	string engine_name = "engine";
-
+	
 	string file_path(argv[1]);
 	size_t x = atoi(argv[2]);
 	size_t y = atoi(argv[3]);
 	size_t z = atoi(argv[4]);
 	float isovalue = atof(argv[5]);
-	Volume = {file_path, {x,y,z}, isovalue};
-	loadVolume(file_path, x,y,z , (void *)Volume.data)
+	
+	Volume.file_path = file_path;
+	cout << "Volume file path set \n";
+	Volume.size = {x,y,z};
+	cout << "Volume size set \n";
+	Volume.isovalue = isovalue;
+	cout << "volume isovalue set done\n";
+
+	Volume.data = new float[x*y*z];
+	loadVolume(file_path, Volume.data);
+	
+	size_t nr_workitems = x*y*z;
+	uint32_t sum = 0 ;
+	for(uint32_t i = 0 ; i < nr_workitems ; ++i){
+		sum = (Volume.data[i] > isovalue) ? sum + 1 : sum;
+	}
+	
+	Volume.result = sum;
+
 
 	try {
 		App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
@@ -290,6 +390,7 @@ int main(int argc, char *argv[])
 		cout << "error occured : " << e.what()  <<  "on File " << __FILE__ << " line : " << __LINE__ << "\n";
 		exit(EXIT_FAILURE);
 	};
+
 
 	delete [] Volume.data;
 	return 0;

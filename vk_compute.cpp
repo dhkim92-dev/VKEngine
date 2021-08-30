@@ -12,6 +12,22 @@ Kernel::Kernel(Context *_context, const string _file_path){
 	create(_context, _file_path);
 }
 
+Kernel::~Kernel(){
+	if(layout){
+		vkDestroyPipelineLayout(device, layout, nullptr);
+		layout = VK_NULL_HANDLE;
+	}
+	if(pipeline){
+		vkDestroyPipeline(device, pipeline, nullptr);
+		pipeline = VK_NULL_HANDLE;
+	}
+
+	if(descriptors.layout){
+		vkDestroyDescriptorSetLayout(device, descriptors.layout, nullptr);
+		descriptors.layout = VK_NULL_HANDLE;
+	}
+}
+
 void Kernel::create(Context *_context, const string _file_path){
 	LOG("Kernel create :: file_path : %s\n", _file_path.c_str() );
 	context = _context;

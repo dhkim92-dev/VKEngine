@@ -61,6 +61,9 @@ namespace VKEngine{
 		operator VkQueue() const {
 			return queue;
 		}
+		operator VkCommandPool() const {
+			return pool;
+		}
 	};
 }
 
