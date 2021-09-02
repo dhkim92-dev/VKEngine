@@ -1,0 +1,36 @@
+#version 450
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1)
+
+layout( binding =0 ) buffer VolumeTest{
+	uint volume_test[];
+};
+
+layout( binding = 2 ) uniform EdgeTest{
+	uint edge_test[];
+};
+
+
+/*
+			   v7-----e10-----v6
+           	   /			  /|
+			  /	|			 / |
+			e11	e7			e9 e6
+			/	|		   /   |
+		 v4|------e8------|v5  |
+		   |  v3|_ _  e2 _| _ _|v2
+		   |   /		  |	  /	
+		  e4 e3			 e5  /		
+		   | /			  | e1
+		   |______e0______|/
+		  v0			  v1
+*/			
+
+void main() {
+	uvec3 gid = gl_GlobalInvocationID.xyz;
+	uint idx = gid.x + gid.y * dim.x  + gid.z * dim.x * dim.y;
+	
+	
+	
+	edge_test[idx] = volume_test[  ] ^ volume_test [ .  ]; // edge 0
+
+}

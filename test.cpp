@@ -186,7 +186,7 @@ class App : public VKEngine::Application{
 		volume.device.raw.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 								 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(float), nullptr);
 		volume.device.v_test.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,  
-								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(bool), nullptr);
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, volume_size * sizeof(uint32_t), nullptr);
 		volume.host.iso_value.create(context, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 									sizeof(float), &Volume.isovalue);
 		volume.host.iso_value.map(0, 4);
@@ -315,12 +315,12 @@ class App : public VKEngine::Application{
 	void copyResult(){
 		size_t sz_mem = Volume.size.x * Volume.size.y * Volume.size.z * sizeof(bool);
 		Buffer h_volume_test(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
-			,VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sz_mem, nullptr);
-		compute_queue->enqueueCopy(&volume.device.v_test, &h_volume_test, 0, 0, sz_mem);
+			,VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sz_mem * sizeof(uint32_t), nullptr);
+		compute_queue->enqueueCopy(&volume.device.v_test, &h_volume_test, 0, 0, sz_mem*sizeof(uint32_t));
 
 		uint32_t nr_iter = Volume.size.x * Volume.size.y * Volume.size.z;
-		bool *vtest = new bool[sz_mem];
-		h_volume_test.copyTo( vtest, sz_mem );
+		uint32_t *vtest = new uint32_t[sz_mem];
+		h_volume_test.copyTo( vtest, sz_mem  * sizeof(uint32_t));
 		uint32_t vtest_sum = 0;
 
 		for(uint32_t i = 0 ; i < nr_iter ; ++i){
@@ -384,8 +384,8 @@ int main(int argc, const char *argv[])
 
 
 	try {
-		App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
-		app.run();
+	    App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
+	    app.run();
 	}catch(std::runtime_error& e){
 		cout << "error occured : " << e.what()  <<  "on File " << __FILE__ << " line : " << __LINE__ << "\n";
 		exit(EXIT_FAILURE);
