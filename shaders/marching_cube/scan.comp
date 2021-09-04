@@ -7,13 +7,10 @@ layout (binding=0) readonly buffer InBuffer{
 layout (binding=1) writeonly buffer OutBuffer{
 	uvec4 dst[];
 };
-
-/*
 layout (binding=2) writeonly buffer SumBuffer{
 	uint group_sum[];
 };
-*/
-layout (binding=2) uniform Limit{
+layout (binding=3) uniform Limit{
 	uint limit;
 };
 

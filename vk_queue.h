@@ -52,8 +52,8 @@ namespace VKEngine{
 		void endCommandBuffer(VkCommandBuffer command_buffer);
 		void submit(VkCommandBuffer command_buffer, VkSemaphore *wait, VkSemaphore *signal, VkPipelineStageFlags *dst_stage, VkBool32 fenced = VK_FALSE);
 		void submit(VkSubmitInfo submit_info, VkBool32 fenced = false);
-		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, WorkGroupSize lw, VkBool32 fenced = false);
-		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkBool32 fenced = false);
+		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, WorkGroupSize lw, VkBool32 fenced =VK_FALSE);
+		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkBool32 fenced = VK_FALSE);
 		void free(VkCommandBuffer command_buffer);
 		void resetFence();
 		void waitFence();

@@ -335,14 +335,76 @@ class App : public VKEngine::Application{
 
 
 	public:
+
+	void prefixSumTest(){
+		VkDevice device = VkDevice(*context);
+		uint32_t src[512];
+		uint32_t dst[512];
+		uint32_t limit = 128;
+		memset(dst, 0x00, sizeof(uint32_t)*128);
+		for(uint32_t i = 0 ; i < 512 ; ++i){
+			src[i] = 1;
+		}
+
+		Buffer h_src(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+							  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 512*4, (void *)src);
+		Buffer d_src(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+					 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 512*4, nullptr);
+		Buffer d_dst(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT , 
+					 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 512*4, nullptr);
+		Buffer d_limit(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT , VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 4, nullptr);
+
+		compute_queue->enqueueCopy(&src, &d_src, 0, 0, 512 * 4);
+		compute_queue->enqueueCopy(&dst, &d_dst, 0, 0, 512 * 4);
+		compute_queue->enqueueCopy(&limit, &d_limit, 0, 0, 4);
+		Kernel scan(context, "shaders/marching_cube/scan.comp.spv");
+		KernelArgs args;
+
+		VkDescriptorPool pool;
+		vector<VkDescriptorPoolSize> pool_sizes = {
+			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,3),
+			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+		};
+		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo(static_cast<uint32_t>(pool_sizes.size()), pool_sizes.data(), 1);
+		VK_CHECK_RESULT(vkCreateDescriptorPool(device, &pool_CI, nullptr, &pool));
+		scan.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
+			//infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2)
+		});
+		scan.allocateDescriptorSet(pool);
+		
+		scan.build(cache);
+
+		printf("build done\n");
+		scan.setKernelArgs({{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src.descriptor,  nullptr},
+							{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dst.descriptor,  nullptr},
+							//{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dst.descriptor,  nullptr},
+							{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &d_limit.descriptor, nullptr}});
+
+		printf("ndRangeKernel ready\n");
+		compute_queue->ndRangeKernel(&scan,{128,1,1}, VK_TRUE);
+		compute_queue->enqueueCopy(&d_dst, &dst, 0, 0, 512 * 4);
+		printf("[");
+		for(int i = 0 ; i < 512 ; ++i){
+			printf("%d, ", dst[i]);
+		}
+		printf("]\n");
+	}
+
 	void run(){
 		Application::init();
 		cout << "compute_queue : " << compute_queue << endl;
-		prepareComputeBuffers();
-		prepareComputeKernels();
-		buildComputeCommandBuffers();
-		executeCompute();
-		copyResult();
+		prefixSumTest();
+		//prepareComputeBuffers();
+		//prepareComputeKernels();
+		//buildComputeCommandBuffers();
+		//executeCompute();
+		//copyResult();
+		
+		
+		
 		// preparePrograms();
 		// prepareRenderObjects();
 		// prepareCommandBuffer();

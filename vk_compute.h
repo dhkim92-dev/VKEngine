@@ -20,8 +20,8 @@ struct KernelCreateInfo{
 struct KernelArgs{
 	uint32_t binding_idx;
 	VkDescriptorType type;
-	VkDescriptorBufferInfo *buffer_info = nullptr;
-	VkDescriptorImageInfo *image_info = nullptr;
+	VkDescriptorBufferInfo *buffer_info;// = nullptr;
+	VkDescriptorImageInfo *image_info;// = nullptr;
 };
 
 class Kernel{
