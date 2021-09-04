@@ -1,0 +1,62 @@
+#version 450
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+layout (binding=0) readonly buffer InBuffer{
+	uvec4 gin[];
+};
+
+layout (binding=1) buffer OutBuffer{
+	uvec4 gout[];
+};
+
+layout (binding=2) writeonly SumBuffer{
+	uint group_sum[];
+};
+
+
+uint scan1(uint data, shared uint *buf){
+	uint lid = gl_LocalInvocationID.x;
+	uint lsz = gl_WorkGroupSize.x;
+	buf[lid] = 0;
+	lid+=lsz;
+	buf[lid] = data;
+	uint t = 0;
+	for(int offset = 0 ; offset < lsz ; offset <<= 1){
+		barrier();
+		t = buf[lid] + buf[lid - offset];
+		barrier();
+		buf[lid] = t;
+	} 
+
+	return t;
+}
+
+void main(){
+	uint gid = gl_GlobalInvocationID.x;
+	uint lid = gl_LocalInvocationID.x;
+	uint lsz = gl_WorkGroupSize.x;
+
+	uvec4 data = gin[gid];
+	shared uint buf[128];
+	
+	data.y += data.x;
+	data.z += data.y;
+	data.w += data.z;
+
+	buf[lid] = 0;
+	lid+=lsz;
+	buf[lid] = data.w;
+
+	for(int offset = 0 ; offset < lsz ; offset <<= 1){
+		barrier();
+		uint t = buf[lid] + buf[lid - offset];
+		barrier();
+		buf[lid] = t;
+	}
+
+	gout[gid] = data + (uvec4)(t - data.w);
+
+	if(gid == 0)
+	
+
+}

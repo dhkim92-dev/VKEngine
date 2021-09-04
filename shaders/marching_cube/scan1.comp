@@ -1,0 +1,16 @@
+#version 450
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout (binding=0) buffer EdgeTest{
+	uint edge_test[];
+};
+
+layout (binding=1) uniform Size{
+	uint nr_edges;
+};
+
+void main(){
+	uvec3 gid = gl_GlobalInvocationID;
+	uvec local_size = gl_NumWorkGroups.x;
+	
+}
