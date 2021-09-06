@@ -186,5 +186,6 @@ namespace VKEngine{
 		submit(submit_info, fenced);
 		free(command_buffer);
 	}
+
 }
 #endif

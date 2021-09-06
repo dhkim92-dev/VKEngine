@@ -1,0 +1,39 @@
+#version 450
+layout(local_size_x=64, local_size_y=1, local_size_z=1) in;
+layout(binding =0) buffer InBuffer{
+	uint src[];
+};
+layout(binding=1) buffer OutBuffer{
+	uint dst[];
+};
+layout(binding=2) buffer GroupSumBuffer{
+	uint group_sum[];
+};
+
+shared uint buf[2048];
+
+uint scan1(uint data){
+	uint lid = gl_LocalInvocationID.x;
+	uint lsz = gl_WorkGroupSize.x;
+
+	buf[lid] = 0;
+	lid += lsz;
+	buf[lid] = data;
+
+	for(uint i = 1 ; i < lsz ; i<<=1){
+		barrier();
+		uint t = buf[lid] + buf[lid - i];
+		barrier();
+		buf[lid] = t;
+	}
+
+	return buf[lid];
+}
+
+
+void main(){
+	uint id = gl_GlobalInvocationID.x;
+	uint data = src[id];
+	dst[id] = scan1(data);
+}
+

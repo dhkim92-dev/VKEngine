@@ -14,7 +14,6 @@ namespace VKEngine{
 
 struct KernelCreateInfo{
 	string file_path;
-	VkSpecializationInfo specialized_info;
 };
 
 struct KernelArgs{
@@ -44,6 +43,7 @@ class Kernel{
 	~Kernel();
 	void create(Context *_context, const string _file_path);
 	void build(VkPipelineCache cache);
+	void build(VkPipelineCache cache, VkSpecializationInfo *info);
 	void loadShaderModule();
 	void destroyShaderModule();
 	void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings);

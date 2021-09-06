@@ -56,6 +56,7 @@ void Kernel::setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindi
 	VK_CHECK_RESULT( vkCreateDescriptorSetLayout(device, &layout_CI, nullptr, &descriptors.layout) );
 }
 
+/*
 void Kernel::build(VkPipelineCache cache){
 	LOG("Kernel::build()\n");
 	VkPipelineLayoutCreateInfo layout_CI = infos::pipelineLayoutCreateInfo(
@@ -69,8 +70,29 @@ void Kernel::build(VkPipelineCache cache){
 		module,
 		VK_SHADER_STAGE_COMPUTE_BIT
 	);
+	
 	compute_pipeline_CI.stage = shader_stage_CI;
 	VK_CHECK_RESULT( vkCreateComputePipelines(device, cache, 1, &compute_pipeline_CI, nullptr, &pipeline) );
+}
+*/
+
+void Kernel::build(VkPipelineCache cache, VkSpecializationInfo *info){
+	LOG("Kernel::build()\n");
+	VkPipelineLayoutCreateInfo layout_CI = infos::pipelineLayoutCreateInfo(
+		&descriptors.layout, 1
+	);
+
+	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &layout_CI, nullptr, &layout));
+	VkComputePipelineCreateInfo compute_pipeline_CI = infos::computePipelineCreateInfo(layout);
+	VkPipelineShaderStageCreateInfo shader_stage_CI = infos::shaderStageCreateInfo(
+		"main",
+		module,
+		VK_SHADER_STAGE_COMPUTE_BIT
+	);
+	shader_stage_CI.pSpecializationInfo = info;
+	compute_pipeline_CI.stage = shader_stage_CI;
+	VK_CHECK_RESULT( vkCreateComputePipelines(device, cache, 1, &compute_pipeline_CI, nullptr, &pipeline) );
+
 }
 
 void Kernel::setKernelArgs(vector<KernelArgs> args){

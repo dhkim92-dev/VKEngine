@@ -1,23 +1,20 @@
 #version 450
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1)
-
 layout( binding =0 ) buffer Raw{
-	float volume[];
+	float src[];
 };
-
 layout( binding = 1)  buffer VolumeTest{
-	uint vtest[];
+	uint dst[];
 };
-
 layout( binding = 2 ) uniform IsoValue{
 	float isovalue;
 };
 
+const bvec2 MC_TABLE[][8] = {
+
+};
 
 void main() {
-	uvec3 gid = gl_GlobalInvocationID.xyz;
-	uvec3 dim = gl_NumWorkGroups.xyz;
-	uint idx = gid.x + gid.y * dim.x  + gid.z * dim.x * dim.y;
-
-	vtest[idx] = ( volume[idx]  > isovalue) ? 1: 0;
+	uint id = gl_GlobalInvocationID.x;
+	
 }

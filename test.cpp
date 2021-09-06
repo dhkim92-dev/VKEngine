@@ -102,6 +102,72 @@ struct RenderObject{
 	Program *program = nullptr;
 };
 
+class Scan{
+
+};
+
+class MarchingCube{
+	public :
+	private :
+	VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+
+
+	struct {
+		Kernel kernel;
+		Buffer d_dst;
+		Buffer d_src;
+	}edge_test;
+
+	struct {
+		Kernel kernel;
+		Buffer d_dst;
+		Buffer d_src;
+	}cell_test;
+
+	public :
+	void init(){
+		setupBuffers();
+		setupKernels();
+	}
+
+	private :
+	void setupVolumeTestBuffers(){
+	};
+
+	void setupVolumeTestKernel(){
+
+	}
+
+	void setupEdgeTestBuffers(){
+
+	}
+
+	void setupEdgeTestKernel(){
+
+	}
+
+	void setupBuffers(){
+
+	}
+
+	void setupKernels(){
+
+	}
+
+	void loadVolume(){
+
+	}
+	void cellTest(){
+	}
+	void edgeTest(){
+	}
+	void generateVertices(){
+	}
+	void generateIndices(){
+	}
+};
+
+
 class App : public VKEngine::Application{
 	public :
 
@@ -111,32 +177,6 @@ class App : public VKEngine::Application{
 	vector<RenderObject> render_objects;
 	unordered_map<string, Program*> programs;
 	Kernel volume_test, edge_test, cube_test;
-
-	struct{
-		struct{
-			Buffer raw;
-			Buffer iso_value;
-		}host;
-
-		struct{
-			Buffer iso_value;
-			Buffer raw;
-			Buffer e_test;
-			Buffer v_test;
-			Buffer c_test;
-			Buffer vertices;
-			Buffer indices;
-		}device;
-
-		void destroy(){
-			host.raw.destroy();
-			host.iso_value.destroy();
-			device.raw.destroy();
-			device.v_test.destroy();
-			//device.e_test.destroy();
-		};
-	}volume;
-
 	struct {
 		Kernel volume_test;
 		VkDescriptorPool pool = VK_NULL_HANDLE;
@@ -147,7 +187,6 @@ class App : public VKEngine::Application{
 	~App(){
 		VkDevice device = VkDevice(*context);
 		VkCommandPool command_pool = VkCommandPool(*compute_queue);
-		volume.destroy();
 		vkDestroyDescriptorPool(device, compute.pool, nullptr);
 		vkFreeCommandBuffers(device, command_pool, 1, &compute.command_buffer);
 	}
@@ -179,6 +218,7 @@ class App : public VKEngine::Application{
 	}
 
 	void prepareComputeBuffers(){
+		/*
 		size_t volume_size = Volume.size.x * Volume.size.y * Volume.size.z;
 		volume.host.raw.create(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 						 	   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -191,6 +231,7 @@ class App : public VKEngine::Application{
 									sizeof(float), &Volume.isovalue);
 		volume.host.iso_value.map(0, 4);
 		compute_queue->enqueueCopy( &volume.host.raw, &volume.device.raw, 0, 0, volume_size*sizeof(float) );
+		*/
 	}
 
 	void prepareComputeKernels(){
@@ -211,13 +252,15 @@ class App : public VKEngine::Application{
 		);
 		compute.volume_test.allocateDescriptorSet( compute.pool );
 		cout << "kernel build start\n";
-		compute.volume_test.build(cache);
+		compute.volume_test.build(cache,nullptr);
 		cout << "kernel build done\n";
+		/*
 		compute.volume_test.setKernelArgs( { 
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &volume.device.raw.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &volume.device.v_test.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &volume.host.iso_value.descriptor, nullptr}
 		});
+		*/
 		cout << "prepare compute kernel complete\n";
 	}
 
@@ -358,24 +401,33 @@ class App : public VKEngine::Application{
 		compute_queue->enqueueCopy(&dst, &d_dst, 0, 0, 512 * 4);
 		compute_queue->enqueueCopy(&limit, &d_limit, 0, 0, 4);
 		Kernel scan(context, "shaders/marching_cube/scan.comp.spv");
-		KernelArgs args;
+		Kernel scan_ed(context, "shaders/marching_cube/scan_ed.comp.spv");
 
 		VkDescriptorPool pool;
 		vector<VkDescriptorPoolSize> pool_sizes = {
-			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,3),
-			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,6),
+			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
 		};
 		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo(static_cast<uint32_t>(pool_sizes.size()), pool_sizes.data(), 1);
 		VK_CHECK_RESULT(vkCreateDescriptorPool(device, &pool_CI, nullptr, &pool));
+		
 		scan.setupDescriptorSetLayout({
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
-			//infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2)
 		});
+
+		scan_ed.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+		});
+
+
 		scan.allocateDescriptorSet(pool);
-		
-		scan.build(cache);
+		scan.build(cache, nullptr);
+
+
 
 		printf("build done\n");
 		scan.setKernelArgs({{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src.descriptor,  nullptr},

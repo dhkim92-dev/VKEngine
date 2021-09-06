@@ -1,5 +1,5 @@
 #version 450
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 layout (binding=0) readonly buffer InBuffer{
 	uvec4 src[];
@@ -44,5 +44,12 @@ void main(){
 
 	uint val = scan1(data.w);
 	dst[id] = data + uvec4(val - data.w);
-	//dst[id] = val + (uvec4)(val - data.w);
+
+	if(id == 0){
+		group_sum[0] = 0;
+	}
+	
+	if(gl_LocalInvocationID.x == gl_WorkGroupSize.x - 1){
+		group_sum[gl_WorkGroupID.x + 1] = val;
+	}
 }
