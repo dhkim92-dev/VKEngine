@@ -1,16 +1,17 @@
 #version 450
-layout(local_size_x=64, local_size_y=1, local_size_z=1) in;
+
+layout(constant_id=0) const uint SM = 64;
+layout(constant_id=1) const uint sz_shared_buffer = 256;
+
 layout(binding =0) buffer InBuffer{
 	uint src[];
 };
 layout(binding=1) buffer OutBuffer{
 	uint dst[];
 };
-layout(binding=2) buffer GroupSumBuffer{
-	uint group_sum[];
-};
 
-shared uint buf[2048];
+layout(local_size_x=SM, local_size_y=1, local_size_z=1) in;
+shared uint buf[sz_shared_buffer];
 
 uint scan1(uint data){
 	uint lid = gl_LocalInvocationID.x;

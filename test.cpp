@@ -17,8 +17,7 @@
 
 #include "vk_core.h"
 #include "vk_application.h"
-#include "cstdio"
-
+#include "vk_compute.h"
 using namespace std;
 using namespace VKEngine;
 
@@ -103,53 +102,240 @@ struct RenderObject{
 };
 
 class Scan{
+	private :
+	Context *ctx = nullptr;
+	CommandQueue *queue = nullptr;
+	VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+	VkPipelineCache cache = VK_NULL_HANDLE;
+	public:
+	Kernel scan, scan_ed, propagation;
+	vector<uint32_t> g_sizes;
+	vector<uint32_t> l_sizes;
+	vector<uint32_t> limits;
+	vector<Buffer *> d_grps;
 
+	public : 
+	Scan(){}
+	Scan(Context *_ctx, CommandQueue *_queue){
+		create(_ctx, _queue);
+	}
+
+	~Scan(){
+		VkDevice device = VkDevice(*ctx);
+		scan.destroy();
+		scan_ed.destroy();
+		propagation.destroy();
+		vkDestroyDescriptorPool(device, desc_pool, nullptr);
+		for(auto iter = d_grps.begin() ; iter != d_grps.end() ; ++iter){
+			(*iter)->destroy();
+		}
+		vkDestroyPipelineCache(device,cache,nullptr);
+	}
+
+	void create(Context *_ctx, CommandQueue *_queue){
+		ctx=_ctx;
+		queue=_queue;
+	}
+
+	void init(){
+		setupDescriptorPool();
+		setupKernels();
+		initMem();
+		buildKernels();
+	}
+
+	private :
+	void setupDescriptorPool(){
+		vector<VkDescriptorPoolSize> pool_size = {
+			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 7),
+			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+		};
+		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo(
+			static_cast<uint32_t>(pool_size.size()),
+			pool_size.data(),
+			4
+		);
+	}
+	void setupKernels(){
+		//TODO set propagation kernel
+		scan.create(ctx, "shaders/marching_cube/scan.comp.spv");
+		scan_ed.create(ctx, "shaders/marching_cube/scan_ed.comp.spv");
+		scan.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3),
+		});
+		scan_ed.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
+		});
+		scan.allocateDescriptorSet(desc_pool);
+		scan_ed.allocateDescriptorSet(desc_pool);
+	}
+
+	void initMem(){
+		uint32_t size = Volume.size.x * Volume.size.y * Volume.size.z;
+		uint32_t sm = 64;
+		while(size > sm*4){
+			uint32_t gsiz = (size+3)/4;
+			limits.push_back(gsiz);
+			g_sizes.push_back((gsiz + sm - 1)/sm * sm  );
+			l_sizes.push_back(sm);
+			size = (gsiz + sm - 1) / sm;
+			d_grps.push_back( new Buffer( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (size+1)*4, nullptr));
+		}
+
+		if(size>0){
+			d_grps.push_back(nullptr);
+			g_sizes.push_back(size);
+			l_sizes.push_back(size);
+			limits.push_back(size);
+		}
+	}
+
+	void buildKernels(){
+		//TODO 
+		//build propagion
+		vector<uint32_t> s_data = {
+			*limits.end(),
+			*limits.end() * 2
+		};
+		VkSpecializationMapEntry scan_ed_map[2];
+		scan_ed_map[0].constantID = 0;
+		scan_ed_map[0].offset = 0;
+		scan_ed_map[0].size = sizeof(uint32_t);
+		scan_ed_map[1].constantID = 1;
+		scan_ed_map[1].offset = 0;
+		scan_ed_map[1].size = sizeof(uint32_t);
+		VkSpecializationInfo scan_ed_SI={};
+		scan_ed_SI.mapEntryCount = 2;
+		scan_ed_SI.pMapEntries = scan_ed_map;
+		scan_ed_SI.dataSize = static_cast<uint32_t>(s_data.size()),
+		scan_ed_SI.pData = s_data.data();
+		scan.build(cache, nullptr);
+		scan_ed.build(cache, &scan_ed_SI);
+	}
+
+	void run(Buffer *d_src, Buffer *d_dst, Buffer *isovalue){
+		uint32_t nr_grps, nr_g, nr_l, nr_limits;
+		nr_grps = static_cast<uint32_t>( d_grps.size() );
+		nr_g = static_cast<uint32_t>(g_sizes.size());
+		nr_l = static_cast<uint32_t>( l_sizes.size() );
+		nr_limits = static_cast<uint32_t>( limits.size() );
+		scan.setKernelArgs({
+						{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src->descriptor, nullptr},
+						{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dst->descriptor, nullptr},
+						{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &isovalue->descriptor, nullptr}
+					} );
+		scan_ed.setKernelArgs({
+			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src->descriptor, nullptr},
+			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src->descriptor, nullptr}
+		});
+		//TODO
+		// propagation.setKernelArgs();
+		if(nr_grps == nr_g == nr_l == nr_limits){
+			for(uint32_t i = 0 ; i < nr_grps ; ++i){
+				if(d_grps[i] != nullptr){
+					scan.setKernelArgs({
+						{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
+					});
+					queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_FALSE);
+				}else{
+					queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_FALSE);
+				}
+			}
+		}else{
+			printf("Scan::Parameters length not equal!\n");
+			exit(EXIT_FAILURE);
+		}
+		for(uint32_t i = nr_grps-1 ; i >=0 ; --i){
+			if(d_grps[i] != nullptr)
+				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE );
+		}
+	}
 };
 
 class MarchingCube{
-	public :
 	private :
 	VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-
-
+	CommandQueue *queue = nullptr;
+	Context *ctx = nullptr;
+	public :
 	struct {
 		Kernel kernel;
 		Buffer d_dst;
-		Buffer d_src;
 	}edge_test;
 
 	struct {
 		Kernel kernel;
 		Buffer d_dst;
-		Buffer d_src;
 	}cell_test;
 
+	struct{
+		Buffer raw;
+		Buffer isovalue;
+	}general;
+
+	struct{
+		Buffer vertices;
+		Buffer indices;
+	}output;
+
+	Scan edge_scan;
+	Scan cell_scan;
+
 	public :
+	MarchingCube(Context *_ctx, CommandQueue *_queue){
+		create(_ctx, _queue);
+	}
+
+
+	~MarchingCube(){
+		VkDevice device = VkDevice(*ctx);
+		edge_test.kernel.destroy();
+		cell_test.kernel.destroy();
+
+		edge_test.d_dst.destroy();
+		cell_test.d_dst.destroy();
+		general.raw.destroy();
+		general.isovalue.destroy();
+		output.vertices.destroy();
+		output.indices.destroy();
+
+		vkDestroyDescriptorPool(device, desc_pool, nullptr);
+	}
+
+	void create(Context *_ctx, CommandQueue *_queue){
+		ctx = _ctx;
+		queue = _queue;
+	}
+
+
 	void init(){
 		setupBuffers();
 		setupKernels();
 	}
 
 	private :
-	void setupVolumeTestBuffers(){
-	};
-
-	void setupVolumeTestKernel(){
-
-	}
-
-	void setupEdgeTestBuffers(){
-
-	}
-
-	void setupEdgeTestKernel(){
-
+	void setupDescriptorPool(){
+		vector<VkDescriptorPoolSize> pool_size = {
+			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  9),
+			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 6)
+		};
+		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo(
+			static_cast<uint32_t>(pool_size.size()),
+			pool_size.data(),
+			5
+		);
 	}
 
 	void setupBuffers(){
+		uint32_t raw_size = Volume.size.x * Volume.size.y * Volume.size.z;
+		general.raw.create( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raw_size * sizeof(float32), nullptr);
 
 	}
-
 	void setupKernels(){
 
 	}

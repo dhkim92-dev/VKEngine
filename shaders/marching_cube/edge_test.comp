@@ -1,23 +1,27 @@
 #version 450
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-layout( binding =0 ) buffer VolumeTest{
-	uint volume_test[];
+layout( binding =0 ) buffer Raw{
+	uint raw[];
 };
 
 layout( binding=1 ) buffer EdgeTest{
-	uint edge_test[];
+	uvec3 edge_test[];
+};
+
+layout( binding=2 ) uniform IsoValue{
+	float isovalue;
 };
 
 
 /*
-			   v7-----e10-----v6
-           	   /			  /|
-			  /	|			 / |
-			e11	e7			e9 e6
-			/	|		   /   |
-		   |--------------|v5  |
-		   |  v3|_ _ _ _ _| _ _|v2
+           	  v7 ______________v6			  
+			   /|		 	  /|
+			  / |			 / |
+			 /  |		    /  |
+		    /___|________v5/   |
+		   |    |         |    |
+		   |  v3|_________|____|v2
 		   |   /		  |	  /	
 		  e2 e1			  |  /		
 		   | /			  | /
@@ -25,18 +29,24 @@ layout( binding=1 ) buffer EdgeTest{
 		  v0			  v1
 */			
 
+uint pos2idx(uvec3 pos, uvec3 dim){
+	uint idx = pos.x + pos.y * dim.x + pos.z * dim.x * dim.y;
+	return idx;
+}
 
 void main() {
 	/**
 	on each P=(x,y,z), x,y,z in N
 	has 3 edge direction to x, y, z axis
 	*/
-	uvec3 gid = gl_GlobalInvocationID.xyz;
+	uvec3 pos = gl_GlobalInvocationID.xyz;
 	uvec3 dim = gl_NumWorkGroups.xyz;
-	uint idx = gid.x + gid.y * dim.x  + gid.z * dim.x * dim.y;
-	uint v = volume_test[idx];
-	
-	edge_test[3*idx] =  (v^volume_test[idx+1]) ;
-	edge_test[3*idx+1] = (v^volume_test[idx+gid.y*dim.x]) ;
-	edge_test[3*idx+2] = (v^volume_test[idx+gid.z*dim.y*dim.x]); 
+	uint id = pos2idx(pos, dim);
+	bool o = raw[id] < isovalue;
+	uvec3 test;
+	test.x = uint( o ^^ ( raw[ pos2idx( pos + uvec3(1,0,0), dim )] > isovalue ) );
+	test.y = uint( o ^^ ( raw[ pos2idx( pos + uvec3(0,1,0), dim )] > isovalue ) );
+	test.z = uint( o ^^ ( raw[ pos2idx( pos + uvec3(0,0,1), dim )] > isovalue ) );
+
+	edge_test[id] = test;
 }

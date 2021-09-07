@@ -16,12 +16,21 @@ struct KernelCreateInfo{
 	string file_path;
 };
 
-struct KernelArgs{
+typedef struct _KernelArgs{
 	uint32_t binding_idx;
 	VkDescriptorType type;
 	VkDescriptorBufferInfo *buffer_info;// = nullptr;
 	VkDescriptorImageInfo *image_info;// = nullptr;
-};
+	/*
+	KernelArgs(uint32_t idx, VkDescriptorType t, VkDescriptorBufferInfo *bi, VkDescriptorImageInfo *ii){
+		binding_idx = idx;
+		type = t;
+		buffer_info = bi;
+		image_info = ii;
+	}
+	*/
+
+}KernelArgs;
 
 class Kernel{
 	private :
@@ -43,7 +52,7 @@ class Kernel{
 	~Kernel();
 	void create(Context *_context, const string _file_path);
 	void build(VkPipelineCache cache);
-	void build(VkPipelineCache cache, VkSpecializationInfo *info);
+	void build(VkPipelineCache cache, VkSpecializationInfo *info=nullptr);
 	void loadShaderModule();
 	void destroyShaderModule();
 	void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings);
