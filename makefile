@@ -5,7 +5,7 @@ DEPENDENCIES += vk_engine.o vk_context.o vk_utils.o vk_infos.o vk_queue_family.o
 TARGET=test
 
 $(TARGET) : $(DEPENDENCIES)
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cpp $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(TARGET).out $(TARGET).cpp $^ $(LDFLAGS)
 
 vk_engine.o : vk_engine.cpp
 	$(CC) $(CFLAGS) -c $^ $(LDFLAGS)

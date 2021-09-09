@@ -1,0 +1,18 @@
+#version 450
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(binding = 0) writeonly buffer CompactedIndex{
+	uvec3 edge_id[]; 
+};
+layout(binding = 1) readonly buffer EdgeType{
+	uint edge_status[]; // is this id edge test result 1
+};
+layout(binding = 2) readonly buffer EdgeCounter{
+	uint edge_cnt[]; // prefix sum result
+};
+
+void main(){
+	uint id = gl_GlobalInvocationID.x;
+	if(edge_status[id]==uint(1)){
+		edge_id[ edge_cnt[id] - uint(1) ].x = id;
+	}
+}
