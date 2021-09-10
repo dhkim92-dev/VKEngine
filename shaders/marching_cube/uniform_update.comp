@@ -12,9 +12,11 @@ layout(binding = 1) buffer GroupSum{
 void main(){
 	uint id = gl_GlobalInvocationID.x;
 	uint grp_id = gl_WorkGroupID.x;
+	uint sz_grp = gl_NumWorkGroups.x;
+	uvec4 data = dst[id];
+	
 	if(grp_id != 0){
-		uvec4 data = dst[id];
 		data += uvec4(group_sum[grp_id]);
 		dst[id] = data;
-	}	
+	}
 }

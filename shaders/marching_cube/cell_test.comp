@@ -7,7 +7,11 @@ layout( binding = 1)  buffer TriCount{
 	uint tri_count[];
 };
 
-layout( binding = 2 ) uniform IsoValue{
+layout(binding = 2) buffer CellType{
+	uint Cell_Type[];
+};
+
+layout( binding = 3 ) uniform IsoValue{
 	float isovalue;
 };
 
@@ -53,13 +57,14 @@ void main() {
 	uvec3 pos = gl_GlobalInvocationID.xyz;
 	uvec3 dim = gl_NumWorkGroups;
 	uint id = pos2idx(pos, dim);
-	uint cell_type = uint(raw[ id ] > isovalue) |
+	uint cell_type = (uint(raw[ id ] > isovalue) |
 			  uint( raw[ pos2idx( pos + uvec3(1,0,0), dim) ] > isovalue ) << 1 | 
 			  uint( raw[ pos2idx( pos + uvec3(1,1,0), dim) ] > isovalue ) << 2 |
 			  uint( raw[ pos2idx( pos + uvec3(0,1,0), dim) ] > isovalue ) << 3 |
 			  uint( raw[ pos2idx( pos + uvec3(0,0,1), dim) ] > isovalue ) << 4 |
 			  uint( raw[ pos2idx( pos + uvec3(1,0,1), dim) ] > isovalue ) << 5 |
 			  uint( raw[ pos2idx( pos + uvec3(1,1,1), dim) ] > isovalue ) << 6 |
-			  uint( raw[ pos2idx( pos + uvec3(0,1,1), dim) ] > isovalue ) << 7;
+			  uint( raw[ pos2idx( pos + uvec3(0,1,1), dim) ] > isovalue ) << 7);
 	tri_count[id] = nr_triangles[cell_type];
+	Cell_Type[id] = cell_type;
 }
