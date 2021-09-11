@@ -1,19 +1,20 @@
 #version 450
-
 layout(local_size_x = 1 , local_size_y = 1, local_size_z = 1) in;
 
-layout(binding=0) buffer Index{
-	uvec4 index[];
+layout(binding=0) buffer TriCount{
+	uint tri_cnt[]; // size : nr_cubes in Z^3
 };
-layout(binding=1) buffer TriCount{
-	uint tcnt[];
+layout(binding=1) buffer Tri_Psum{
+	uint tri_psum[]; // size : nr_cubes in Z^3
 };
-layout(binding=2) buffer CellType{
-	uint ctype[];
+layout(binding=2) buffer Compact{
+	uint Compact_Table[]; // size : tri_psum[nr_cubes - 1];
 };
-layout(binding=3) buffer c
 
 void main(){
 	uint id = gl_GlobalInvocationID.x;
-	uint type = ctype[id];
+	if(tri_cnt[id] == 0){
+		return ;
+	}
+	Compact_Table[aid] = id
 }
