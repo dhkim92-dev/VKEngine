@@ -114,6 +114,7 @@ class Scan{
 	vector<uint32_t> l_sizes;
 	vector<uint32_t> limits;
 	vector<Buffer *> d_grps;
+	Buffer u_limit;
 
 	public : 
 	Scan(){}
@@ -133,6 +134,7 @@ class Scan{
 		for(auto iter = d_grps.begin() ; iter != d_grps.end() ; ++iter){
 			(*iter)->destroy();
 		}
+		u_limit.destroy();
 		vkDestroyPipelineCache(device,cache,nullptr);
 	}
 
@@ -166,6 +168,7 @@ class Scan{
 		//TODO set propagation kernel
 		scan.create(ctx, "shaders/marching_cube/scan.comp.spv");
 		scan_ed.create(ctx, "shaders/marching_cube/scan_ed.comp.spv");
+		propagation.create(ctx, "shaders/marching_cube/uniform_update.comp.spv");
 		scan.setupDescriptorSetLayout({
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
@@ -177,8 +180,13 @@ class Scan{
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
 		});
+		propagation.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+		});
 		scan.allocateDescriptorSet(desc_pool);
 		scan_ed.allocateDescriptorSet(desc_pool);
+		propagation.allocateDescriptorSet(desc_pool);
 	}
 
 	void initMem(uint32_t x, uint32_t y, uint32_t z){
@@ -199,6 +207,9 @@ class Scan{
 			l_sizes.push_back(size);
 			limits.push_back(size);
 		}
+		u_limit.create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+					VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, sizeof(uint32_t), &limits[0]);
+
 
 		for(uint32_t i : limits){
 			cout << "limits : " << i << endl;
@@ -231,10 +242,14 @@ class Scan{
 		scan.build(cache, nullptr);
 		cout << "scan build done\n" << endl;
 		scan_ed.build(cache, &scan_ed_SI);
+		propagation.build(cache, nullptr);
 		cout << "scan ed build done\n" << endl;
 	}
-
-	void run(Buffer *d_src, Buffer *d_dst, Buffer *isovalue){
+	public :
+	void run(Buffer *d_src, Buffer *d_dst){
+		printf("Scan::run()\n");
+		printf("Scan::run::d_src = %p\n", d_src);
+		printf("Scan::run::d_dst = %p\n", d_dst);
 		uint32_t nr_grps, nr_g, nr_l, nr_limits;
 		nr_grps = static_cast<uint32_t>( d_grps.size() );
 		nr_g = static_cast<uint32_t>(g_sizes.size());
@@ -243,33 +258,52 @@ class Scan{
 		scan.setKernelArgs({
 						{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src->descriptor, nullptr},
 						{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dst->descriptor, nullptr},
-						{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &isovalue->descriptor, nullptr}
+						//{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[0]->descriptor, nullptr},
+						{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &u_limit.descriptor, nullptr}
 					} );
+
+		printf("scan setKernelArgs\n");
 		scan_ed.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src->descriptor, nullptr},
-			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src->descriptor, nullptr}
+			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dst->descriptor, nullptr}
 		});
+		printf("scan_ed setKernelArgs\n");
 		//TODO
-		// propagation.setKernelArgs();
-		if(nr_grps == nr_g == nr_l == nr_limits){
-			for(uint32_t i = 0 ; i < nr_grps ; ++i){
-				if(d_grps[i] != nullptr){
-					scan.setKernelArgs({
-						{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
-					});
-					queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_FALSE);
-				}else{
-					queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_FALSE);
-				}
+		propagation.setKernelArgs({
+			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_src->descriptor, nullptr}
+		});
+		printf("propagation setKernelArgs\n");
+		u_limit.map();
+		printf("u_limit map()\n");
+		for(uint32_t i = 0 ; i < nr_grps ; ++i){
+			if(d_grps[i] != nullptr){
+				printf("run scan kernel\n");
+				scan.setKernelArgs({
+					{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
+				});
+				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_TRUE);
+				u_limit.copyFrom(&limits[i], sizeof(uint32_t));
+			}else{
+				printf("run scan_ed kernel\n");
+				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_TRUE);
 			}
-		}else{
-			printf("Scan::Parameters length not equal!\n");
-			exit(EXIT_FAILURE);
 		}
-		for(uint32_t i = nr_grps-1 ; i >=0 ; --i){
-			if(d_grps[i] != nullptr)
-				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE );
+		
+		for(int i = nr_grps-1 ; i >=0 ; --i){
+			printf("d_grps[%d] = %d\n",i, d_grps[i]);
+			if(d_grps[i] != nullptr){
+				printf("uniform update! %d \n", i);
+				propagation.setKernelArgs({
+					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
+				});
+				printf("uniform update setKernelArgs\n");
+				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_TRUE );
+				printf("uniform update done\n");
+			}else{
+				printf("d_grps[i] == nullptr\n");
+			}
 		}
+		printf("end run!\n");
 	}
 };
 
@@ -304,6 +338,11 @@ class MarchingCube{
 		Buffer indices;
 	}output;
 
+	struct{
+		Buffer edge_out;
+		Buffer cell_out;
+	}prefix_sum;
+
 	Scan edge_scan;
 	Scan cell_scan;
 
@@ -312,7 +351,6 @@ class MarchingCube{
 	MarchingCube(Context *_ctx, CommandQueue *_queue){
 		create(_ctx, _queue);
 	}
-
 
 	~MarchingCube(){
 		destroy();
@@ -383,6 +421,9 @@ class MarchingCube{
 							   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(uint32_t) * 3 * (x-1) * (y-1) * (z-1), nullptr);
 		cell_test.d_dst.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 							   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sizeof(uint32_t) * (x-2) * (y-2) * (z-2));
+
+		prefix_sum.edge_out.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (x-1)*(y-1)*(z-1)*sizeof(uint32_t)*3 , nullptr);
 	}
 
 	void createKernels(){
@@ -443,10 +484,30 @@ class MarchingCube{
 		for(uint32_t i = 0 ; i < 3*gx*gy*gz ; ++i){
 			sum+=data[i];
 		}
-		printf("{%d %d %d %d %d %d}\n", data[0], data[1], data[2], data[3], data[4], data[5]);
-		printf("{%d %d %d %d %d %d}\n", data[6], data[7], data[8], data[9], data[10], data[11]);
-		printf("sum : %d\n", sum);
+		//printf("{%d %d %d %d %d %d}\n", data[0], data[1], data[2], data[3], data[4], data[5]);
+		//printf("{%d %d %d %d %d %d}\n", data[6], data[7], data[8], data[9], data[10], data[11]);
+		printf("edge_test sum : %d\n", sum);
+		delete [] data;
 	}
+
+	void edgeTestPrefixSum(){
+		edge_scan.run( &edge_test.d_dst, &prefix_sum.edge_out);
+		printf("edge scan done\n");
+		uint32_t x,y,z;
+		x = Volume.size.x;
+		y = Volume.size.y;
+		z = Volume.size.z;
+		uint32_t *edge_psum = new uint32_t[3 * (x-1) * (y-1) * (z-1)];
+
+		queue->enqueueCopy(&prefix_sum.edge_out, edge_psum, 0, 0, sizeof(uint32_t) * 3 * (x-1) * (y-1) * (z-1));
+		printf("edge test prefix sum result[-1] : %d\n", edge_psum[ 3 * (x-1) * (y-1) * (z-1) - 1]);
+		delete [] edge_psum;
+	}
+
+	void cellTestPrefixSum(){
+
+	}
+
 	void generateVertices(){
 	}
 	void generateIndices(){
@@ -673,6 +734,7 @@ class App : public VKEngine::Application{
 		mc.init();
 		mc.setupVolume();
 		mc.edgeTest();
+		mc.edgeTestPrefixSum();
 	}
 
 	void prefixSumTest(){

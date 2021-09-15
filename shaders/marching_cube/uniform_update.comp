@@ -17,6 +17,7 @@ void main(){
 	
 	if(grp_id != 0){
 		data += uvec4(group_sum[grp_id]);
-		dst[id] = data;
+		//dst[id] = data;
+		//dst[id] = uvec4(1);//data;
 	}
 }
