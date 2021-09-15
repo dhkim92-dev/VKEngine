@@ -37,6 +37,7 @@ void loadVolume(string file_path, void *data){
 	std::ifstream is(file_path, std::ios::binary | std::ios::in | std::ios::ate);
 	if(is.is_open()){
 		size_t size = is.tellg();
+		cout << "volume size : " << size << endl;
 		assert(size > 0);
 		is.seekg(0, std::ios::beg);
 		is.read((char *)data, size);
@@ -119,8 +120,11 @@ class Scan{
 	Scan(Context *_ctx, CommandQueue *_queue){
 		create(_ctx, _queue);
 	}
-
 	~Scan(){
+		destroy();
+	}
+
+	void destroy(){
 		VkDevice device = VkDevice(*ctx);
 		scan.destroy();
 		scan_ed.destroy();
@@ -137,10 +141,10 @@ class Scan{
 		queue=_queue;
 	}
 
-	void init(){
+	void init(uint32_t x, uint32_t y, uint32_t z){
 		setupDescriptorPool();
 		setupKernels();
-		initMem();
+		initMem(x,y,z);
 		buildKernels();
 	}
 
@@ -155,6 +159,8 @@ class Scan{
 			pool_size.data(),
 			4
 		);
+
+		VK_CHECK_RESULT(vkCreateDescriptorPool(VkDevice(*ctx), &pool_CI, nullptr, &desc_pool));
 	}
 	void setupKernels(){
 		//TODO set propagation kernel
@@ -175,8 +181,8 @@ class Scan{
 		scan_ed.allocateDescriptorSet(desc_pool);
 	}
 
-	void initMem(){
-		uint32_t size = Volume.size.x * Volume.size.y * Volume.size.z;
+	void initMem(uint32_t x, uint32_t y, uint32_t z){
+		uint32_t size = x*y*z;
 		uint32_t sm = 64;
 		while(size > sm*4){
 			uint32_t gsiz = (size+3)/4;
@@ -193,15 +199,23 @@ class Scan{
 			l_sizes.push_back(size);
 			limits.push_back(size);
 		}
+
+		for(uint32_t i : limits){
+			cout << "limits : " << i << endl;
+		}
 	}
 
 	void buildKernels(){
 		//TODO 
 		//build propagion
+		uint32_t s_size = limits[limits.size()-1];
 		vector<uint32_t> s_data = {
-			*limits.end(),
-			*limits.end() * 2
+			s_size,
+			s_size * 2
 		};
+		for(uint32_t i : s_data){
+			cout << "s_data : " << i << endl;
+		}
 		VkSpecializationMapEntry scan_ed_map[2];
 		scan_ed_map[0].constantID = 0;
 		scan_ed_map[0].offset = 0;
@@ -212,10 +226,12 @@ class Scan{
 		VkSpecializationInfo scan_ed_SI={};
 		scan_ed_SI.mapEntryCount = 2;
 		scan_ed_SI.pMapEntries = scan_ed_map;
-		scan_ed_SI.dataSize = static_cast<uint32_t>(s_data.size()),
+		scan_ed_SI.dataSize = static_cast<uint32_t>(sizeof(uint32_t)*s_data.size()),
 		scan_ed_SI.pData = s_data.data();
 		scan.build(cache, nullptr);
+		cout << "scan build done\n" << endl;
 		scan_ed.build(cache, &scan_ed_SI);
+		cout << "scan ed build done\n" << endl;
 	}
 
 	void run(Buffer *d_src, Buffer *d_dst, Buffer *isovalue){
@@ -262,11 +278,16 @@ class MarchingCube{
 	VkDescriptorPool desc_pool = VK_NULL_HANDLE;
 	CommandQueue *queue = nullptr;
 	Context *ctx = nullptr;
+	VkPipelineCache cache = VK_NULL_HANDLE;
 	public :
 	struct {
 		Kernel kernel;
 		Buffer d_dst;
 	}edge_test;
+
+	struct {
+		Kernel kernel;
+	}edge_compact;
 
 	struct {
 		Kernel kernel;
@@ -287,12 +308,17 @@ class MarchingCube{
 	Scan cell_scan;
 
 	public :
+	MarchingCube(){};
 	MarchingCube(Context *_ctx, CommandQueue *_queue){
 		create(_ctx, _queue);
 	}
 
 
 	~MarchingCube(){
+		destroy();
+	}
+
+	void destroy(){
 		VkDevice device = VkDevice(*ctx);
 		edge_test.kernel.destroy();
 		cell_test.kernel.destroy();
@@ -303,8 +329,8 @@ class MarchingCube{
 		general.isovalue.destroy();
 		output.vertices.destroy();
 		output.indices.destroy();
-
 		vkDestroyDescriptorPool(device, desc_pool, nullptr);
+		vkDestroyPipelineCache(device, cache, nullptr);
 	}
 
 	void create(Context *_ctx, CommandQueue *_queue){
@@ -314,6 +340,16 @@ class MarchingCube{
 
 
 	void init(){
+		setupDescriptorPool();
+		uint32_t x = Volume.size.x;
+		uint32_t y = Volume.size.y;
+		uint32_t z = Volume.size.z;
+
+		edge_scan.create(ctx, queue);
+		cell_scan.create(ctx, queue);
+		edge_scan.init(x-1,y-1,z-1);
+		cell_scan.init(x-2,y-2,z-2);
+		createKernels();
 		setupBuffers();
 		setupKernels();
 	}
@@ -329,23 +365,87 @@ class MarchingCube{
 			pool_size.data(),
 			5
 		);
+
+		VK_CHECK_RESULT(vkCreateDescriptorPool(VkDevice(*ctx), &pool_CI, nullptr, &desc_pool));
+		cout << "MC::setupDescriptorPool : " << desc_pool << "\n";
 	}
 
 	void setupBuffers(){
 		uint32_t raw_size = Volume.size.x * Volume.size.y * Volume.size.z;
+		uint32_t x,y,z;;
+		x = Volume.size.x;
+		y = Volume.size.y;
+		z = Volume.size.z;
 		general.raw.create( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raw_size * sizeof(float32), nullptr);
-
+		general.isovalue.create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+									 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, sizeof(float), &Volume.isovalue);
+		edge_test.d_dst.create(ctx,  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+							   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(uint32_t) * 3 * (x-1) * (y-1) * (z-1), nullptr);
+		cell_test.d_dst.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+							   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sizeof(uint32_t) * (x-2) * (y-2) * (z-2));
 	}
+
+	void createKernels(){
+		edge_test.kernel.create(ctx, "shaders/marching_cube/edge_test.comp.spv");
+		cell_test.kernel.create(ctx, "shaders/marching_cube/cell_test.comp.spv");
+		edge_compact.kernel.create(ctx, "shaders/marching_cube/edge_compact.comp.spv");
+	}
+
 	void setupKernels(){
+		edge_test.kernel.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0 ),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1 ),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2)
+		});
 
+		edge_compact.kernel.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2)
+		});
+
+		cell_test.kernel.setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3),
+		});
+
+		edge_test.kernel.allocateDescriptorSet(desc_pool);
+		edge_compact.kernel.allocateDescriptorSet(desc_pool);
+		cell_test.kernel.allocateDescriptorSet(desc_pool);
+		edge_test.kernel.build(cache, nullptr);
+		edge_compact.kernel.build(cache, nullptr);
+		cell_test.kernel.build(cache, nullptr);
 	}
 
-	void loadVolume(){
-
+	public : 
+	void setupVolume(){
+		//void *data = Volume.data;
+		uint32_t sz_volume = Volume.size.x * Volume.size.y * Volume.size.z;
+		queue->enqueueCopy(Volume.data, &general.raw, 0, 0, sizeof(float) * sz_volume);
 	}
 	void cellTest(){
 	}
 	void edgeTest(){
+		uint32_t gx = Volume.size.x-1;
+		uint32_t gy = Volume.size.y-1;
+		uint32_t gz = Volume.size.z-1;
+		edge_test.kernel.setKernelArgs({
+			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.raw.descriptor, nullptr},
+			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
+			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
+		});
+		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_TRUE);
+		uint32_t *data = new uint32_t[3*gx*gy*gz];
+		queue->enqueueCopy(&edge_test.d_dst, data, 0, 0, 3*gx*gy*gz*sizeof(uint32_t));
+		uint32_t sum = 0;
+		for(uint32_t i = 0 ; i < 3*gx*gy*gz ; ++i){
+			sum+=data[i];
+		}
+		printf("{%d %d %d %d %d %d}\n", data[0], data[1], data[2], data[3], data[4], data[5]);
+		printf("{%d %d %d %d %d %d}\n", data[6], data[7], data[8], data[9], data[10], data[11]);
+		printf("sum : %d\n", sum);
 	}
 	void generateVertices(){
 	}
@@ -361,20 +461,15 @@ class App : public VKEngine::Application{
 	};
 
 	vector<RenderObject> render_objects;
-	unordered_map<string, Program*> programs;
-	Kernel volume_test, edge_test, cube_test;
-	struct {
-		Kernel volume_test;
-		VkDescriptorPool pool = VK_NULL_HANDLE;
-		VkCommandBuffer command_buffer=VK_NULL_HANDLE;
-	}compute;
+	
+	MarchingCube mc;
 
 	public :
 	~App(){
 		VkDevice device = VkDevice(*context);
 		VkCommandPool command_pool = VkCommandPool(*compute_queue);
-		vkDestroyDescriptorPool(device, compute.pool, nullptr);
-		vkFreeCommandBuffers(device, command_pool, 1, &compute.command_buffer);
+		mc.destroy();
+		//vkFreeCommandBuffers(device, command_pool, 1, &compute.command_buffer);
 	}
 
 	protected:
@@ -421,6 +516,7 @@ class App : public VKEngine::Application{
 	}
 
 	void prepareComputeKernels(){
+		/*
 		VkDevice device = VkDevice(*context);
 		vector<VkDescriptorPoolSize> pool_sizes({
 			infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2),
@@ -440,6 +536,7 @@ class App : public VKEngine::Application{
 		cout << "kernel build start\n";
 		compute.volume_test.build(cache,nullptr);
 		cout << "kernel build done\n";
+		*/
 		/*
 		compute.volume_test.setKernelArgs( { 
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &volume.device.raw.descriptor, nullptr},
@@ -451,6 +548,7 @@ class App : public VKEngine::Application{
 	}
 
 	void buildComputeCommandBuffers(){
+		/*
 		compute.command_buffer = compute_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		compute_queue->beginCommandBuffer(compute.command_buffer);
 		//compute_queue->ndRangeKernel(&compute.volume_test, {256,256,256}, VK_TRUE);
@@ -461,6 +559,7 @@ class App : public VKEngine::Application{
 								0, 1, &compute.volume_test.descriptors.set, 0, nullptr);
 		vkCmdDispatch(compute.command_buffer, Volume.size.x, Volume.size.y, Volume.size.z);
 		compute_queue->endCommandBuffer(compute.command_buffer);
+		*/
 	}
 	
 	void preparePrograms(){
@@ -531,6 +630,7 @@ class App : public VKEngine::Application{
 	}
 
 	void executeCompute(){
+		/*
 		LOG("execute Compute\n");
 		memcpy(volume.host.iso_value.data, &Volume.isovalue, sizeof(float));
 		VkSubmitInfo submit_info = infos::submitInfo();
@@ -539,9 +639,11 @@ class App : public VKEngine::Application{
 		vkQueueSubmit(VkQueue(*compute_queue), 1, &submit_info, VK_NULL_HANDLE);
 		vkQueueWaitIdle(VkQueue(*compute_queue));
 		LOG("execute Compute done\n");
+		*/
 	}
 
 	void copyResult(){
+		/*
 		size_t sz_mem = Volume.size.x * Volume.size.y * Volume.size.z * sizeof(bool);
 		Buffer h_volume_test(context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
 			,VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sz_mem * sizeof(uint32_t), nullptr);
@@ -560,10 +662,18 @@ class App : public VKEngine::Application{
 		printf("CPU result : %d\n", Volume.result);
 
 		delete[] vtest;
+		*/
 	}
 
 
 	public:
+
+	void runMarchingCube(){
+		mc.create(context, compute_queue);
+		mc.init();
+		mc.setupVolume();
+		mc.edgeTest();
+	}
 
 	void prefixSumTest(){
 		VkDevice device = VkDevice(*context);
@@ -634,7 +744,8 @@ class App : public VKEngine::Application{
 	void run(){
 		Application::init();
 		cout << "compute_queue : " << compute_queue << endl;
-		prefixSumTest();
+		runMarchingCube();
+		//prefixSumTest();
 		//prepareComputeBuffers();
 		//prepareComputeKernels();
 		//buildComputeCommandBuffers();
@@ -658,26 +769,29 @@ int main(int argc, const char *argv[])
 	string _name = "vulkan";
 	string engine_name = "engine";
 	
+	/*
 	string file_path(argv[1]);
 	size_t x = atoi(argv[2]);
 	size_t y = atoi(argv[3]);
 	size_t z = atoi(argv[4]);
-	float isovalue = atof(argv[5]);
 	
+	float isovalue = atof(argv[5]);
+	*/
+	string file_path = "assets/dragon_vrip_FLT32_128_128_64.raw";
 	Volume.file_path = file_path;
 	cout << "Volume file path set \n";
-	Volume.size = {x,y,z};
+	Volume.size = {128,128,64};
 	cout << "Volume size set \n";
-	Volume.isovalue = isovalue;
+	Volume.isovalue = 0.2;
 	cout << "volume isovalue set done\n";
 
-	Volume.data = new float[x*y*z];
+	Volume.data = new float[128*128*64];
 	loadVolume(file_path, Volume.data);
 	
-	size_t nr_workitems = x*y*z;
+	size_t nr_workitems = 128*128*64;
 	uint32_t sum = 0 ;
 	for(uint32_t i = 0 ; i < nr_workitems ; ++i){
-		sum = (Volume.data[i] > isovalue) ? sum + 1 : sum;
+		sum = (Volume.data[i] > Volume.isovalue) ? sum + 1 : sum;
 	}
 	
 	Volume.result = sum;

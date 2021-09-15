@@ -2,11 +2,11 @@
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout( binding =0 ) buffer Raw{
-	uint raw[];
+	float raw[];
 };
 
-layout( binding=1 ) buffer EdgeTest{
-	uvec3 edge_test[];
+layout(binding=1 ) buffer EdgeTest{
+	uint edge_test[];
 };
 
 layout( binding=2 ) uniform IsoValue{
@@ -35,18 +35,16 @@ uint pos2idx(uvec3 pos, uvec3 dim){
 }
 
 void main() {
-	/**
-	on each P=(x,y,z), x,y,z in N
-	has 3 edge direction to x, y, z axis
-	*/
 	uvec3 pos = gl_GlobalInvocationID.xyz;
 	uvec3 dim = gl_NumWorkGroups.xyz;
-	uint id = pos2idx(pos, dim);
-	bool o = raw[id] < isovalue;
+	uvec3 vdim = dim + uvec3(1);
 	uvec3 test;
-	test.x = uint( o ^^ ( raw[ pos2idx( pos + uvec3(1,0,0), dim )] > isovalue ) );
-	test.y = uint( o ^^ ( raw[ pos2idx( pos + uvec3(0,1,0), dim )] > isovalue ) );
-	test.z = uint( o ^^ ( raw[ pos2idx( pos + uvec3(0,0,1), dim )] > isovalue ) );
-
-	edge_test[id] = test;
+	bool o = raw[ pos2idx(pos, vdim) ] > isovalue;
+	test.x = uint( o ^^ ( raw[ pos2idx( pos + uvec3(1,0,0), vdim  )] > isovalue ) ) ;
+	test.y = uint( o ^^ ( raw[ pos2idx( pos + uvec3(0,1,0), vdim  )] > isovalue ) ) ;
+	test.z = uint( o ^^ ( raw[ pos2idx( pos + uvec3(0,0,1), vdim  )] > isovalue ) ) ;
+	uint id = 3* pos2idx(pos, dim);
+	edge_test[id] = test.x;
+	edge_test[id+1] = test.y;
+	edge_test[id+2] = test.z;
 }

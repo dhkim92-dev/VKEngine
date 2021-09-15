@@ -1,0 +1,41 @@
+#version 450
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1)in;
+layout (binding=0) buffer Volume{
+	float Raw[];
+};
+layout(binding = 1) buffer EdgeCompact{
+	uvec3 Edge_compact[] ;
+};
+layout(binding = 2) buffer Dimension{
+	uvec3 Dim;
+};
+layout(binding = 3) buffer Vertices{
+	vec3 vertices[];
+};
+
+layout(binding=4) uniform Isovalue{
+	float isovalue;
+};
+
+vec3 idx2pos(uint idx, uvec3 dim){
+	vec3 pos;
+	pos.z = uint(idx / (dim.x * dim.y)) * 1.0;
+	pos.y = uint( (idx - (pos.z*dim.x*dim.y)) / dim.x ) * 1.0;
+	pos.x = (idx % uint(pos.x)) * 1.0;
+	return pos;
+}
+
+void main(){
+	uint tid = gl_GlobalInvocationID.x;
+	uvec3 dim = Dim;
+	uint edge_id = Edge_compact[tid].x;
+	uint origin = edge_id / uint(3);
+	uint dir[3] = {1, Dim.x, Dim.x*Dim.y};
+	vec3 p0 = idx2pos(origin, dim);
+	vec3 p1 = idx2pos(origin + dir[ edge_id%uint(3) ], dim);
+	float v0 = Raw[origin];
+	float v1 = Raw[origin + dir[edge_id%uint(3)]];
+	
+	vertices[tid] = p0 + ((isovalue - v0)/(v1-v0)) * p1;
+}
+
