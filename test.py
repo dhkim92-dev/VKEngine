@@ -26,7 +26,7 @@ def to_list(byte_data) :
 def isovalue_test(data, test, size, isovalue=0.2) :
     #for i in range(size) : 
     #    test[i] = 1 if data[i] > isovalue else 0
-    test = np.array( data > isovalue )
+    test = np.array( data > isovalue , astype=np.int32)
     return test
 
 def pos2idx(pos, dim) : 
@@ -51,6 +51,18 @@ def edge_test(data, dim, isovalue=np.float32(0.2)):
     print("edge_test sum : ", np.sum(out) )
     return out
 
+def edge_compact(out_edge_test, out_prefix_sum) :
+    nr_vertices = out_prefix_sum[-1];
+    out = np.zeros(nr_vertices  ,dtype=np.int32)
+    offset = 0
+    print('out_edge_test length : ', out_edge_test.shape)
+    print('out_prefix_sum length : ', out_prefix_sum.shape)
+    for i in range(out_edge_test.shape[0]) : 
+        if out_edge_test[i] : 
+            out[offset] = i-1
+            offset+=1
+    return out
+
 def edge_test_prefix_sum(in_data) : 
     return np.cumsum(in_data)
 
@@ -67,6 +79,12 @@ def main() :
     #volume[1,1,1] = 1
     et_out = edge_test(volume, Dim(127,127,63), isovalue=np.float32(0.2))
     et_psum = edge_test_prefix_sum(et_out)
-    print(et_psum)
+    et_compact = edge_compact(et_out, et_psum)
+    
+    print('et_out sum : ', np.sum(et_out))
+    print("edge_psum[-1] : ", et_psum[-1])
+    print('et_compact sum : ', np.sum(et_compact) )
+    print('et_compact : ', et_compact)
+
 if __name__ == '__main__' :
     main()
