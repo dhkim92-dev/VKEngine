@@ -1,5 +1,5 @@
 #version 450
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 layout(binding = 0) buffer Source{
 	uvec4 dst[];
@@ -13,11 +13,10 @@ void main(){
 	uint id = gl_GlobalInvocationID.x;
 	uint grp_id = gl_WorkGroupID.x;
 	uint sz_grp = gl_NumWorkGroups.x;
-	uvec4 data = dst[id];
-	
+	//dst[id] = uvec4(1);
 	if(grp_id != 0){
+		uvec4 data = dst[id];
 		data += uvec4(group_sum[grp_id]);
-		//dst[id] = data;
-		//dst[id] = uvec4(1);//data;
+		dst[id] = data;
 	}
 }

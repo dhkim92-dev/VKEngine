@@ -49,6 +49,10 @@ def edge_test(data, dim, isovalue=np.float32(0.2)):
                 #print('o_id : ', o_id)
     print(out)
     print("edge_test sum : ", np.sum(out) )
+    return out
+
+def edge_test_prefix_sum(in_data) : 
+    return np.cumsum(in_data)
 
 def main() :
     volume = load_volume("./assets/dragon_vrip_FLT32_128_128_64.raw")
@@ -61,7 +65,8 @@ def main() :
     #print(np.sum(volume_test))
     #volume = np.zeros((3,3,3), dtype = np.float32)
     #volume[1,1,1] = 1
-    edge_test(volume, Dim(127,127,63), isovalue=np.float32(0.2))
-
+    et_out = edge_test(volume, Dim(127,127,63), isovalue=np.float32(0.2))
+    et_psum = edge_test_prefix_sum(et_out)
+    print(et_psum)
 if __name__ == '__main__' :
     main()

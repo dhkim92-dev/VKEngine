@@ -20,7 +20,7 @@ typedef struct _KernelArgs{
 	uint32_t binding_idx;
 	VkDescriptorType type;
 	VkDescriptorBufferInfo *buffer_info = nullptr;
-	VkDescriptorImageInfo *image_info = nullptr;
+	VkDescriptorImageInfo *image_info;// = nullptr;
 	/*
 	KernelArgs(uint32_t idx, VkDescriptorType t, VkDescriptorBufferInfo *bi, VkDescriptorImageInfo *ii){
 		binding_idx = idx;

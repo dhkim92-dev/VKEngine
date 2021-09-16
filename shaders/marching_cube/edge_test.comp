@@ -13,7 +13,6 @@ layout( binding=2 ) uniform IsoValue{
 	float isovalue;
 };
 
-
 /*
            	  v7 ______________v6			  
 			   /|		 	  /|
