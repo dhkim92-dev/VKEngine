@@ -211,13 +211,24 @@ class Scan{
 					VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, sizeof(uint32_t), &limits[0]);
 
 
-		for(uint32_t i : limits){
-			cout << "limits : " << i << endl;
-		}
-
+		printf("g_sizes : [ ");
 		for(uint32_t i = 0 ; i < g_sizes.size() ; ++i){
-			printf("g_sizes[%d] : %d\n", i, g_sizes[i]);
+			printf("%d ", g_sizes[i]);
 		}
+		printf(" ] \n");
+
+		printf("l_sizes : [ ");
+		for(uint32_t i = 0 ; i < l_sizes.size() ; ++i){
+			printf(" %d ", l_sizes[i]);
+		}
+		printf(" ]\n");
+
+		printf("limits : [ ");
+		for(uint32_t i : limits){
+			printf(" %d ", i);
+		}
+		printf(" ]\n");
+
 	}
 
 	void buildKernels(){
@@ -228,9 +239,11 @@ class Scan{
 			s_size * 2,
 			s_size
 		};
+		/*
 		for(uint32_t i : s_data){
 			cout << "s_data : " << i << endl;
 		}
+		*/
 		VkSpecializationMapEntry scan_ed_map[2];
 		scan_ed_map[0].constantID = 0;
 		scan_ed_map[0].offset = 0;
@@ -244,10 +257,9 @@ class Scan{
 		scan_ed_SI.dataSize = static_cast<uint32_t>(sizeof(uint32_t)*s_data.size()),
 		scan_ed_SI.pData = s_data.data();
 		scan.build(cache, nullptr);
-		cout << "scan build done\n" << endl;
 		scan_ed.build(cache, &scan_ed_SI);
 		propagation.build(cache, nullptr);
-		cout << "scan ed build done\n" << endl;
+		cout << "scan ed local size : " << s_data[1] << endl;
 	}
 	public :
 	void run(Buffer *d_src, Buffer *d_dst){
@@ -278,14 +290,14 @@ class Scan{
 					{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr},
 					{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &u_limit.descriptor, nullptr}
 				});
-				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_TRUE);
+				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_FALSE);
 			}else{
 				printf("run scan_ed kernel\n");
 				scan_ed.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr}
 				});
-				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_TRUE);
+				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_FALSE);
 			}
 		}
 		
@@ -296,21 +308,11 @@ class Scan{
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
-				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_TRUE );
+				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE );
 			}else{
 				printf("d_grps[%d] == nullptr\n", i);
 			}
 		}
-		uint32_t x,y,z;
-		x = 127;
-		y = 127;
-		z = 63;
-		int idx = 3 * (x-1) * (y-1) * (z-1)-1;
-		uint32_t *psum = new uint32_t[ 3 * (x-1) * (y-1) * (z-1)];
-		queue->enqueueCopy( d_dst, psum, 0, 0, sizeof(uint32_t)*(idx + 1) );
-		printf("uniform update result : %d %d %d %d %d %d %d %d\n", psum[0], psum[1], psum[2], psum[3], psum[4], psum[5], psum[6], psum[7]);
-		printf("end run!\n");
-		delete [] psum;
 	}
 };
 
@@ -383,7 +385,6 @@ class MarchingCube{
 		queue = _queue;
 	}
 
-
 	void init(){
 		setupDescriptorPool();
 		uint32_t x = Volume.size.x;
@@ -402,7 +403,7 @@ class MarchingCube{
 	private :
 	void setupDescriptorPool(){
 		vector<VkDescriptorPoolSize> pool_size = {
-			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  9),
+			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  12),
 			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 6)
 		};
 		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo(
@@ -456,7 +457,7 @@ class MarchingCube{
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3)
 		});
 
 		edge_test.kernel.allocateDescriptorSet(desc_pool);
@@ -474,7 +475,19 @@ class MarchingCube{
 		queue->enqueueCopy(Volume.data, &general.raw, 0, 0, sizeof(float) * sz_volume);
 	}
 	void cellTest(){
+		uint32_t x = Volume.size.x-2;
+		uint32_t y = Volume.size.y-2;
+		uint32_t z = Volume.size.z-2;
+
+		cell_test.kernel.setKernelArgs({
+			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.raw.descriptor, nullptr},
+			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.d_dst.descriptor, nullptr},
+			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.isovalue.descriptor, nullptr}
+		});
+
+		queue->ndRangeKernel(&cell_test.kernel, {x,y,z}, VK_FALSE);
 	}
+
 	void edgeTest(){
 		uint32_t gx = Volume.size.x-1;
 		uint32_t gy = Volume.size.y-1;
@@ -484,10 +497,14 @@ class MarchingCube{
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
 		});
-		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_TRUE);
+		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_FALSE);
+		uint32_t *out_et = new uint32_t[3*gx * gy * gz];
+		queue->enqueueCopy(&edge_test.d_dst, out_et, 0, 0, sizeof(uint32_t) * 3 * gx * gy * gz);
 		uint32_t sum = 0;
-		//printf("{%d %d %d %d %d %d}\n", data[0], data[1], data[2], data[3], data[4], data[5]);
-		//printf("{%d %d %d %d %d %d}\n", data[6], data[7], data[8], data[9], data[10], data[11]);
+		for(uint32_t i = 0 ; i < 3*gx*gy*gz ; ++i)
+			sum+=out_et[i];
+		printf("edge_test result : %d\n", sum);
+		delete [] out_et;
 	}
 
 	void edgeTestPrefixSum(){
@@ -496,16 +513,47 @@ class MarchingCube{
 		y = Volume.size.y;
 		z = Volume.size.z;
 		printf("edge_test_prefix_sum start!\n");
-		uint32_t et_sum = 0;
-
-
-		printf("sum ( edge_test.d_dst() ) = %d\n", et_sum);
 		edge_scan.run( &edge_test.d_dst, &prefix_sum.edge_out);
-		printf("edge scan done\n");
+		uint32_t psum_out = 0;
+		printf("edge_psum_out : %d\n", psum_out);
+		printf("edge_test_prefix_sum done!\n");
 	}
 
 	void edgeCompact(){
+		printf("edge compact start\n");
+		uint32_t psum_out = 0;
+		uint32_t x,y,z;
+		x = Volume.size.x;
+		y = Volume.size.y;
+		z = Volume.size.z;
+		queue->enqueueCopy(&prefix_sum.edge_out, &psum_out, (3*(x-1)*(y-1)*(z-1) - 1  ) * sizeof(uint32_t) , 0,  sizeof(uint32_t));
 
+		printf("target allocated size : %d\n",  psum_out);
+		output.vertices.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, psum_out * sizeof(float) * 3,  nullptr);
+		printf("actual allocated size : %d\n", psum_out);
+		edge_compact.kernel.setKernelArgs({
+			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
+			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
+			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &prefix_sum.edge_out.descriptor, nullptr}
+		});
+
+		printf("set kernel asgrs done\n");
+		queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1}, VK_FALSE);
+		uint32_t *ec_out  = new uint32_t[  3*psum_out ];
+		queue->enqueueCopy(&output.vertices, ec_out, 0, 0, sizeof(uint32_t) * 3 * (psum_out));
+		uint32_t sum = 0;
+		for(uint32_t i = 0 ; i < 10 ; ++i){
+			printf("%d ", ec_out[i*3]);	
+		}
+		printf("\n");
+		for(uint32_t i = psum_out - 1 ; i > psum_out - 11 ; i--){
+			printf("%d ", ec_out[i*3]);
+		}
+		printf("\n");
+		delete [] ec_out;
+		printf("edge_compact result : %d\n", sum);
+		printf("edge_compact done\n");
 	}
 
 	void cellTestPrefixSum(){

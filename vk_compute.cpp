@@ -29,7 +29,7 @@ Kernel::~Kernel(){
 }
 
 void Kernel::create(Context *_context, const string _file_path){
-	LOG("Kernel create :: file_path : %s\n", _file_path.c_str() );
+	//LOG("Kernel create :: file_path : %s\n", _file_path.c_str() );
 	context = _context;
 	device = VkDevice(*context);
 	file_path = _file_path;
@@ -50,8 +50,8 @@ void Kernel::destroyShaderModule(){
 }
 
 void Kernel::setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings){
-	LOG("Kernel::setupDescriptorSetLayout()\n");
-	LOG("bindings size : %d\n", bindings.size());
+	//LOG("Kernel::setupDescriptorSetLayout()\n");
+	//LOG("bindings size : %d\n", bindings.size());
 	VkDescriptorSetLayoutCreateInfo layout_CI =  infos::descriptorSetLayoutCreateInfo(bindings);
 	VK_CHECK_RESULT( vkCreateDescriptorSetLayout(device, &layout_CI, nullptr, &descriptors.layout) );
 }
@@ -77,7 +77,7 @@ void Kernel::build(VkPipelineCache cache){
 */
 
 void Kernel::build(VkPipelineCache cache, VkSpecializationInfo *info){
-	LOG("Kernel::build()\n");
+	//LOG("Kernel::build()\n");
 	VkPipelineLayoutCreateInfo layout_CI = infos::pipelineLayoutCreateInfo(
 		&descriptors.layout, 1
 	);
