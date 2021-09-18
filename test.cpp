@@ -519,6 +519,15 @@ class MarchingCube{
 		printf("edge_test_prefix_sum done!\n");
 	}
 
+	void cellTestPrefixSum(){
+		uint32_t x,y,z;
+		x = Volume.size.x;
+		y = Volume.size.y;
+		z = Volume.size.z;
+
+		cell_scan.run( &cell_test.d_dst, &prefix_sum.cell_out);
+	}
+
 	void edgeCompact(){
 		printf("edge compact start\n");
 		uint32_t psum_out = 0;
