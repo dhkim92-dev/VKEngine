@@ -50,5 +50,5 @@ vk_compute.o : vk_compute.cpp
 
 clean:
 	rm *.o 
-	rm $(TEST)
+	rm $(TARGET).out
 	rm *.gfxr

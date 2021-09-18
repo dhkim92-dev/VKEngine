@@ -564,11 +564,6 @@ class MarchingCube{
 		printf("edge_compact result : %d\n", sum);
 		printf("edge_compact done\n");
 	}
-
-	void cellTestPrefixSum(){
-
-	}
-
 	void generateVertices(){
 	}
 	void generateIndices(){
