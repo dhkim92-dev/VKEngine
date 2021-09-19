@@ -120,15 +120,16 @@ def cast2global(pattern, dim : Dim) :
                 3*(+1) + 1,   ## 1
                 3*dim.x + 0,   ## 2
                 1,   ## 3 
-                3*(dim.x*dim.y) + 0,   ## 8
-                3*(dim.x*dim.y + 1) + 1,   ## 9
-                3*(dim.x*dim.y + dim.x) + 0,   ## 10
-                3*(dim.x*dim.y) +1,   ## 11
-                2,   ## 4
-                3*(+1) + 2,   ## 5
-                3*(dim.x + 1) + 2,   ## 6
-                3*(dim.x) + 2  ## 7
+                3*(dim.x*dim.y) + 0,   ## 4
+                3*(dim.x*dim.y + 1) + 1,   ## 5
+                3*(dim.x*dim.y + dim.x) + 0,   ## 6
+                3*(dim.x*dim.y) +1,   ## 7
+                2,   ## 8
+                3*(+1) + 2,   ## 9
+                3*(dim.x + 1) + 2,   ## 10
+                3*(dim.x) + 2,  ## 11
              ]
+    #print('offset : ', offset)
     for i in range(len(pattern)) :
         if pattern[i] == -1 :
             break
@@ -150,15 +151,15 @@ def gen_vertices(volume, et, ep, ec, dim, isovalue) :
         z1,y1,x1 = z0 + dirs[dv][0], y0 + dirs[dv][1] , x0 + dirs[dv][2]
         v0 = volume[z0,y0,x0]
         v1 = volume[z1,y1,x1]
-        print('edge_id : ', eid)
-        print("vid : ", vid)
-        print(f'p0 : {[z0, y0, x0]} value : {v0} p1 : {[z1, y1 ,x1]} value : {v1}')
+        #print('edge_id : ', eid)
+        #print("vid : ", vid)
+        #print(f'p0 : {[z0, y0, x0]} value : {v0} p1 : {[z1, y1 ,x1]} value : {v1}')
         out[i] = np.array([z0, y0, x0],dtype=np.float32) + \
-                   np.array([z1, y1, x1],dtype=np.float32)*((isovalue - v0)/(v1-v0) )
+                   (np.array([z1, y1, x1],dtype=np.float32) - np.array([z0,y0,x0], dtype=np.float32))*((isovalue - v0)/(v1-v0) )
 
     return out
    
-def gen_indices(volume, ct, tc, tc_psum, dim) : 
+def gen_indices(volume, ct, tc, tc_psum, et_psum, dim) : 
     """
     gen index buffer
     Args :
@@ -169,17 +170,42 @@ def gen_indices(volume, ct, tc, tc_psum, dim) :
     """
     off = 0
     out = np.zeros(3*tc_psum[-1] ,dtype = np.int32)
+    """
     for i in range(len(ct)) : 
         nr_tri = tc[i]
         if nr_tri == 0 :
             continue
-        #print(f'i : {i} nr_tri : {nr_tri}, cell_type : {ct[i]}')
         pattern = np.array(vf.pattern[ct[i]], dtype = np.int32)
+        print(f'pattern[{ct[i]}] : ', pattern)
         pattern = cast2global(pattern, Dim(dim.x-2, dim.y-2, dim.z-2))
+        print(f'converted : {pattern}')
         out[3*off : 3*(off+nr_tri)]=pattern[:3*nr_tri]
         off += nr_tri
-
+    off = 0
+    """
+    for z in range(dim.z-2) :
+        for y in range(dim.y-2) :
+            for x in range(dim.x-2) :
+                cid = pos2idx([z,y,x], Dim(dim.x-2, dim.y-2, dim.z-2))
+                nr_tri =tc[cid]
+                if nr_tri == 0 :
+                    continue
+                #print('cid : ', cid )
+                #print('ctype : ', ct[cid])
+                pattern = np.array(vf.pattern[ct[cid]], dtype=np.int32)
+                #print('pattern : ', pattern)
+                pattern = 3*pos2idx((z,y,x), Dim(dim.x-1, dim.y-1, dim.z-1)) + cast2global(pattern, Dim(dim.x-1, dim.y-1 ,dim.z-1))
+                #print('converted : ', pattern)
+                out[3*off : 3*(off+nr_tri)] = pattern[:3*nr_tri]
+                off += nr_tri
+        
     return out
+
+def cast2unique(indices, ep) : 
+    for i in range(indices.shape[0]) :
+        indices[i] = ep[indices[i]]
+    return indices
+        
 
 def save_object(file_name, vertices, indices) :
     with open(file_name, 'w') as f :
@@ -205,17 +231,22 @@ def edge_test_varify(et_compact, dim) :
 
 
 def main() :
-    #volume = load_volume("./assets/dragon_vrip_FLT32_128_128_64.raw")
-    #volume = np.frombuffer(volume, dtype=np.float32)#.reshape(128,128,64)
-    isovalue = 0.5
-    volume = np.zeros((4,4,4) ,dtype=np.float32)
-    volume[1,1,1] = 1.0
-    dim = Dim(volume.shape[2], volume.shape[1], volume.shape[0])
+    """
+    volume = load_volume("./assets/dragon_vrip_FLT32_128_128_64.raw")
+    dim = Dim(128, 128, 64)
+    """
+
+    volume = load_volume("./assets/Genus3_FLT32_128_64_64.raw")
+    dim = Dim(128, 64, 64)
+    volume = np.frombuffer(volume, dtype=np.float32)#.reshape(128,128,64)
+    isovalue = 0.1
+    #volume = np.zeros((4,4,4) ,dtype=np.float32)
+    #volume[1,1,1] = 1.0
     print('volume max : ', np.max(volume))
     et_out = edge_test(volume, dim, isovalue=np.float32(0.2))
     print('et_out sum : ', np.sum(et_out))
-    
     et_psum = edge_test_prefix_sum(et_out)
+    print('edge_psum : ', et_psum)
     print("edge_psum[-1] : ", et_psum[-1])
     et_compact = edge_compact(et_out, et_psum)
     print('et_compact length : ', len(et_compact) )
@@ -227,10 +258,11 @@ def main() :
     print('tri counts : ', tcnt)
     tcnt_psum = tri_counts_prefixsum(tcnt)
     print('cell test tri count psum : ', tcnt_psum[-1])
-    vertices = gen_vertices(volume, et_out, et_psum, et_compact, dim, np.float32(isovalue))
-    indices = gen_indices(volume, ctypes, tcnt, tcnt_psum, dim )
+    vertices = ( gen_vertices(volume, et_out, et_psum, et_compact, dim, np.float32(isovalue)) )
+    indices = gen_indices(volume, ctypes, tcnt, tcnt_psum, et_psum, dim )
+    indices = cast2unique(indices, et_psum)
+    print('edge psum : ', et_compact)
     save_object('sample.obj', vertices, indices)
-
 
 if __name__ == '__main__' :
     main()
