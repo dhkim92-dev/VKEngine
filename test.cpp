@@ -279,10 +279,10 @@ class Scan{
 			d_dsts.push_back(d_grps[i]);
 		}
 
-
 		for(uint32_t i = 0 ; i < nr_grps ; ++i){
 			if(d_grps[i] != nullptr){
 				printf("run scan kernel\n");
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 				u_limit.copyFrom(&limits[i], sizeof(uint32_t));
 				scan.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
@@ -291,13 +291,18 @@ class Scan{
 					{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &u_limit.descriptor, nullptr}
 				});
 				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_FALSE);
+				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
+				printf("scan kernel spent : %.3f seconds\n", t.count());
 			}else{
 				printf("run scan_ed kernel\n");
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 				scan_ed.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr}
 				});
 				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_FALSE);
+				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
+				printf("scan_ed kernel spent : %.3f seconds\n", t.count());
 			}
 		}
 		
@@ -308,7 +313,11 @@ class Scan{
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
+				
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE );
+				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
+				printf("uniform_update kernel spent : %.3f seconds\n", t.count());
 			}else{
 				printf("d_grps[%d] == nullptr\n", i);
 			}
@@ -345,6 +354,8 @@ class MarchingCube{
 	struct{
 		Buffer vertices;
 		Buffer indices;
+		Kernel gen_indices;
+		Kernel gen_vertices;
 	}output;
 
 	struct{
@@ -438,6 +449,8 @@ class MarchingCube{
 		edge_test.kernel.create(ctx, "shaders/marching_cube/edge_test.comp.spv");
 		cell_test.kernel.create(ctx, "shaders/marching_cube/cell_test.comp.spv");
 		edge_compact.kernel.create(ctx, "shaders/marching_cube/edge_compact.comp.spv");
+		//output.gen_vertices.create(ctx, "shaders/marching_cube/gen_vertices.comp.spv");
+		//output.gen_indices.create(ctx, "shaders/marching_cube/gen_indices.comp.spv");
 	}
 
 	void setupKernels(){
@@ -524,7 +537,6 @@ class MarchingCube{
 		x = Volume.size.x;
 		y = Volume.size.y;
 		z = Volume.size.z;
-
 		cell_scan.run( &cell_test.d_dst, &prefix_sum.cell_out);
 	}
 
@@ -565,6 +577,7 @@ class MarchingCube{
 		printf("edge_compact done\n");
 	}
 	void generateVertices(){
+
 	}
 	void generateIndices(){
 	}
@@ -789,9 +802,19 @@ class App : public VKEngine::Application{
 		mc.create(context, compute_queue);
 		mc.init();
 		mc.setupVolume();
+		std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 		mc.edgeTest();
+		std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
+		printf("edge_test operation time : %.4f seconds\n", t.count() );
+		start = std::chrono::system_clock::now();
 		mc.edgeTestPrefixSum();
+		t = std::chrono::system_clock::now() - start;
+		printf("edge_scan operation time : %.4f seconds\n", t.count() );
+
+		start = std::chrono::system_clock::now();
 		mc.edgeCompact();
+		t = std::chrono::system_clock::now() - start;
+		printf("edge_compact operation time : %.4f seconds\n", t.count() );
 	}
 
 	void prefixSumTest(){
@@ -901,7 +924,7 @@ int main(int argc, const char *argv[])
 	cout << "Volume file path set \n";
 	Volume.size = {128,128,64};
 	cout << "Volume size set \n";
-	Volume.isovalue = 0.2;
+	Volume.isovalue = 0.02;
 	cout << "volume isovalue set done\n";
 
 	Volume.data = new float[128*128*64];

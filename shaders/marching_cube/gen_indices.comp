@@ -13,7 +13,7 @@ layout(binding=3) buffer Dimension{
 	uvec3 Dim;
 };
 layout(binding = 4) buffer Index{
-	uvec3 Indices[];
+	uint Indices[];
 };
 
 const int LUT[256][15] = 
@@ -274,21 +274,20 @@ const int LUT[256][15] =
 {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
-uvec3 cast2global(uvec3 local, uint offset, uvec3 dim){
+uvec3 cast2global(uint vid, uvec3 dim){
+	// dim = volume_dim - (1,1,1)
+	uint eid = 3*vid;
 	uint dir[12] = {
-		12 * 0, // 0
-		12 * 1 + 1, // 1
-		12 * dim.x + 0, // 2
-		12 * 0 + 1, // 3
-		12 * 0 + 2,// 4
-		12 * 1 + 2,// 5
-		12 * (dim.x + 1) + 2, // 6
-		12 * (dim.x) + 2, // 7
-		12 * (dim.x * dim.y) + 0, // 8
-		12 * (dim.x * dim.y + 1) + 1, // 9
-		12 * (dim.x * dim.y + dim.x) + 0, // 10
-		12 * (dim.x * dim.y) + 1// 11
+		0, // 0
+		4, // 1
+		3*dim.x, // 2
+		1, // 3
+		// 4
+		// 5
+		// 6
+		// 7
 	};
+
 	local.x = offset + dir[local.x];
 	local.y = offset + dir[local.y];
 	local.z = offset + dir[local.z];
