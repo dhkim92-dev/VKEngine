@@ -511,13 +511,13 @@ class MarchingCube{
 			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
 		});
 		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_FALSE);
-		uint32_t *out_et = new uint32_t[3*gx * gy * gz];
-		queue->enqueueCopy(&edge_test.d_dst, out_et, 0, 0, sizeof(uint32_t) * 3 * gx * gy * gz);
-		uint32_t sum = 0;
-		for(uint32_t i = 0 ; i < 3*gx*gy*gz ; ++i)
-			sum+=out_et[i];
-		printf("edge_test result : %d\n", sum);
-		delete [] out_et;
+		//uint32_t *out_et = new uint32_t[3*gx * gy * gz];
+		//queue->enqueueCopy(&edge_test.d_dst, out_et, 0, 0, sizeof(uint32_t) * 3 * gx * gy * gz);
+		//uint32_t sum = 0;
+		//for(uint32_t i = 0 ; i < 3*gx*gy*gz ; ++i)
+		//	sum+=out_et[i];
+		//printf("edge_test result : %d\n", sum);
+		//delete [] out_et;
 	}
 
 	void edgeTestPrefixSum(){
@@ -525,11 +525,11 @@ class MarchingCube{
 		x = Volume.size.x;
 		y = Volume.size.y;
 		z = Volume.size.z;
-		printf("edge_test_prefix_sum start!\n");
+		//printf("edge_test_prefix_sum start!\n");
 		edge_scan.run( &edge_test.d_dst, &prefix_sum.edge_out);
-		uint32_t psum_out = 0;
-		printf("edge_psum_out : %d\n", psum_out);
-		printf("edge_test_prefix_sum done!\n");
+		//uint32_t psum_out = 0;
+		//printf("edge_psum_out : %d\n", psum_out);
+		//printf("edge_test_prefix_sum done!\n");
 	}
 
 	void cellTestPrefixSum(){
