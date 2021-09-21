@@ -1,20 +1,26 @@
 #version 450
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
-layout(binding = 0) buffer TriCount{
-	uint Tri_Count[];
+
+layout(binding = 0) readonly buffer CellType{
+	uint ctype[];
 };
-layout(binding = 1) buffer TriPsum{
-	uint Tri_Psum[];
+
+layout(binding = 1) readonly buffer TriCount{
+	uint tcnt[];
 };
-layout(binding = 2) buffer CellType{
-	uint Cell_Type[];
+
+layout(binding = 2) readonly buffer TriPsum{
+	uint tpsum[];
 };
-layout(binding=3) buffer Dimension{
-	uvec3 Dim;
+
+layout(binding = 3) readonly buffer Dim{
+	uvec3 dim;
 };
-layout(binding = 4) buffer Index{
-	uint Indices[];
+
+layout(binding = 4) writeonly buffer Indices{
+	uint indices[];
 };
+
 
 const int LUT[256][15] = 
 {{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -274,43 +280,58 @@ const int LUT[256][15] =
 {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
-uvec3 cast2global(uint vid, uvec3 dim){
-	// dim = volume_dim - (1,1,1)
-	uint eid = 3*vid;
-	uint dir[12] = {
-		0, // 0
-		4, // 1
-		3*dim.x, // 2
-		1, // 3
-		// 4
-		// 5
-		// 6
-		// 7
+uint pos2idx(uvec3 pos, uvec3 dim){
+	return pos.x + pos.y * dim.x + pos.z * dim.x * dim.y;
+}
+
+uvec3 idx2pos(uint idx, uvec3 dim){
+	uvec3 ret;
+	ret.z = idx / (dim.x*dim.y);
+	ret.y = (idx - ret.z * dim.x * dim.y) / dim.x;
+	ret.z = idx % dim.x;
+	return ret;
+}
+
+uvec3 cast2global(uint eid, uvec3 index, uvec3 dim){
+	uint cast_table[12] = {
+		0,//0
+		4,//1
+		3*dim.x,//2
+		1,//3
+		3*dim.x*dim.y,       //4
+		3*(dim.x*dim.y+1)+1, //5
+		3*(dim.x*dim.y+dim.x),  //6
+		3*(dim.x*dim.y) + 1, //7
+		2, //8
+		5, //9
+		3*dim.x + 5,//10
+		3*dim.x + 2//11
 	};
 
-	local.x = offset + dir[local.x];
-	local.y = offset + dir[local.y];
-	local.z = offset + dir[local.z];
-
-	return local;
+	index.x = cast_table[index.x];
+	index.y = cast_table[index.y];
+	index.z = cast_table[index.z];
+	index += eid;
+	return index;
 }
 
 void main(){
-	uint tid = gl_GlobalInvocationID.x;
-	uint nr_tri = Tri_Count[tid];
-	uint cell_type = Cell_Type[tid];
-	uvec3 dim = Dim;
-	if(nr_tri <= 0){
-		return ;
-	}
-	uint offset = Tri_Psum[tid] - 1;
+	uvec3 pos = gl_GlobalInvocationID.xyz;
+	uvec3 edim = dim - uvec3(1);
+	uvec3 cdim = dim - uvec3(2);
+	uint eid = 3*pos2idx(pos , edim);
+	uint cid = pos2idx(pos , cdim);
+	uint cell_type = ctype[cid];
+	uint nr_tri = tcnt[cid];
+	uint offset = tpsum[cid];
 	for(uint i = 0 ; i < nr_tri ; ++i){
 		uvec3 index;
-		uint loffset = i*3;
-		index.x = uint(LUT[cell_type][loffset+0]);
-		index.y = uint(LUT[cell_type][loffset+1]);
-		index.z = uint(LUT[cell_type][loffset+2]);
-		index = cast2global(index,  offset ,dim);
-		Indices[offset + i] = index;
+		index.x = LUT[cell_type][i*3];
+		index.y = LUT[cell_type][i*3+1];
+		index.z = LUT[cell_type][i*3+2];
+		index = cast2global(eid, index, edim);
+		indices[3*offset + 3*i + 0] = index.x;
+		indices[3*offset + 3*i + 1] = index.y;
+		indices[3*offset + 3*i + 2] = index.z;
 	}
 }

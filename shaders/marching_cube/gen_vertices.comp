@@ -1,41 +1,52 @@
 #version 450
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1)in;
-layout (binding=0) buffer Volume{
-	float Raw[];
+layout(binding = 0) readonly buffer Volume{
+	float raw[];
 };
-layout(binding = 1) buffer EdgeCompact{
-	uvec3 Edge_compact[] ;
+layout(binding = 1) readonly buffer EdgePsum{
+	uint edge_psum[];
 };
-layout(binding = 2) buffer Dimension{
-	uvec3 Dim;
+layout(binding = 2) readonly buffer EdgeCompact{
+	uint edge_compact[];
 };
-layout(binding = 3) buffer Vertices{
-	vec3 vertices[];
+layout(binding = 3) readonly buffer Dim{
+	uvec3 dim;
 };
-
 layout(binding=4) uniform Isovalue{
 	float isovalue;
 };
+layout(binding = 5) writeonly buffer Vertices{
+	float vertices[];
+};
 
-vec3 idx2pos(uint idx, uvec3 dim){
-	vec3 pos;
-	pos.z = uint(idx / (dim.x * dim.y)) * 1.0;
-	pos.y = uint( (idx - (pos.z*dim.x*dim.y)) / dim.x ) * 1.0;
-	pos.x = (idx % uint(pos.x)) * 1.0;
-	return pos;
+uint pos2idx(uvec3 pos, uvec3 dim){
+	return pos.x + pos.y*dim.x + pos.z*dim.x*dim.y;
+}
+
+uvec3 idx2pos(uint idx, uvec3 dim){
+	uvec3 ret;
+	ret.z = idx / (dim.x*dim.y);
+	ret.y = (idx - ret.z * dim.x * dim.y) / dim.x;
+	ret.z = idx % dim.x;
+	return ret;
 }
 
 void main(){
 	uint tid = gl_GlobalInvocationID.x;
-	uvec3 dim = Dim;
-	uint edge_id = Edge_compact[tid].x;
-	uint origin = edge_id / uint(3);
-	uint dir[3] = {1, Dim.x, Dim.x*Dim.y};
-	vec3 p0 = idx2pos(origin, dim);
-	vec3 p1 = idx2pos(origin + dir[ edge_id%uint(3) ], dim);
-	float v0 = Raw[origin];
-	float v1 = Raw[origin + dir[edge_id%uint(3)]];
-	
-	vertices[tid] = p0 + ((isovalue - v0)/(v1-v0)) * p1;
+	uint edge_id = edge_compact[tid*3];
+	uint dir = edge_id%3;
+	uint vid = edge_id/3;
+	uvec3 edim = dim - uvec3(1);
+	uvec3 p0 = idx2pos(vid, edim);
+	uvec3 p1;
+	p1.z = uint(dir/2);
+	p1.y = dir - 2*p1.z;
+	p1.x = (dir - 2*p1.z - p1.y ) % 2;
+	p1 += p0;
+	float v0 = raw[pos2idx(p0, edim)];
+	float v1 = raw[pos2idx(p1, edim)];
+	vec3 ip= vec3(p0) + vec3(p1 - p0) * ((isovalue - v0)/(v1-v0));
+	vertices[tid*3] = ip.x;
+	vertices[tid*3+1] = ip.y;
+	vertices[tid*3+2] = ip.z;
 }
-

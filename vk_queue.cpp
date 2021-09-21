@@ -169,6 +169,7 @@ namespace VKEngine{
 
 	void CommandQueue::ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkBool32 fenced)
 	{
+		VkEvent event;
 		VkSubmitInfo submit_info = infos::submitInfo();
 		VkPipeline pipeline = kernel->pipeline;
 		VkPipelineLayout layout = kernel->layout;
