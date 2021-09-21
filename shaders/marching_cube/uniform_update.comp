@@ -14,7 +14,7 @@ void main(){
 	uint grp_id = gl_WorkGroupID.x;
 	if(grp_id != 0){
 		uvec4 data = dst[id];
-		data += group_sum[grp_id];
+		data += uvec4(group_sum[grp_id]);
 		dst[id] = data;
 	}
 }

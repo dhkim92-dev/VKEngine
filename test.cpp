@@ -195,7 +195,7 @@ class Scan{
 		while(size > sm*4){
 			uint32_t gsiz = (size+3)/4;
 			limits.push_back(gsiz);
-			g_sizes.push_back((gsiz + sm - 1)/sm * sm  );
+			g_sizes.push_back( (uint32_t)((gsiz + sm - 1)/sm) * sm  );
 			l_sizes.push_back(sm);
 			size = (gsiz + sm - 1) / sm;
 			d_grps.push_back( new Buffer( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (size+1)*4, nullptr));
@@ -301,11 +301,6 @@ class Scan{
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr}
 				});
 				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_FALSE);
-				uint32_t tmp[81];
-				queue->enqueueCopy(d_dsts[i], tmp, 0, 0, 324);
-				for(uint32_t i = 0 ; i < 81 ; i++)
-					printf("scan_ed[%d] result :%d\n", i, tmp[i]);		
-
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				printf("scan_ed kernel spent : %.3f seconds\n", t.count());
 			}
@@ -318,7 +313,6 @@ class Scan{
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
-				
 				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE );
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
@@ -620,12 +614,17 @@ class MarchingCube{
 		x = Volume.size.x;
 		y = Volume.size.y;
 		z = Volume.size.z;
-		uint32_t psum=0;
+		uint32_t *psum = new uint32_t[3*(x-1)*(y-1)*(z-1)];
+		uint32_t max_value = 0;
 		printf("edgeCompact() enqueueCopy start\n");
-		queue->enqueueCopy(&prefix_sum.edge_out, &psum, (3*(x-1)*(y-1)*(z-1)-1)*sizeof(uint32_t), 0,sizeof(uint32_t) );
+		printf("prefix_sum.edge_out shape : %d\n", prefix_sum.edge_out.descriptor.range);
+		printf("psum shape : %d\n", sizeof(uint32_t) * 3 * (x-1) * (y-1) * (z-1));
+		queue->enqueueCopy(&prefix_sum.edge_out, psum, 0, 0, sizeof(uint32_t) * 3*(x-1)*(y-1)*(z-1));
 		printf("edgeCompact() enqueueCopy end\n");
 
-		printf("psum out : %d\n", psum );
+		for(uint32_t i = 0 ; i < 3*(x-1)*(y-1)*(z-1) ; ++i)
+			max_value = ( max_value > psum[i] ) ? max_value : psum[i]; 
+		printf("psum out : %d\n", psum[3*(x-1)*(y-1)*(z-1)-2 ]);
 
 		output.vertices.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0 * sizeof(float) * 3,  nullptr);
@@ -807,13 +806,6 @@ class App : public VKEngine::Application{
 		mc.setupVolume();
 		std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 		mc.edgeTest();
-		uint32_t tmp[81] = {0,};
-		compute_queue->enqueueCopy(&mc.edge_test.d_dst, tmp, 0, 0, 324);
-		for(uint32_t i = 0 ; i < 81 ;++i){
-			printf("edgeTest[%d] : %d \n", i, tmp[i]);
-		}
-		printf("\n");
-
 		std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 		printf("edgeTest() operation time : %.4f seconds\n", t.count() );
 		start = std::chrono::system_clock::now();
@@ -873,27 +865,13 @@ int main(int argc, const char *argv[])
 	string file_path = "assets/dragon_vrip_FLT32_128_128_64.raw";
 	Volume.file_path = file_path;
 	cout << "Volume file path set \n";
-	Volume.size = {4,4,4};
+	Volume.size = {128,128,64};
 	cout << "Volume size set \n";
 	Volume.isovalue = 0.2;
 	cout << "volume isovalue set done\n";
-	
-	float tmp_data[4][4][4];
-	memset(tmp_data, 0x00, sizeof(float)*64);
-	tmp_data[1][1][1] = 0.5;
 
-	Volume.data = new float[4*4*4];
-	memcpy(Volume.data, tmp_data, sizeof(float)*64);	
-
-	/*
-	size_t nr_workitems = 128*128*64;
-	uint32_t sum = 0 ;
-	for(uint32_t i = 0 ; i < nr_workitems ; ++i){
-		sum = (Volume.data[i] > Volume.isovalue) ? sum + 1 : sum;
-	}
-	
-	Volume.result = sum;
-	*/
+	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
+	loadVolume(file_path, Volume.data);
 
 	try {
 	    App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
