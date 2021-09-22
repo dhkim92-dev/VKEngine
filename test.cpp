@@ -956,7 +956,6 @@ int main(int argc, const char *argv[])
 	cout << "Volume size set \n";
 	Volume.isovalue = 0.2;
 	cout << "volume isovalue set done\n";
-
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
 	loadVolume(file_path, Volume.data);
 	//for(uint32_t i = 0 ; i < Volume.size.x*Volume.size.y*Volume.size.z ; ++i){
