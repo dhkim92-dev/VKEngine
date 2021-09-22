@@ -195,13 +195,13 @@ class Scan{
 		while(size > sm*4){
 			uint32_t gsiz = (size+3)/4;
 			limits.push_back(gsiz);
-			g_sizes.push_back( (uint32_t)((gsiz + sm - 1)/sm) * sm  );
+			g_sizes.push_back((gsiz + sm - 1)/sm*sm  );
 			l_sizes.push_back(sm);
 			size = (gsiz + sm - 1) / sm;
 			d_grps.push_back( new Buffer( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (size+1)*4, nullptr));
 		}
 
-		if(size>0){
+		if(size){
 			d_grps.push_back(nullptr);
 			g_sizes.push_back(size);
 			l_sizes.push_back(size);
@@ -236,14 +236,14 @@ class Scan{
 		//build propagion
 		uint32_t s_size = limits[limits.size()-1];
 		vector<uint32_t> s_data = {
-			s_size * 2,
+			s_size*2,
 			s_size
 		};
-		/*
+		
 		for(uint32_t i : s_data){
 			cout << "s_data : " << i << endl;
 		}
-		*/
+		
 		VkSpecializationMapEntry scan_ed_map[2];
 		scan_ed_map[0].constantID = 1;
 		scan_ed_map[0].offset = 0;
@@ -259,7 +259,7 @@ class Scan{
 		scan.build(cache, nullptr);
 		scan_ed.build(cache, &scan_ed_SI);
 		propagation.build(cache, nullptr);
-		cout << "scan ed local size : " << s_data[1] << endl;
+		//cout << "scan ed local size : " << s_data[1] << endl;
 	}
 	public :
 	void run(Buffer *d_src, Buffer *d_dst){
@@ -279,6 +279,26 @@ class Scan{
 			d_dsts.push_back(d_grps[i]);
 		}
 
+		printf("run::d_srcs length: %d\n", d_srcs.size());
+		printf("run::d_dsts length: %d\n", d_dsts.size());
+		printf("run::d_srcs : ");
+		for(auto src : d_srcs){
+			printf("%p ,", src);
+		}
+		printf("\n");
+		printf("run::d_dsts : ");
+		for(auto dst : d_dsts){
+			printf("%p ,", dst);
+		}
+		printf("\n");
+		printf("run::d_grps : ");
+		for(auto grp : d_grps){
+			printf("%p ,", grp);
+		}
+		printf("\n");
+
+
+
 		for(uint32_t i = 0 ; i < nr_grps ; ++i){
 			if(d_grps[i] != nullptr){
 				printf("run scan kernel\n");
@@ -292,15 +312,17 @@ class Scan{
 				});
 				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_FALSE);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
+				printf("scan() d_src : %p d_dst : %p d_grps : %p u_limit :%d\n", d_srcs[i], d_dsts[i], d_grps[i] ,limits[i]);
 				printf("scan kernel spent : %.3f seconds\n", t.count());
 			}else{
 				printf("run scan_ed kernel\n");
 				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 				scan_ed.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
-					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr}
+					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 				});
 				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_FALSE);
+				printf("scan_ed() d_src : %p d_dst : %p d_grps : %p\n", d_srcs[i], d_dsts[i], d_grps[i]);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				printf("scan_ed kernel spent : %.3f seconds\n", t.count());
 			}
@@ -314,11 +336,10 @@ class Scan{
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
 				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE );
+				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
+				printf("uniformUpdate() d_dst : %p d_grps : %p\n", d_dsts[i], d_grps[i]);
 				printf("uniform_update kernel spent : %.3f seconds\n", t.count());
-			}else{
-				printf("d_grps[%d] == nullptr\n", i);
 			}
 		}
 	}
@@ -487,7 +508,7 @@ class MarchingCube{
 		prefix_sum.edge_out.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 3*(x-1)*(y-1)*(z-1)*sizeof(uint32_t), nullptr);
 		prefix_sum.cell_out.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (x-1)*(y-1)*(z-1)*sizeof(uint32_t)*3 , nullptr);
+									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (x-2)*(y-2)*(z-2)*sizeof(uint32_t) , nullptr);
 
 		general.dim.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
 							VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(float)*3, nullptr);
@@ -567,7 +588,7 @@ class MarchingCube{
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.raw.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.tri_counts.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.cell_types.descriptor, nullptr},
-			{3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.isovalue.descriptor, nullptr}
+			{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
 		});
 
 		queue->ndRangeKernel(&cell_test.kernel, {x,y,z}, VK_FALSE);
@@ -604,7 +625,7 @@ class MarchingCube{
 		x = Volume.size.x;
 		y = Volume.size.y;
 		z = Volume.size.z;
-		cell_scan.run( &cell_test.tri_counts, &prefix_sum.cell_out);
+		cell_scan.run(&cell_test.tri_counts, &prefix_sum.cell_out);
 		printf("cellScan() end\n");
 	}
 
@@ -614,20 +635,17 @@ class MarchingCube{
 		x = Volume.size.x;
 		y = Volume.size.y;
 		z = Volume.size.z;
-		uint32_t *psum = new uint32_t[3*(x-1)*(y-1)*(z-1)];
-		uint32_t max_value = 0;
-		printf("edgeCompact() enqueueCopy start\n");
-		printf("prefix_sum.edge_out shape : %d\n", prefix_sum.edge_out.descriptor.range);
-		printf("psum shape : %d\n", sizeof(uint32_t) * 3 * (x-1) * (y-1) * (z-1));
-		queue->enqueueCopy(&prefix_sum.edge_out, psum, 0, 0, sizeof(uint32_t) * 3*(x-1)*(y-1)*(z-1));
-		printf("edgeCompact() enqueueCopy end\n");
-
-		for(uint32_t i = 0 ; i < 3*(x-1)*(y-1)*(z-1) ; ++i)
-			max_value = ( max_value > psum[i] ) ? max_value : psum[i]; 
-		printf("psum out : %d\n", psum[3*(x-1)*(y-1)*(z-1)-2 ]);
-
-		output.vertices.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0 * sizeof(float) * 3,  nullptr);
+		
+		queue->enqueueCopy(&prefix_sum.edge_out,
+							&output.nr_vertices, 
+							sizeof(uint32_t)* (3*(x-1)*(y-1)*(z-1)-2), 0, 
+							sizeof(float));
+		
+		printf("edgeCompact() : nr_vertices : %d\n", output.nr_vertices);
+		
+		output.vertices.create(ctx, 
+								VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,  3 * sizeof(float) * output.nr_vertices,  nullptr);
 		edge_compact.kernel.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
@@ -817,17 +835,36 @@ class App : public VKEngine::Application{
 		t = std::chrono::system_clock::now() - start;
 		printf("edgeCompact() operation time : %.4f seconds\n", t.count() );
 
-		/*
+		
 		start = std::chrono::system_clock::now();
 		mc.cellTest();
 		t = std::chrono::system_clock::now() - start;
 		printf("cellTest() operation time : %.4f seconds\n", t.count() );
+		uint32_t* cell_test_result = new uint32_t[ (Volume.size.x - 2) * (Volume.size.y - 2) * (Volume.size.z) ];
+		compute_queue->enqueueCopy(&mc.cell_test.tri_counts,
+									cell_test_result,
+									0,0,
+									sizeof(uint32_t) * (Volume.size.x-2) * (Volume.size.y-2) * (Volume.size.z-2)
+								);
+		uint32_t nr_tri = 0;
+		uint32_t last_pos = 0;
+		for(uint32_t i = 0 ; i < (Volume.size.x-2) * (Volume.size.y-2) * (Volume.size.z-2) ; ++i){
+			nr_tri += cell_test_result[i];
+			if(cell_test_result[i])
+				last_pos = i;
+		}
+		printf("cell test result nr_tri : %d, last_1 : %d\n", nr_tri, last_pos);
+		delete [] cell_test_result;
 
+		
 		start = std::chrono::system_clock::now();
 		mc.cellTestPrefixSum();
 		t = std::chrono::system_clock::now() - start;
-		printf("cellTestPrefixSum() operation time : %.4f seconds\n", t.count() );
-
+		uint32_t cell_scan = 0;
+		printf("cellTestPrefixSum() process time : %.4f secodns\n", t.count());
+		compute_queue->enqueueCopy(&mc.prefix_sum.cell_out, &cell_scan, sizeof(uint32_t) * ((Volume.size.x-2) * (Volume.size.y-2) * (Volume.size.z-2) - 1),0, sizeof(uint32_t));
+		printf("CellScan[-1] : %d\n",cell_scan);
+		/*
 		start = std::chrono::system_clock::now();
 		mc.generateIndices();
 		t = std::chrono::system_clock::now() - start;
@@ -865,13 +902,18 @@ int main(int argc, const char *argv[])
 	string file_path = "assets/dragon_vrip_FLT32_128_128_64.raw";
 	Volume.file_path = file_path;
 	cout << "Volume file path set \n";
+	//Volume.size = {128,128,64};
 	Volume.size = {128,128,64};
 	cout << "Volume size set \n";
 	Volume.isovalue = 0.2;
 	cout << "volume isovalue set done\n";
 
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
-	loadVolume(file_path, Volume.data);
+	//loadVolume(file_path, Volume.data);
+	for(uint32_t i = 0 ; i < Volume.size.x*Volume.size.y*Volume.size.z ; ++i){
+		Volume.data[i] = 0.0;
+	}
+	Volume.data[ Volume.size.x*Volume.size.y + Volume.size.x + 1 ] = 1;
 
 	try {
 	    App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
