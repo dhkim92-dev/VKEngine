@@ -25,9 +25,9 @@ uint scan1(uint data){
 	buf[lid] = data;
 
 	for(uint i = 1 ; i < lsz ; i<<=1){
-		barrier();
+		memoryBarrier();
 		uint t = buf[lid] + buf[lid - i];
-		barrier();
+		memoryBarrier();
 		buf[lid] = t;
 	}
 

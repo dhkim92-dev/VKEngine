@@ -864,6 +864,13 @@ class App : public VKEngine::Application{
 		printf("cellTestPrefixSum() process time : %.4f secodns\n", t.count());
 		compute_queue->enqueueCopy(&mc.prefix_sum.cell_out, &cell_scan, sizeof(uint32_t) * ((Volume.size.x-2) * (Volume.size.y-2) * (Volume.size.z-2) - 1),0, sizeof(uint32_t));
 		printf("CellScan[-1] : %d\n",cell_scan);
+		uint32_t cs_size = (Volume.size.x - 2) * (Volume.size.y - 2) * (Volume.size.z - 2);
+		uint32_t *cell_scan_all = new uint32_t[cs_size];
+		compute_queue->enqueueCopy(&mc.prefix_sum.cell_out, cell_scan_all, 0, 0,  cs_size*sizeof(uint32_t));
+		for(uint32_t i = cs_size-249 ; i < cs_size ; ++i){
+			//printf("cell_Scan[%d] : %d\n", i, cell_scan_all[i]);
+		}
+		delete [] cell_scan_all;
 		/*
 		start = std::chrono::system_clock::now();
 		mc.generateIndices();
@@ -903,7 +910,7 @@ int main(int argc, const char *argv[])
 	Volume.file_path = file_path;
 	cout << "Volume file path set \n";
 	//Volume.size = {128,128,64};
-	Volume.size = {128,128,64};
+	Volume.size = {64,32,32};
 	cout << "Volume size set \n";
 	Volume.isovalue = 0.2;
 	cout << "volume isovalue set done\n";
