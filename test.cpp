@@ -117,6 +117,8 @@ class Scan{
 	vector<Buffer *> d_grps;
 	Buffer u_limit;
 
+	VkCommandBuffer scan_buffer, scan_ed_buffer, uniform_update_buffer;
+
 	public : 
 	Scan(){}
 	Scan(Context *_ctx, CommandQueue *_queue){
@@ -198,7 +200,7 @@ class Scan{
 			g_sizes.push_back((gsiz + sm - 1)/sm*sm  );
 			l_sizes.push_back(sm);
 			size = (gsiz + sm - 1) / sm;
-			d_grps.push_back( new Buffer( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (size+1)*4, nullptr));
+			d_grps.push_back( new Buffer( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (size+1)*sizeof(uint32_t), nullptr));
 		}
 
 		if(size){
@@ -228,7 +230,6 @@ class Scan{
 			printf(" %d ", i);
 		}
 		printf(" ]\n");
-
 	}
 
 	void buildKernels(){
@@ -310,7 +311,31 @@ class Scan{
 					{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr},
 					{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &u_limit.descriptor, nullptr}
 				});
-				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_FALSE);
+				/*
+				scan_buffer = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+				queue->beginCommandBuffer(scan_buffer);
+				if(i==0){
+					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, 0, VK_SHADER_STAGE_COMPUTE_BIT);
+				}else{
+					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+					d_dsts[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+					d_grps[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+				}
+
+				vkCmdBindPipeline(scan_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan.pipeline);
+				vkCmdBindDescriptorSets(scan_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan.layout, 0, 1, &scan.descriptors.set, 0, nullptr);
+				vkCmdDispatch(scan_buffer, g_sizes[i], 1,1);
+
+				if(i==0){
+					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+				}else{
+					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+					d_dsts[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+					d_grps[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+				}
+				*/
+
+				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_TRUE);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				printf("scan() d_src : %p d_dst : %p d_grps : %p u_limit :%d\n", d_srcs[i], d_dsts[i], d_grps[i] ,limits[i]);
 				printf("scan kernel spent : %.3f seconds\n", t.count());
@@ -321,7 +346,7 @@ class Scan{
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 				});
-				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_FALSE);
+				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_TRUE);
 				printf("scan_ed() d_src : %p d_dst : %p d_grps : %p\n", d_srcs[i], d_dsts[i], d_grps[i]);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				printf("scan_ed kernel spent : %.3f seconds\n", t.count());
@@ -336,7 +361,7 @@ class Scan{
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
 				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_FALSE);
+				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_TRUE);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				printf("uniformUpdate() d_dst : %p d_grps : %p\n", d_dsts[i], d_grps[i]);
 				printf("uniform_update kernel spent : %.3f seconds\n", t.count());
@@ -635,12 +660,17 @@ class MarchingCube{
 		x = Volume.size.x;
 		y = Volume.size.y;
 		z = Volume.size.z;
-		
+
+		uint32_t *edge_compact_result = new uint32_t[3*(x-1)*(y-1)*(z-1)];
 		queue->enqueueCopy(&prefix_sum.edge_out,
-							&output.nr_vertices, 
-							sizeof(uint32_t)* (3*(x-1)*(y-1)*(z-1)-2), 0, 
-							sizeof(float));
-		
+							//&output.nr_vertices, 
+							edge_compact_result,
+							0 , 0, 
+							sizeof(uint32_t) * 3 * (x-1) *(y-1)*(z-1));
+		for(uint32_t i = 0 ; i < 3*(x-1)*(y-1)*(z-1);i++){
+
+		}
+		output.nr_vertices = edge_compact_result[3*(x-1)*(y-1)*(z-1)-2];
 		printf("edgeCompact() : nr_vertices : %d\n", output.nr_vertices);
 		
 		output.vertices.create(ctx, 
@@ -819,23 +849,35 @@ class App : public VKEngine::Application{
 	public:
 
 	void runMarchingCube(){
+		uint32_t x,y,z;
+		x = Volume.size.x;
+		y = Volume.size.y;
+		z = Volume.size.z;
 		mc.create(context, compute_queue);
 		mc.init();
 		mc.setupVolume();
 		std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 		mc.edgeTest();
 		std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
+		uint32_t *edge_test_result=new uint32_t[3*(x-1)*(y-1)*(z-1)];
+		uint32_t edge_test_sum = 0;
+		compute_queue->enqueueCopy(&mc.edge_test.d_dst, edge_test_result, 0, 0, sizeof(uint32_t)*(x-1)*(y-1)*(z-1)*3);
+		for(uint32_t i = 0 ; i < 3*(x-1)*(y-1)*(z-1) ; ++i){
+			edge_test_sum += edge_test_result[i];
+		}
+		delete [] edge_test_result;
 		printf("edgeTest() operation time : %.4f seconds\n", t.count() );
 		start = std::chrono::system_clock::now();
 		mc.edgeTestPrefixSum();
 		t = std::chrono::system_clock::now() - start;
 		printf("edgePrefixSum() operation time : %.4f seconds\n", t.count() );
+		printf("edge_test_psum_cpu : %d\n", edge_test_sum);
 		start = std::chrono::system_clock::now();
 		mc.edgeCompact();
 		t = std::chrono::system_clock::now() - start;
 		printf("edgeCompact() operation time : %.4f seconds\n", t.count() );
 
-		
+		exit(EXIT_FAILURE);
 		start = std::chrono::system_clock::now();
 		mc.cellTest();
 		t = std::chrono::system_clock::now() - start;
@@ -909,18 +951,18 @@ int main(int argc, const char *argv[])
 	string file_path = "assets/dragon_vrip_FLT32_128_128_64.raw";
 	Volume.file_path = file_path;
 	cout << "Volume file path set \n";
-	//Volume.size = {128,128,64};
-	Volume.size = {64,32,32};
+	Volume.size = {128,128,64};
+	//Volume.size = {64,64,32};
 	cout << "Volume size set \n";
 	Volume.isovalue = 0.2;
 	cout << "volume isovalue set done\n";
 
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
-	//loadVolume(file_path, Volume.data);
-	for(uint32_t i = 0 ; i < Volume.size.x*Volume.size.y*Volume.size.z ; ++i){
-		Volume.data[i] = 0.0;
-	}
-	Volume.data[ Volume.size.x*Volume.size.y + Volume.size.x + 1 ] = 1;
+	loadVolume(file_path, Volume.data);
+	//for(uint32_t i = 0 ; i < Volume.size.x*Volume.size.y*Volume.size.z ; ++i){
+//		Volume.data[i] = 0.0;
+	//}
+	//Volume.data[ Volume.size.x*Volume.size.y + Volume.size.x + 1 ] = 1;
 
 	try {
 	    App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
