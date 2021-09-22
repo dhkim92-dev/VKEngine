@@ -2,10 +2,10 @@
 layout(constant_id=1) const uint sz_shared_buffer = 256;
 layout(local_size_x_id=2) in;
 
-layout(binding =0) buffer InBuffer{
+layout(std430, binding =0) buffer InBuffer{
 	uint src[];
 };
-layout(binding=1) buffer OutBuffer{
+layout(std430, binding=1) buffer OutBuffer{
 	uint dst[];
 };
 

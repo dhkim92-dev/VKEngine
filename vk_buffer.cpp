@@ -33,7 +33,7 @@ namespace VKEngine{
 		if(ptr != nullptr){
 			copyFrom(ptr, size);
 		}
-		setupDescriptor(0, _size);
+		setupDescriptor(0, VK_WHOLE_SIZE);
 		bind(0);
 	}
 
