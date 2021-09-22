@@ -314,27 +314,25 @@ class Scan{
 				/*
 				scan_buffer = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 				queue->beginCommandBuffer(scan_buffer);
-				if(i==0){
-					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, 0, VK_SHADER_STAGE_COMPUTE_BIT);
-				}else{
-					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-					d_dsts[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-					d_grps[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-				}
-
+				d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_dsts[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_grps[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 				vkCmdBindPipeline(scan_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan.pipeline);
 				vkCmdBindDescriptorSets(scan_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan.layout, 0, 1, &scan.descriptors.set, 0, nullptr);
 				vkCmdDispatch(scan_buffer, g_sizes[i], 1,1);
 
-				if(i==0){
-					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-				}else{
-					d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-					d_dsts[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-					d_grps[i]->barrier(scan_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-				}
+				d_srcs[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_dsts[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_grps[i]->barrier(scan_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				queue->endCommandBuffer(scan_buffer);
+				VkSubmitInfo SI = infos::submitInfo();
+				SI.commandBufferCount=1;
+				SI.pCommandBuffers = &scan_buffer;
+				queue->resetFence();
+				queue->submit(SI, VK_TRUE);
+				queue->waitFence();
+				queue->free(scan_buffer);
 				*/
-
 				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_TRUE);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				printf("scan() d_src : %p d_dst : %p d_grps : %p u_limit :%d\n", d_srcs[i], d_dsts[i], d_grps[i] ,limits[i]);
@@ -346,6 +344,25 @@ class Scan{
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 				});
+				/*
+				scan_ed_buffer =  queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+				queue->beginCommandBuffer(scan_ed_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+				d_srcs[i]->barrier(scan_ed_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_dsts[i]->barrier(scan_ed_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				vkCmdBindPipeline(scan_ed_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan_ed.pipeline);
+				vkCmdBindDescriptorSets(scan_ed_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan_ed.layout, 0, 1, &scan_ed.descriptors.set, 0, nullptr);
+				vkCmdDispatch(scan_ed_buffer, g_sizes[i], 1,1);
+				d_srcs[i]->barrier(scan_ed_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_dsts[i]->barrier(scan_ed_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				queue->endCommandBuffer(scan_ed_buffer);
+				VkSubmitInfo SI = infos::submitInfo();
+				SI.commandBufferCount=1;
+				SI.pCommandBuffers = &scan_ed_buffer;
+				queue->resetFence();
+				queue->submit(SI, VK_TRUE);
+				queue->waitFence();
+				queue->free(scan_ed_buffer);
+				*/
 				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_TRUE);
 				printf("scan_ed() d_src : %p d_dst : %p d_grps : %p\n", d_srcs[i], d_dsts[i], d_grps[i]);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
@@ -360,6 +377,25 @@ class Scan{
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
+				/*
+				uniform_update_buffer =  queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+				queue->beginCommandBuffer(uniform_update_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+				d_srcs[i]->barrier(uniform_update_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_dsts[i]->barrier(uniform_update_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				vkCmdBindPipeline(uniform_update_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, propagation.pipeline);
+				vkCmdBindDescriptorSets(uniform_update_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, propagation.layout, 0, 1, &propagation.descriptors.set, 0, nullptr);
+				vkCmdDispatch(uniform_update_buffer, g_sizes[i], 1,1);
+				d_srcs[i]->barrier(uniform_update_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_dsts[i]->barrier(uniform_update_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				queue->endCommandBuffer(uniform_update_buffer);
+				VkSubmitInfo SI = infos::submitInfo();
+				SI.commandBufferCount=1;
+				SI.pCommandBuffers = &uniform_update_buffer;
+				queue->resetFence();
+				queue->submit(SI, VK_TRUE);
+				queue->waitFence();
+				queue->free(uniform_update_buffer);
+				*/
 				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 				queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_TRUE);
 				std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
@@ -661,16 +697,40 @@ class MarchingCube{
 		y = Volume.size.y;
 		z = Volume.size.z;
 
+		
 		uint32_t *edge_compact_result = new uint32_t[3*(x-1)*(y-1)*(z-1)];
+		
 		queue->enqueueCopy(&prefix_sum.edge_out,
 							//&output.nr_vertices, 
 							edge_compact_result,
 							0 , 0, 
 							sizeof(uint32_t) * 3 * (x-1) *(y-1)*(z-1));
+							
+		/*			
+		VkCommandBuffer copy_buffer = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		queue->beginCommandBuffer(copy_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		Buffer staging(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+						3*(x-1)*(y-1)*(z-1)*sizeof(uint32_t), nullptr);
+		VkBufferCopy region = {};
+		region.size = 3*(x-1)*(y-1)*(z-1)*sizeof(uint32_t);
+		region.srcOffset = 0;
+		region.dstOffset = 0;
+		prefix_sum.edge_out.barrier(copy_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+		vkCmdCopyBuffer(copy_buffer, VkBuffer(prefix_sum.edge_out), VkBuffer(staging), 1, &region);
+		prefix_sum.edge_out.barrier(copy_buffer, VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_HOST_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+		queue->endCommandBuffer(copy_buffer);
+		VkSubmitInfo submit_info = infos::submitInfo();
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &copy_buffer;
+		queue->submit(submit_info, VK_TRUE);
+
+		staging.copyTo(edge_compact_result, sizeof(uint32_t)*3*(x-1)*(y-1)*(z-1));
 		for(uint32_t i = 0 ; i < 3*(x-1)*(y-1)*(z-1);i++){
 
 		}
-		output.nr_vertices = edge_compact_result[3*(x-1)*(y-1)*(z-1)-2];
+		*/
+		
+		output.nr_vertices = edge_compact_result[3*(x-1)*(y-1)*(z-1)-1];
 		printf("edgeCompact() : nr_vertices : %d\n", output.nr_vertices);
 		
 		output.vertices.create(ctx, 

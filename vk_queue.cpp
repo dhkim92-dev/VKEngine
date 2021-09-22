@@ -129,8 +129,8 @@ namespace VKEngine{
 
 	void CommandQueue::waitFence(){
 		VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX));
-		vkDestroyFence(device, fence, nullptr);
-		fence = VK_NULL_HANDLE;
+		//vkDestroyFence(device, fence, nullptr);
+		//fence = VK_NULL_HANDLE;
 	}
 
 	void CommandQueue::enqueueCopy(Buffer *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking){
@@ -164,21 +164,7 @@ namespace VKEngine{
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 					size, nullptr);	
-
-		VkCommandBuffer command_buffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		src->barrier(command_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-		VkBufferCopy region = {};
-		region.size = size;
-		region.srcOffset = src_offset;
-		region.dstOffset = dst_offset;
-		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(staging),1, &region );
-		staging.barrier(command_buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
-		endCommandBuffer(command_buffer);
-		submit(command_buffer, nullptr, nullptr, nullptr, (is_blocking ? VK_TRUE: VK_FALSE));
-		free(command_buffer);
-		//enqueueCopy(src, &staging, src_offset, dst_offset, size, is_blocking);
+		enqueueCopy(src, &staging, src_offset, dst_offset, size, is_blocking);
 		staging.copyTo(dst, size);
 		staging.destroy();
 	}
