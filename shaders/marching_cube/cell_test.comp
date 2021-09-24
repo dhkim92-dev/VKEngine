@@ -1,5 +1,5 @@
 #version 450
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1,local_size_y = 1, local_size_z = 1) in;
 layout( binding =0 ) buffer Raw{
 	float raw[];
 };
@@ -49,8 +49,7 @@ const uint nr_triangles[256] = { 0,1,1,2,1,2,2,3,
 								 3,2,4,1,2,1,1,0 };
 
 uint pos2idx(uvec3 pos, uvec3 dim){
-	uint idx = pos.x + pos.y * dim.x + pos.z * dim.x * dim.y;
-	return idx;
+	return pos.x + pos.y * dim.x + pos.z * dim.x * dim.y;
 }
 
 void main() {

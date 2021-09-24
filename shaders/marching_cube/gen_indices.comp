@@ -13,12 +13,20 @@ layout(binding = 2) readonly buffer TriPsum{
 	uint tpsum[];
 };
 
-layout(binding = 3) readonly buffer Dim{
+layout(binding=3) readonly buffer EdgePsum{
+	uint edge_psum[];
+};
+
+layout(binding = 4) readonly buffer Dim{
 	uvec3 dim;
 };
 
-layout(binding = 4) writeonly buffer Indices{
+layout(binding = 5) writeonly buffer Indices{
 	uint indices[];
+};
+
+layout(binding=6) readonly buffer CastTable{
+	uint cast_table[];
 };
 
 
@@ -288,50 +296,39 @@ uvec3 idx2pos(uint idx, uvec3 dim){
 	uvec3 ret;
 	ret.z = idx / (dim.x*dim.y);
 	ret.y = (idx - ret.z * dim.x * dim.y) / dim.x;
-	ret.z = idx % dim.x;
+	ret.x = idx % dim.x;
 	return ret;
 }
 
-uvec3 cast2global(uint eid, uvec3 index, uvec3 dim){
-	uint cast_table[12] = {
-		0,//0
-		4,//1
-		3*dim.x,//2
-		1,//3
-		3*dim.x*dim.y,       //4
-		3*(dim.x*dim.y+1)+1, //5
-		3*(dim.x*dim.y+dim.x),  //6
-		3*(dim.x*dim.y) + 1, //7
-		2, //8
-		5, //9
-		3*dim.x + 5,//10
-		3*dim.x + 2//11
-	};
-
+uvec3 cast2global(uint eid, uvec3 index, uvec3 _dim){
 	index.x = cast_table[index.x];
 	index.y = cast_table[index.y];
 	index.z = cast_table[index.z];
 	index += eid;
+	index.x = edge_psum[index.x];
+	index.y = edge_psum[index.y];
+	index.z = edge_psum[index.z];
 	return index;
 }
 
+
 void main(){
 	uvec3 pos = gl_GlobalInvocationID.xyz;
-	uvec3 edim = dim - uvec3(1);
-	uvec3 cdim = dim - uvec3(2);
+	uvec3 edim = dim - uint(1);
+	uvec3 cdim = edim - uint(1);
 	uint eid = 3*pos2idx(pos , edim);
 	uint cid = pos2idx(pos , cdim);
 	uint cell_type = ctype[cid];
 	uint nr_tri = tcnt[cid];
-	uint offset = tpsum[cid];
+	uint offset = tpsum[cid - 1];
+
 	for(uint i = 0 ; i < nr_tri ; ++i){
-		uvec3 index;
-		index.x = LUT[cell_type][i*3];
-		index.y = LUT[cell_type][i*3+1];
-		index.z = LUT[cell_type][i*3+2];
-		index = cast2global(eid, index, edim);
-		indices[3*offset + 3*i + 0] = index.x;
-		indices[3*offset + 3*i + 1] = index.y;
-		indices[3*offset + 3*i + 2] = index.z;
+		cdim.x = LUT[cell_type][i*3];
+		cdim.y = LUT[cell_type][i*3+1];
+		cdim.z = LUT[cell_type][i*3+2];
+		cdim = cast2global(eid, cdim, edim);
+		indices[3*offset + 3*i + 0] = cdim.x;
+		indices[3*offset + 3*i + 1] = cdim.y;
+		indices[3*offset + 3*i + 2] = cdim.z;
 	}
 }

@@ -1,0 +1,42 @@
+#version 450
+layout (local_size_x=32) in;
+layout(std430, binding=0) readonly buffer CellTest{
+	uint tri_count[];
+};
+
+layout(std430, binding=1) readonly buffer CellScan{
+	uint cell_psum[];
+};
+
+layout(std430, binding=2) readonly buffer Dim{
+	uvec3 vdim;
+};
+
+layout(std430, binding=3) writeonly buffer Out{
+	uint cell_compact[];
+};
+
+uvec3 idx2pos(uint idx, uvec3 dim){
+	uvec3 pos;
+	pos.z = idx / (dim.x * dim.y);
+	pos.y = (idx - pos.z*(dim.x*dim.y)) / dim.x;
+	pos.x = idx % dim.x;
+	return pos;
+}
+
+uint pos2idx(uvec3 pos, uvec3 dim){
+	return pos.z * dim.x*dim.y + pos.y * dim.x + pos.x;
+}
+
+void main(){
+	uint tid = gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+	uint nr_triangles = tri_count[tid];
+	uvec3 dim = vdim;
+	dim-=2;
+	uint limit = (dim.x * dim.y * dim.z-2) - 1;
+	if(limit < tid || nr_triangles == 0 ) return ;
+	uint offset = cell_psum[tid]-nr_triangles;
+	for(uint i = 0 ; i < nr_triangles ; ++i){
+		cell_compact[offset + i] = tid;
+	}
+}

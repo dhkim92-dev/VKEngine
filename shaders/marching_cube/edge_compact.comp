@@ -4,7 +4,7 @@ layout(binding = 0) writeonly buffer CompactedIndex{
 	uint edge_id[]; 
 };
 layout(binding = 1) readonly buffer EdgeType{
-	uint edge_status[]; // is this id edge test result 1
+	uint edge_type[]; // is this id edge test result 1
 };
 layout(binding = 2) readonly buffer EdgeCounter{
 	uint edge_psum[]; // prefix sum result
@@ -12,7 +12,7 @@ layout(binding = 2) readonly buffer EdgeCounter{
 
 void main(){
 	uint id = gl_GlobalInvocationID.x;
-	if(edge_status[id]==uint(1)){
+	if(edge_type[id]==uint(1)){
 		uint offset = 3 * (edge_psum[id] - 1);
 		edge_id[offset] = id;
 	}

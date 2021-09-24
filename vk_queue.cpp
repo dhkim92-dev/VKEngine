@@ -107,9 +107,7 @@ namespace VKEngine{
 
 	void CommandQueue::submit(VkSubmitInfo submit_info, VkBool32 fenced){
 		if(fenced == VK_TRUE){
-			LOG("with fence!\n");
 			resetFence();
-			LOG("with fence : %p\n", fence);
 			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submit_info, fence));
 			waitFence();
 		}else{
@@ -181,7 +179,7 @@ namespace VKEngine{
 		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		vkCmdBindPipeline(command_buffer, point, pipeline);
 		vkCmdBindDescriptorSets(command_buffer, point, layout, 0, 1, &descriptor_set, 0, nullptr);
-		LOG("dispatch size : %d %d %d\n", gw.x, gw.y, gw.z);
+		//LOG("dispatch size : %d %d %d\n", gw.x, gw.y, gw.z);
 		vkCmdDispatch(command_buffer, gw.x, gw.y, gw.z);
 		endCommandBuffer(command_buffer);
 		submit_info.commandBufferCount =1;

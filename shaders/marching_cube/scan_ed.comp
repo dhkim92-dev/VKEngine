@@ -2,10 +2,10 @@
 layout(constant_id=1) const uint sz_shared_buffer = 256;
 layout(local_size_x_id=2) in;
 
-layout(std430, binding =0) buffer InBuffer{
+layout(std430, binding =0) readonly buffer InBuffer{
 	uint src[];
 };
-layout(std430, binding=1) buffer OutBuffer{
+layout(std430, binding=1) writeonly buffer OutBuffer{
 	uint dst[];
 };
 
@@ -20,9 +20,11 @@ uint scan1(uint data){
 	buf[lid] = data;
 
 	for(uint i = 1 ; i < lsz ; i<<=1){
-		memoryBarrier();
+		memoryBarrierShared();
+		barrier();
 		uint t = buf[lid] + buf[lid - i];
-		memoryBarrier();
+		barrier();
+		memoryBarrierShared();
 		buf[lid] = t;
 	}
 
