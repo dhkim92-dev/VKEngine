@@ -485,7 +485,7 @@ class MarchingCube{
 	void setupDescriptorPool(){
 		printf("MarchingcCube::setupDescriptorPool() start\n");
 		vector<VkDescriptorPoolSize> pool_size = {
-			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  23),
+			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  24),
 			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
 		};
 		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo(
@@ -576,7 +576,8 @@ class MarchingCube{
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3)
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3),
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4)
 		});
 		/*
 		cell_compact.kernel.setupDescriptorSetLayout({
@@ -640,10 +641,11 @@ class MarchingCube{
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.raw.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.tri_counts.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.cell_types.descriptor, nullptr},
-			{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
+			{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr},
+			{4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.dim.descriptor, nullptr},
 		});
 
-		queue->ndRangeKernel(&cell_test.kernel, {x,y,z}, VK_FALSE);
+		queue->ndRangeKernel(&cell_test.kernel, {x, y, z}, VK_FALSE);
 		printf("cellTest() end\n");
 	}
 
@@ -657,7 +659,7 @@ class MarchingCube{
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
 		});
-		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_TRUE);
+		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_FALSE);
 		printf("edgeTest() end()\n");
 	}
 

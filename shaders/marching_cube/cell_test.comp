@@ -1,18 +1,22 @@
 #version 450
-layout(local_size_x = 1,local_size_y = 1, local_size_z = 1) in;
-layout( binding =0 ) buffer Raw{
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(std430, binding =0 ) readonly buffer Raw{
 	float raw[];
 };
-layout( binding = 1)  buffer TriCount{
+layout(std430, binding = 1)  writeonly buffer TriCount{
 	uint tri_count[];
 };
 
-layout(binding = 2) buffer CellType{
+layout(std430, binding = 2) writeonly buffer CellType{
 	uint Cell_Type[];
 };
 
 layout( binding = 3 ) uniform IsoValue{
 	float isovalue;
+};
+
+layout(std430,binding = 4) readonly buffer Dim{
+	uvec3 vdim;
 };
 
 const uint nr_triangles[256] = { 0,1,1,2,1,2,2,3,
@@ -49,13 +53,13 @@ const uint nr_triangles[256] = { 0,1,1,2,1,2,2,3,
 								 3,2,4,1,2,1,1,0 };
 
 uint pos2idx(uvec3 pos, uvec3 dim){
-	return pos.x + pos.y * dim.x + pos.z * dim.x * dim.y;
+	return pos.x + dim.x*(pos.y + pos.z*dim.y);
 }
 
 void main() {
 	uvec3 pos = gl_GlobalInvocationID.xyz;
-	uvec3 dim = gl_NumWorkGroups.xyz;
-	dim += uvec3(2); 
+	uvec3 dim = vdim - 2;//gl_NumWorkGroups.xyz;
+	dim += 2; 
 	uint id = pos2idx(pos, dim);
 	uint cell_type = (uint(raw[ id ] > isovalue) |
 			  uint( raw[ pos2idx( pos + uvec3(1,0,0), dim) ] > isovalue ) << 1 | 
@@ -65,7 +69,7 @@ void main() {
 			  uint( raw[ pos2idx( pos + uvec3(1,0,1), dim) ] > isovalue ) << 5 |
 			  uint( raw[ pos2idx( pos + uvec3(1,1,1), dim) ] > isovalue ) << 6 |
 			  uint( raw[ pos2idx( pos + uvec3(0,1,1), dim) ] > isovalue ) << 7);
-	id = pos2idx(pos, dim-uvec3(2));
+	id = pos2idx(pos, dim-2);
 	tri_count[id] = nr_triangles[cell_type];
 	Cell_Type[id] = cell_type;
 }
