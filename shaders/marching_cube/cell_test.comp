@@ -58,8 +58,7 @@ uint pos2idx(uvec3 pos, uvec3 dim){
 
 void main() {
 	uvec3 pos = gl_GlobalInvocationID.xyz;
-	uvec3 dim = vdim - 2;//gl_NumWorkGroups.xyz;
-	dim += 2; 
+	uvec3 dim = vdim;
 	uint id = pos2idx(pos, dim);
 	uint cell_type = (uint(raw[ id ] > isovalue) |
 			  uint( raw[ pos2idx( pos + uvec3(1,0,0), dim) ] > isovalue ) << 1 | 

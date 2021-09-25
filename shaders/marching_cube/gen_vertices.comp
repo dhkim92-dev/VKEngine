@@ -46,7 +46,7 @@ void main(){
 	float v0 = raw[pos2idx(p0, dim)];
 	float v1 = raw[pos2idx(p1, dim)];
 	vec3 ip= p0 + (p1 - p0) * ((isovalue - v0)/(v1-v0));
-	vertices[tid*3] = ip.x / float(edim.x+1) ;
-	vertices[tid*3+1] = ip.y / float(edim.y + 1);
-	vertices[tid*3+2] = ip.z / float(edim.z + 1);
+	vertices[tid*3] = ip.x;
+	vertices[tid*3+1] = ip.y;
+	vertices[tid*3+2] = ip.z;
 }

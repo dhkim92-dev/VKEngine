@@ -315,20 +315,20 @@ uvec3 cast2global(uint eid, uvec3 index, uvec3 _dim){
 void main(){
 	uvec3 pos = gl_GlobalInvocationID.xyz;
 	uvec3 edim = dim - uint(1);
-	uvec3 cdim = edim - uint(1);
+	//uvec3 cdim = edim - uint(1);
 	uint eid = 3*pos2idx(pos , edim);
-	uint cid = pos2idx(pos , cdim);
-	uint cell_type = ctype[cid];
+	uint cid = pos2idx(pos , edim-1);
+	//uint cell_type = ctype[cid];
 	uint nr_tri = tcnt[cid];
 	uint offset = tpsum[cid - 1];
-
+	cid = ctype[cid];
 	for(uint i = 0 ; i < nr_tri ; ++i){
-		cdim.x = LUT[cell_type][i*3];
-		cdim.y = LUT[cell_type][i*3+1];
-		cdim.z = LUT[cell_type][i*3+2];
-		cdim = cast2global(eid, cdim, edim);
-		indices[3*offset + 3*i + 0] = cdim.x;
-		indices[3*offset + 3*i + 1] = cdim.y;
-		indices[3*offset + 3*i + 2] = cdim.z;
+		pos.x = LUT[cid][i*3];
+		pos.y = LUT[cid][i*3+1];
+		pos.z = LUT[cid][i*3+2];
+		pos = cast2global(eid, pos, edim);
+		indices[3*(offset+i) + 0] = pos.x;
+		indices[3*(offset+i) + 1] = pos.y;
+		indices[3*(offset+i) + 2] = pos.z;
 	}
 }
