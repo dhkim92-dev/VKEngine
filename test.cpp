@@ -98,17 +98,11 @@ struct Vertex {
 	}
 };
 
-
-struct RenderObject{
-	struct {
-		glm::mat4 model;
-		glm::mat4 view;
-		glm::mat4 proj;
-	}matrices;
-	Buffer *ubo = nullptr;
-	VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
-	Program *program = nullptr;
-};
+struct UniformMatrices{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+}uniform_matrix;
 
 class Scan{
 	private :
@@ -795,7 +789,6 @@ class App : public VKEngine::Application{
 	explicit App(string app_name, string engine_name, int h, int w, vector<const char*>instance_exts, vector<const char*>device_exts , vector<const char *>valids) : Application(app_name, engine_name, h, w, instance_exts, device_exts, valids){
 	};
 
-	vector<RenderObject> render_objects;
 	
 	MarchingCube mc;
 
@@ -804,10 +797,11 @@ class App : public VKEngine::Application{
 		VkDevice device = VkDevice(*context);
 		VkCommandPool command_pool = VkCommandPool(*compute_queue);
 		mc.destroy();
-		//vkFreeCommandBuffers(device, command_pool, 1, &compute.command_buffer);
 	}
 
 	protected:
+	Program *draw_program;
+
 	virtual void initWindow(){
 		LOG("App Init Window\n");
 		glfwInit();
@@ -833,84 +827,76 @@ class App : public VKEngine::Application{
 		render();
 	}
 
-	void prepareComputeBuffers(){
-
-	}
-
-	void prepareComputeKernels(){
-
-		cout << "prepare compute kernel complete\n";
+	void prepareCompute(){
 	}
 	
 	void preparePrograms(){
-		// LOG("-------------Test::preparePrograms() start------------------------\n");
-		// Program *program = new Program(context);
-		// program->attachShader("./shaders/cubes/cube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		// program->attachShader("./shaders/cubes/cube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		// program->setupDescriptorSetLayout({
-		// 	infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1)
-		// });
-		// program->createDescriptorPool({
-		// 	infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
-		// });
-		// auto attributes = Vertex::vertexInputAttributes();
-		// auto bindings = Vertex::vertexInputBinding();
-		// program->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
-		// program->build(render_pass, cache);
-		// programs.insert({"cube", program});
-		// LOG("-------------Test::preparePrograms() end------------------------\n");
-	}
-
-	void prepareRenderObjects(){
+		LOG("-------------Test::preparePrograms() start------------------------\n");
+		draw_program = new Program(context);
+		draw_program->attachShader("./shaders/marching_cube/draw.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		draw_program->attachShader("./shaders/marching_cube/draw.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		draw_program->setupDescriptorSetLayout({
+			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1)
+		});
+		draw_program->createDescriptorPool({
+		 	infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
+		});
+		auto attributes = Vertex::vertexInputAttributes();
+		auto bindings = Vertex::vertexInputBinding();
+		draw_program->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
+		draw_program->build(render_pass, cache);
+		//programs.insert({"draw", program});
+		LOG("-------------Test::preparePrograms() end------------------------\n");
 	}
 
 	void prepareCommandBuffer(){
-		// std::array<VkClearValue, 2> clear_values{};
-		// clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-		// clear_values[1].depthStencil = {1.0f, 0};
-		// draw_command_buffers.resize(swapchain.buffers.size());
-		
-		// VkRenderPassBeginInfo render_pass_BI = infos::renderPassBeginInfo();
-		// render_pass_BI.clearValueCount = static_cast<uint32_t>(clear_values.size());
-		// render_pass_BI.pClearValues = clear_values.data();
-		// render_pass_BI.renderArea.offset = {0,0};
-		// render_pass_BI.renderArea.extent.height = height;
-		// render_pass_BI.renderArea.extent.width = width;
-		// render_pass_BI.renderPass = render_pass;
+		std::array<VkClearValue, 2> clear_values{};
+		clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+		clear_values[1].depthStencil = {1.0f, 0};
+		draw_command_buffers.resize(swapchain.buffers.size());
+		uint32_t sz_indices = mc.output.nr_faces * sizeof(uint32_t) * 3;
 
-		// for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
-		// 	draw_command_buffers[i] = graphics_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		// }
+		VkRenderPassBeginInfo render_pass_BI = infos::renderPassBeginInfo();
+		render_pass_BI.clearValueCount = static_cast<uint32_t>(clear_values.size());
+		render_pass_BI.pClearValues = clear_values.data();
+		render_pass_BI.renderArea.offset = {0,0};
+		render_pass_BI.renderArea.extent.height = height;
+		render_pass_BI.renderArea.extent.width = width;
+		render_pass_BI.renderPass = render_pass;
+
+		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
+			draw_command_buffers[i] = graphics_queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		}
 		
-		// for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
-			
-			// graphics_queue->beginCommandBuffer(draw_command_buffers[i]);
-			// render_pass_BI.framebuffer = framebuffers[i];
-			// VkViewport viewport = infos::viewport(static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f);
-			// VkRect2D scissor = infos::rect2D(width, height, 0, 0);
-			// vkCmdBeginRenderPass(draw_command_buffers[i], &render_pass_BI, VK_SUBPASS_CONTENTS_INLINE);
-			// vkCmdSetViewport(draw_command_buffers[i], 0, 1, &viewport);
-			// vkCmdSetScissor(draw_command_buffers[i], 0, 1, &scissor);
-			// vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, render_objects[0].program->pipeline);
-			// VkBuffer vertex_buffer[] = {VkBuffer(*cube.vbo)};
-			// VkBuffer indices_buffer[] = {VkBuffer(*cube.ibo)};
-			// VkDeviceSize offsets[] = {0};
-			// vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, vertex_buffer, offsets);
-			// vkCmdBindIndexBuffer(draw_command_buffers[i], VkBuffer(*cube.ibo), 0, VK_INDEX_TYPE_UINT16);
-			// vkCmdBindDescriptorSets(draw_command_buffers[i], 
-			// 						VK_PIPELINE_BIND_POINT_GRAPHICS,
-			// 						render_objects[0].program->pipeline_layout, 
-			// 						0, 
-			// 						1, &render_objects[0].descriptor_set,
-			// 						0, nullptr);
-			// vkCmdDrawIndexed(draw_command_buffers[i], static_cast<uint32_t>(cube_indices.size()), 1, 0, 0, 0);
-			// vkCmdEndRenderPass(draw_command_buffers[i]);
-			// graphics_queue->endCommandBuffer(draw_command_buffers[i]);
-		// }	
+		for(uint32_t i = 0 ; i < draw_command_buffers.size() ; ++i){
+			graphics_queue->beginCommandBuffer(draw_command_buffers[i]);
+			render_pass_BI.framebuffer = framebuffers[i];
+			VkViewport viewport = infos::viewport(static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f);
+			VkRect2D scissor = infos::rect2D(width, height, 0, 0);
+			vkCmdBeginRenderPass(draw_command_buffers[i], &render_pass_BI, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdSetViewport(draw_command_buffers[i], 0, 1, &viewport);
+			vkCmdSetScissor(draw_command_buffers[i], 0, 1, &scissor);
+			vkCmdBindPipeline(draw_command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, draw_program->pipeline);
+			VkBuffer vertex_buffer[] = {VkBuffer(mc.output.vertices)};
+			VkBuffer indices_buffer[] = {VkBuffer(mc.output.indices)};
+			VkDeviceSize offsets[] = {0};
+			vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, vertex_buffer ,offsets);
+			vkCmdBindIndexBuffer(draw_command_buffers[i], indices_buffer[0], 0, VK_INDEX_TYPE_UINT32);
+			/*
+			vkCmdBindDescriptorSets(draw_command_buffers[i], 
+									VK_PIPELINE_BIND_POINT_GRAPHICS,
+									draw_program->pipeline_layout, 
+									0, 
+									1, &render_objects[0].descriptor_set,
+									0, nullptr);
+			*/
+			vkCmdDrawIndexed(draw_command_buffers[i], sz_indices, 1, 0, 0, 0);
+			vkCmdEndRenderPass(draw_command_buffers[i]);
+			graphics_queue->endCommandBuffer(draw_command_buffers[i]);
+		}	
 	}
 
 	public:
-
 	void runMarchingCube(){
 		uint32_t x,y,z;
 		x = Volume.size.x;
@@ -926,12 +912,6 @@ class App : public VKEngine::Application{
 		PROFILING(mc.edgeCompact(), "edgeCompact()");
 		PROFILING(mc.cellTest(), "cellTest()");
 		PROFILING(mc.cellTestPrefixSum(),"cellTestPrefixSum()");
-
-		//PROFILING(mc.cellCompact(),"cellCompact()");
-		//uint32_t debug=0;
-		//compute_queue->enqueueCopy(&mc.cell_compact.d_dst, &debug, 4*mc.output.nr_faces-4, 0, 4);
-		//printf("debug : %d\n", debug);
-
 		PROFILING(mc.generateVertices(),"generateVertices()");
 		PROFILING(mc.generateIndices(),"generateIndices()");
 		std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
@@ -971,11 +951,6 @@ int main(int argc, const char *argv[])
 	cout << "volume isovalue set done\n";
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
 	loadVolume(file_path, Volume.data);
-	//for(uint32_t i = 0 ; i < Volume.size.x*Volume.size.y*Volume.size.z ; ++i){
-	//	Volume.data[i] = 0.0;
-	//}
-	//Volume.data[ Volume.size.x*Volume.size.y + Volume.size.x + 1 ] = 1;
-
 	try {
 	    App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
 	    app.run();
@@ -983,8 +958,6 @@ int main(int argc, const char *argv[])
 		cout << "error occured : " << e.what()  <<  "on File " << __FILE__ << " line : " << __LINE__ << "\n";
 		exit(EXIT_FAILURE);
 	};
-
-
 	delete [] Volume.data;
 	return 0;
 }

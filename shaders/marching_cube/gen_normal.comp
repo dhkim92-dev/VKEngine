@@ -1,0 +1,23 @@
+#version 450
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout(std430, binding = 0) readonly buffer Vertex{
+	float vertices[];
+}; 
+layout(std430, binding = 1) readonly buffer Index{
+	uint indices[];
+};
+layout(std430, binding = 2) buffer Limit{
+	uvec3 lim;
+};
+layout(std430, binding = 2) writeonly buffer Normal{
+	float normal[];
+};
+
+
+void main(){
+	uint tid = gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+	if(tid > lim.x - 1){ return ;}
+}
+
+
