@@ -10,5 +10,5 @@ layout(location = 0) out vec3 outColor;
 
 void main(){
 	gl_Position = MVP.proj * MVP.view * MVP.model * vec4(inPos, 1.0);
-	outColor =  inPos;
+	outColor =  vec3(inPos);
 }

@@ -12,6 +12,7 @@
 #include <chrono>
 #include <algorithm>
 #include <ctime>
+#include <unistd.h>
 #ifndef GLFW_INCLUDE_VULKAN
 #define GLFW_INCLUDE_VULKAN 1
 #endif
@@ -71,7 +72,6 @@ vector<const char *> getRequiredExtensions(  ){
 
 struct Vertex {
 	glm::vec3 pos;
-	glm::vec3 color;
 	
 	static vector<VkVertexInputBindingDescription> vertexInputBinding(){
 		vector <VkVertexInputBindingDescription> bindings;
@@ -84,16 +84,11 @@ struct Vertex {
 	}
 
 	static vector<VkVertexInputAttributeDescription> vertexInputAttributes(){
-		vector<VkVertexInputAttributeDescription> attributes(2);
+		vector<VkVertexInputAttributeDescription> attributes(1);
 		attributes[0].binding = 0;
 		attributes[0].location = 0;
 		attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributes[0].offset = offsetof(Vertex, pos);
-
-		attributes[1].binding = 0;
-		attributes[1].location = 1;
-		attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributes[1].offset = offsetof(Vertex, color);
 		return attributes;
 	}
 };
@@ -102,6 +97,7 @@ struct UniformMatrices{
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
+	VkDescriptorSet desc_set;
 }uniform_matrix;
 
 class Scan{
@@ -387,6 +383,7 @@ class MarchingCube{
 	struct{
 		Buffer vertices;
 		Buffer indices;
+		Buffer ubo;
 		Kernel gen_indices;
 		Kernel gen_vertices;
 		uint32_t nr_faces = 0;
@@ -397,6 +394,8 @@ class MarchingCube{
 		Buffer edge_out;
 		Buffer cell_out;
 	}prefix_sum;
+
+	VkSemaphore compute_complete;
 
 	Scan edge_scan;
 	Scan cell_scan;
@@ -436,7 +435,7 @@ class MarchingCube{
 		delete [] vertices;
 		delete [] indices;
 		os.close();
-		printf("save end()");
+		printf("save end()\n");
 	}
 
 	void destroy(){
@@ -461,6 +460,9 @@ class MarchingCube{
 	}
 
 	void init(){
+		VkSemaphoreCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*ctx), &info, nullptr, &compute_complete ));
 		setupDescriptorPool();
 		uint32_t x = Volume.size.x;
 		uint32_t y = Volume.size.y;
@@ -519,6 +521,16 @@ class MarchingCube{
 
 		general.cast_table.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
 							VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(uint32_t)*12, nullptr);
+
+		output.vertices.create(ctx, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(float) * ((3 * (x-1) * (y-1) * (z-1)) / 4), nullptr);
+		output.indices.create(ctx, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(uint32_t) * ((3 * (x-1) * (y-1) * (z-1)) / 4), nullptr);
+
+		output.ubo.create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+							VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+							sizeof(UniformMatrices), &uniform_matrix);
+		//output.ubo.map();
 
 		uint32_t dim[3] = {x,y,z};
 		uint32_t edim[3] = {x-1,y-1,z-1};
@@ -684,20 +696,11 @@ class MarchingCube{
 		y = Volume.size.y;
 		z = Volume.size.z;
 
-		
-		uint32_t nr_edges = 0;
-		
 		queue->enqueueCopy(&prefix_sum.edge_out,
-							&nr_edges,
+							&output.nr_vertices,
 							sizeof(uint32_t)*(x-1)*(y-1)*(z-1)*3 - sizeof(uint32_t) , 0, 
 							sizeof(uint32_t));
-							
-		printf("edgeCompact()::nr_vertices : %d\n",nr_edges);
-		output.nr_vertices = nr_edges;
-		
-		output.vertices.create(ctx, 
-								VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,  3 * sizeof(float) * output.nr_vertices,  nullptr);
+		printf("edgeCompact()::nr_vertices : %d\n",output.nr_vertices);
 		edge_compact.kernel.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
@@ -761,12 +764,6 @@ class MarchingCube{
 				sizeof(uint32_t));
 
 		printf("generateIndices() : nr_faces %d\n", output.nr_faces);
-
-		output.indices.create(ctx,
-			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 3 * output.nr_faces * sizeof(uint32_t), nullptr
-		);
-
 		output.gen_indices.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.cell_types.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.tri_counts.descriptor, nullptr},
@@ -785,14 +782,10 @@ class MarchingCube{
 
 class App : public VKEngine::Application{
 	public :
-
+	MarchingCube mc;
 	explicit App(string app_name, string engine_name, int h, int w, vector<const char*>instance_exts, vector<const char*>device_exts , vector<const char *>valids) : Application(app_name, engine_name, h, w, instance_exts, device_exts, valids){
 	};
 
-	
-	MarchingCube mc;
-
-	public :
 	~App(){
 		VkDevice device = VkDevice(*context);
 		VkCommandPool command_pool = VkCommandPool(*compute_queue);
@@ -801,7 +794,7 @@ class App : public VKEngine::Application{
 
 	protected:
 	Program *draw_program;
-
+	
 	virtual void initWindow(){
 		LOG("App Init Window\n");
 		glfwInit();
@@ -818,16 +811,25 @@ class App : public VKEngine::Application{
 		while(!glfwWindowShouldClose(window)){
 			glfwPollEvents();
 			draw();
+			updateUniform();
 		}
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
 
 	void draw(){
+		//runMarchingCube();
 		render();
 	}
 
+
 	void prepareCompute(){
+		uniform_matrix.model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		uniform_matrix.view = camera.matrices.view;
+		uniform_matrix.proj = camera.matrices.proj;
+		mc.create(context, compute_queue);
+		mc.init();
+		mc.setupVolume();
 	}
 	
 	void preparePrograms(){
@@ -841,11 +843,17 @@ class App : public VKEngine::Application{
 		draw_program->createDescriptorPool({
 		 	infos::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
 		});
+		draw_program->allocDescriptorSet(&uniform_matrix.desc_set, 0, 1);
 		auto attributes = Vertex::vertexInputAttributes();
 		auto bindings = Vertex::vertexInputBinding();
 		draw_program->graphics.vertex_input = infos::vertexInputStateCreateInfo(attributes, bindings);
 		draw_program->build(render_pass, cache);
-		//programs.insert({"draw", program});
+
+		draw_program->uniformUpdate(
+				uniform_matrix.desc_set,
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0,
+				&mc.output.ubo.descriptor, nullptr
+		);
 		LOG("-------------Test::preparePrograms() end------------------------\n");
 	}
 
@@ -854,7 +862,9 @@ class App : public VKEngine::Application{
 		clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 		clear_values[1].depthStencil = {1.0f, 0};
 		draw_command_buffers.resize(swapchain.buffers.size());
-		uint32_t sz_indices = mc.output.nr_faces * sizeof(uint32_t) * 3;
+		uint32_t sz_indices = mc.output.nr_faces *3;
+
+		printf("sz_vertices : %d , sz indices : %d\n", mc.output.nr_vertices, sz_indices);
 
 		VkRenderPassBeginInfo render_pass_BI = infos::renderPassBeginInfo();
 		render_pass_BI.clearValueCount = static_cast<uint32_t>(clear_values.size());
@@ -882,30 +892,31 @@ class App : public VKEngine::Application{
 			VkDeviceSize offsets[] = {0};
 			vkCmdBindVertexBuffers(draw_command_buffers[i], 0, 1, vertex_buffer ,offsets);
 			vkCmdBindIndexBuffer(draw_command_buffers[i], indices_buffer[0], 0, VK_INDEX_TYPE_UINT32);
-			/*
 			vkCmdBindDescriptorSets(draw_command_buffers[i], 
 									VK_PIPELINE_BIND_POINT_GRAPHICS,
 									draw_program->pipeline_layout, 
 									0, 
-									1, &render_objects[0].descriptor_set,
+									1, &uniform_matrix.desc_set,
 									0, nullptr);
-			*/
 			vkCmdDrawIndexed(draw_command_buffers[i], sz_indices, 1, 0, 0, 0);
 			vkCmdEndRenderPass(draw_command_buffers[i]);
 			graphics_queue->endCommandBuffer(draw_command_buffers[i]);
 		}	
 	}
 
+	void updateUniform(){
+		static auto start_time = std::chrono::high_resolution_clock::now();
+		auto cur_time = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(cur_time - start_time).count();
+		uniform_matrix.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+		uniform_matrix.view = glm::lookAt(glm::vec3(1.0f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		uniform_matrix.proj = glm::perspective(glm::radians(45.0f), width/(float)height, 0.1f, 10.0f);
+		uniform_matrix.proj[1][1] *= -1;
+		mc.output.ubo.copyFrom(&uniform_matrix, sizeof(UniformMatrices));
+	}
+
 	public:
 	void runMarchingCube(){
-		uint32_t x,y,z;
-		x = Volume.size.x;
-		y = Volume.size.y;
-		z = Volume.size.z;
-		mc.create(context, compute_queue);
-		mc.init();
-		mc.setupVolume();
-		
 		std::chrono::time_point start = std::chrono::system_clock::now(); 
 		PROFILING(mc.edgeTest(), "edgeTest()");
 		PROFILING(mc.edgeTestPrefixSum(),"edgeTestPrefixSum()");
@@ -918,10 +929,17 @@ class App : public VKEngine::Application{
 		printf("Marching Cube spent %.4lf seconds\n", t.count()); 
 		mc.save();
 	}
+
 	void run(){
 		Application::init();
 		cout << "compute_queue : " << compute_queue << endl;
+		prepareCompute();
 		runMarchingCube();
+		sleep(1);
+		preparePrograms();
+		prepareCommandBuffer();
+		mainLoop();
+		//runMarchingCube();
 	}
 };
 
@@ -947,12 +965,12 @@ int main(int argc, const char *argv[])
 	Volume.size = {128,128,64};
 	//Volume.size = {4,4,4};
 	cout << "Volume size set \n";
-	Volume.isovalue = 0.02;
+	Volume.isovalue = 0.05000001;
 	cout << "volume isovalue set done\n";
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
 	loadVolume(file_path, Volume.data);
 	try {
-	    App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
+	    App app(_name, engine_name, 1080, 1920, instance_extensions, device_extensions , validations);
 	    app.run();
 	}catch(std::runtime_error& e){
 		cout << "error occured : " << e.what()  <<  "on File " << __FILE__ << " line : " << __LINE__ << "\n";

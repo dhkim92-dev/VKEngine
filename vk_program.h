@@ -18,6 +18,13 @@ namespace VKEngine{
 		vector<VkDescriptorSetLayoutBinding> bindings;
 	};
 
+	struct ShaderArgs{
+		uint32_t binding_index;
+		VkDescriptorType descriptor_type;
+		VkDescriptorBufferInfo *buffer_info;
+		VkDescriptorImageInfo *image_info;
+	};
+
 	struct GraphicsPipelineCreateInfo{
 		vector<VkDynamicState> dynamic_state_enabled = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 		VkPipelineInputAssemblyStateCreateInfo input_assembly = infos::inputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE );
@@ -78,6 +85,7 @@ namespace VKEngine{
 						   uint32_t binding_idx, 
 						   VkDescriptorBufferInfo *buffer_info,
 						   VkDescriptorImageInfo *image_info);
+		void setShaderArgs(uint32_t set_id, vector<ShaderArgs> args);
 		void destroy();
 	};
 }

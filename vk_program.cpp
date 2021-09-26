@@ -81,6 +81,16 @@ namespace VKEngine{
 		vkUpdateDescriptorSets(device, 1, &write_info, 0, nullptr);
 	}
 
+	void Program::setShaderArgs(uint32_t set_id, vector<ShaderArgs> args){
+		uint32_t nr_args = static_cast<uint32_t>(args.size());
+		vector<VkWriteDescriptorSet> writes;
+		for(uint32_t i = 0 ; i < nr_args ; i++){
+			VkWriteDescriptorSet write_info = infos::writeDescriptorSet(descriptors.sets[set_id], args[i].descriptor_type, args[i].binding_index, args[i].buffer_info, args[i].image_info);
+			writes.push_back(write_info);
+		}
+		vkUpdateDescriptorSets(device, 1, writes.data(), 0, nullptr);
+	}
+
 	void Program::destroy(){
 		if(pipeline) vkDestroyPipeline(device, pipeline, nullptr);
 		pipeline = VK_NULL_HANDLE;
