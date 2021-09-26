@@ -27,7 +27,7 @@ namespace VKEngine{
 
 	struct GraphicsPipelineCreateInfo{
 		vector<VkDynamicState> dynamic_state_enabled = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-		VkPipelineInputAssemblyStateCreateInfo input_assembly = infos::inputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_POINT_LIST, 0, VK_FALSE);
+		VkPipelineInputAssemblyStateCreateInfo input_assembly = infos::inputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 		VkPipelineViewportStateCreateInfo viewport = infos::viewportStateCreateInfo(1,1,0);
 		VkPipelineRasterizationStateCreateInfo rasterization = infos::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
 		VkPipelineMultisampleStateCreateInfo multisample=infos::multisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);

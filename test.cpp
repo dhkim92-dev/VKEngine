@@ -963,9 +963,8 @@ int main(int argc, const char *argv[])
 	Volume.file_path = file_path;
 	cout << "Volume file path set \n";
 	Volume.size = {128,128,64};
-	//Volume.size = {4,4,4};
 	cout << "Volume size set \n";
-	Volume.isovalue = 0.05000001;
+	Volume.isovalue = 0.0f;
 	cout << "volume isovalue set done\n";
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
 	loadVolume(file_path, Volume.data);
