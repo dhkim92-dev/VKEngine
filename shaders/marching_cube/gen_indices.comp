@@ -1,31 +1,31 @@
 #version 450
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
-layout(binding = 0) readonly buffer CellType{
+layout(std430, binding = 0) readonly buffer CellType{
 	uint ctype[];
 };
 
-layout(binding = 1) readonly buffer TriCount{
+layout(std430, binding = 1) readonly buffer TriCount{
 	uint tcnt[];
 };
 
-layout(binding = 2) readonly buffer TriPsum{
+layout(std430, binding = 2) readonly buffer TriPsum{
 	uint tpsum[];
 };
 
-layout(binding=3) readonly buffer EdgePsum{
+layout(std430, binding=3) readonly buffer EdgePsum{
 	uint edge_psum[];
 };
 
-layout(binding = 4) readonly buffer Dim{
+layout(std430, binding = 4) readonly buffer Dim{
 	uvec3 dim;
 };
 
-layout(binding = 5) writeonly buffer Indices{
+layout(std430, binding = 5) writeonly buffer Indices{
 	uint indices[];
 };
 
-layout(binding=6) readonly buffer CastTable{
+layout(std430, binding=6) readonly buffer CastTable{
 	uint cast_table[];
 };
 

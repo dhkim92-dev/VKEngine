@@ -970,7 +970,7 @@ int main(int argc, const char *argv[])
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
 	loadVolume(file_path, Volume.data);
 	try {
-	    App app(_name, engine_name, 1080, 1920, instance_extensions, device_extensions , validations);
+	    App app(_name, engine_name, 600, 800, instance_extensions, device_extensions , validations);
 	    app.run();
 	}catch(std::runtime_error& e){
 		cout << "error occured : " << e.what()  <<  "on File " << __FILE__ << " line : " << __LINE__ << "\n";

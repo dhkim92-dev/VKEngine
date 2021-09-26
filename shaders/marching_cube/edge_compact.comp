@@ -1,12 +1,12 @@
 #version 450
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-layout(binding = 0) writeonly buffer CompactedIndex{
+layout(std430, binding = 0) writeonly buffer CompactedIndex{
 	uint edge_id[]; 
 };
-layout(binding = 1) readonly buffer EdgeType{
+layout(std430, binding = 1) readonly buffer EdgeType{
 	uint edge_type[]; // is this id edge test result 1
 };
-layout(binding = 2) readonly buffer EdgeCounter{
+layout(std430, binding = 2) readonly buffer EdgeCounter{
 	uint edge_psum[]; // prefix sum result
 };
 
