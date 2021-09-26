@@ -361,11 +361,6 @@ class MarchingCube{
 	struct {
 		Kernel kernel;
 	}edge_compact;
-	
-	struct {
-		Kernel kernel;
-		Buffer d_dst;
-	}cell_compact;
 
 	struct {
 		Kernel kernel;
@@ -384,10 +379,13 @@ class MarchingCube{
 		Buffer vertices;
 		Buffer indices;
 		Buffer ubo;
+		Buffer normals;
 		Kernel gen_indices;
 		Kernel gen_vertices;
+		Kernel gen_normal;
 		uint32_t nr_faces = 0;
 		uint32_t nr_vertices = 0;
+		uint32_t nr_normals = 0;
 	}output;
 
 	struct{
@@ -419,13 +417,17 @@ class MarchingCube{
 
 		float *vertices = new float[3*output.nr_vertices];
 		uint32_t *indices = new uint32_t[3*output.nr_faces];
-
+		float *normals = new float[3 * output.nr_faces];
 		queue->enqueueCopy(&output.vertices, vertices, 0, 0 ,3 * output.nr_vertices*sizeof(float) );
 		queue->enqueueCopy(&output.indices, indices, 0, 0, 3 * output.nr_faces*sizeof(uint32_t));
 
 		std::ofstream os("sample.obj");
 		for(uint32_t i = 0 ; i < output.nr_vertices ; ++i){
 			os << "v " << vertices[3*i] << " " << vertices[3*i + 1] << " " << vertices[3*i + 2] << endl;
+		}
+
+		for(uint32_t i = 0 ; i < output.nr_faces ; ++i){
+			os << "vn " << normals[3*i] << " " << normals[3*i+1] << " " << normals[3*i+2] << endl;
 		}
 		
 		for(uint32_t i = 0 ; i < output.nr_faces ; ++i){
@@ -434,6 +436,7 @@ class MarchingCube{
 
 		delete [] vertices;
 		delete [] indices;
+		delete [] normals;
 		os.close();
 		printf("save end()\n");
 	}
@@ -481,7 +484,7 @@ class MarchingCube{
 	void setupDescriptorPool(){
 		printf("MarchingcCube::setupDescriptorPool() start\n");
 		vector<VkDescriptorPoolSize> pool_size = {
-			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  24),
+			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  30),
 			infos::descriptorPoolSize( VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3)
 		};
 		VkDescriptorPoolCreateInfo pool_CI = infos::descriptorPoolCreateInfo(
@@ -530,6 +533,8 @@ class MarchingCube{
 		output.ubo.create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 							VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 							sizeof(UniformMatrices), &uniform_matrix);
+		//output.normals.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+		//					(3*(x-1)*(y-1)*(z-1) / 4) * 3 * sizeof(float), nullptr);
 		//output.ubo.map();
 
 		uint32_t dim[3] = {x,y,z};
@@ -561,6 +566,7 @@ class MarchingCube{
 		//cell_compact.kernel.create(ctx, "shaders/marching_cube/cell_compact.comp.spv");
 		output.gen_vertices.create(ctx, "shaders/marching_cube/gen_vertices.comp.spv");
 		output.gen_indices.create(ctx, "shaders/marching_cube/gen_indices.comp.spv");
+		//output.gen_normal.create(ctx, "shaders/marching_cube/gen_normals.comp.spv");
 		printf("MarchingCube::createKernel() end\n");
 	}
 
@@ -586,7 +592,7 @@ class MarchingCube{
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4)
 		});
 		/*
-		cell_compact.kernel.setupDescriptorSetLayout({
+		output.gen_normal.setupDescriptorSetLayout({
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
@@ -617,7 +623,7 @@ class MarchingCube{
 		edge_test.kernel.allocateDescriptorSet(desc_pool);
 		edge_compact.kernel.allocateDescriptorSet(desc_pool);
 		cell_test.kernel.allocateDescriptorSet(desc_pool);
-		//cell_compact.kernel.allocateDescriptorSet(desc_pool);
+		//output.gen_normal.allocateDescriptorSet(desc_pool);
 		output.gen_vertices.allocateDescriptorSet(desc_pool);
 		output.gen_indices.allocateDescriptorSet(desc_pool);
 
@@ -625,7 +631,7 @@ class MarchingCube{
 		edge_test.kernel.build(cache, nullptr);
 		edge_compact.kernel.build(cache, nullptr);
 		cell_test.kernel.build(cache, nullptr);
-		//cell_compact.kernel.build(cache, nullptr);
+		//output.gen_normal.build(cache, nullptr);
 		output.gen_indices.build(cache,nullptr);
 		output.gen_vertices.build(cache, nullptr);
 		printf("MarchingCube::setupKernel() end()\n");
@@ -710,25 +716,18 @@ class MarchingCube{
 		printf("edgeCompact() end\n");
 	}
 
-	void cellCompact(){
-		/*
-		printf("cellCompact() start\n");
-		uint32_t x,y,z;
-		x = Volume.size.x;
-		y = Volume.size.y;
-		z = Volume.size.z;
-		queue->enqueueCopy(&prefix_sum.cell_out, &output.nr_faces, sizeof(uint32_t)*((x-2)*(y-2)*(z-2)-1), 0, sizeof(uint32_t));
-		cell_compact.d_dst.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(uint32_t) * output.nr_faces, nullptr);
-		cell_compact.kernel.setKernelArgs({
-			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_test.tri_counts.descriptor, nullptr},
-			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &prefix_sum.cell_out.descriptor, nullptr},
+	void generateNormals(){
+		printf("generateNormal() start\n");
+		uint32_t dim[3] = { output.nr_faces, output.nr_faces, output.nr_faces  };
+		queue->enqueueCopy(dim, &general.dim, 0, 0, sizeof(uint32_t) * 3  );
+		output.gen_normal.setKernelArgs({
+			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
+			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.indices.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.dim.descriptor, nullptr},
-			{3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &cell_compact.d_dst.descriptor, nullptr},
+			{3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.normals.descriptor, nullptr},
 		});
-		uint32_t gx = (x-2)*(y-2)*(z-2);
-		queue->ndRangeKernel(&cell_compact.kernel, {gx,1,1}, VK_FALSE);
-		printf("cellCompact() end\n");
-		*/
+		queue->ndRangeKernel(&output.gen_normal, {output.nr_faces,1,1}, VK_FALSE);
+		printf("generateNormal() end\n");
 	}
 
 
@@ -925,6 +924,7 @@ class App : public VKEngine::Application{
 		PROFILING(mc.cellTestPrefixSum(),"cellTestPrefixSum()");
 		PROFILING(mc.generateVertices(),"generateVertices()");
 		PROFILING(mc.generateIndices(),"generateIndices()");
+		//PROFILING(mc.generateNormals(), "generateNormals()");
 		std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 		printf("Marching Cube spent %.4lf seconds\n", t.count()); 
 		mc.save();

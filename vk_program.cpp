@@ -38,6 +38,7 @@ namespace VKEngine{
 		VkGraphicsPipelineCreateInfo graphics_pipeline_CI = graphics.pipelineCreateInfo(render_pass, pipeline_layout);
 		graphics_pipeline_CI.stageCount =static_cast<uint32_t>(stages.size());
 		graphics_pipeline_CI.pStages = stages.data();
+		graphics_pipeline_CI.pInputAssemblyState;
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, cache, 1, &graphics_pipeline_CI, nullptr, &pipeline))
 
 		for(Shader shader : shaders){

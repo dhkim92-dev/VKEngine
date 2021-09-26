@@ -57,7 +57,7 @@ namespace VKEngine{
 
 	void Application::setupCamera(){
 		camera.init(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-		camera.setPerspective(60.0f, 800.0f/600.0f, 0.1f, 256.0f);
+		camera.setPerspective(60.0f, (float)width/(float)height, 0.1f, 10.0f);
 	}
 
 	void Application::setupSwapchain(){
