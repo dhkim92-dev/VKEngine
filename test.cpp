@@ -425,13 +425,14 @@ class MarchingCube{
 		for(uint32_t i = 0 ; i < output.nr_vertices ; ++i){
 			os << "v " << vertices[3*i] << " " << vertices[3*i + 1] << " " << vertices[3*i + 2] << endl;
 		}
-
+		/*
 		for(uint32_t i = 0 ; i < output.nr_faces ; ++i){
 			os << "vn " << normals[3*i] << " " << normals[3*i+1] << " " << normals[3*i+2] << endl;
 		}
+		*/
 		
 		for(uint32_t i = 0 ; i < output.nr_faces ; ++i){
-			os << "f " << indices[3*i] << " " << indices[3*i + 1] << " " << indices[3*i + 2] << endl;
+			os << "f " << indices[3*i] + 1 << " " << indices[3*i + 1]  + 1<< " " << indices[3*i + 2] + 1<< endl;
 		}
 
 		delete [] vertices;

@@ -327,6 +327,7 @@ void main(){
 		pos.y = LUT[cid][i*3+1];
 		pos.z = LUT[cid][i*3+2];
 		pos = cast2global(eid, pos, edim);
+		pos -= 1;
 		indices[3*(offset+i) + 0] = pos.x;
 		indices[3*(offset+i) + 1] = pos.y;
 		indices[3*(offset+i) + 2] = pos.z;
