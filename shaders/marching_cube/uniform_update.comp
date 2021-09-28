@@ -18,7 +18,7 @@ void main(){
 		data.z = dst[tid*4+2];
 		data.w = dst[tid*4+3];
 		uint value = group_sum[grp_id];
-		data += value;
+		data += uvec4(value,value,value,value);
 		dst[tid*4] = data.x;
 		dst[tid*4+1] = data.y;
 		dst[tid*4+2] = data.z;

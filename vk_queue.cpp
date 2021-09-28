@@ -19,7 +19,8 @@ namespace VKEngine{
 		context = _context;
 		device = VkDevice(*context);
 		type = _type;
-		pool = context->getCommandPool(type);
+		//pool = context->getCommandPool(type);
+		pool = context->createCommandPool(_type);
 		LOG("CommandQueue::CommandQueue context : %p \n", context);
 		LOG("CommandQueue::CommandQueue device : %p \n", device);
 		LOG("CommandQueue::CommandQueue pool : %p \n", pool);
@@ -38,7 +39,7 @@ namespace VKEngine{
 
 	void CommandQueue::createCommandQueue(){
 		VkDeviceQueueCreateInfo queue_CI = infos::deviceQueueCreateInfo();
-		QueueFamilyIndice indices = context->findQueueFamilies();
+		QueueFamilyIndice indices = context->queue_family_indices;
 		uint32_t index = 0;
 
 		switch(type){
@@ -186,6 +187,10 @@ namespace VKEngine{
 		submit_info.pCommandBuffers = &command_buffer;
 		submit(submit_info, fenced);
 		free(command_buffer);
+	}
+
+	VkResult CommandQueue::waitIdle(){
+		return vkQueueWaitIdle(queue);
 	}
 
 }

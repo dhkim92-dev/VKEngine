@@ -36,23 +36,25 @@ namespace VKEngine{
 		Context(const VkInstance instance,
 			const uint32_t gpu_id,  
 			const VkQueueFlags request_queues,
+			VkSurfaceKHR surface,
 			const vector<const char *> _extension_names,
 			const vector<const char *> _validation_names);
 		Context();
 
-		void setupPresentFamily(VkSurfaceKHR _surface);		
+		void setupSurface(VkSurfaceKHR _surface);		
 		void setupQueueFamilyIndices();
 
 		~Context();
 
-		void create(VkInstance instance, uint32_t gpu_id, VkQueueFlags request_queues, vector<const char*> device_extensions, vector<const char*> validation_extensions);
+		void create(VkInstance instance, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface, vector<const char*> device_extensions, vector<const char*> validation_extensions);
 		void selectGPU(const uint32_t gpu_id);
 		void setupDevice(VkQueueFlags request_queue, vector<const char*>device_exts, vector<const char*> valid_exts);
 		QueueFamilyIndice findQueueFamilies(VkPhysicalDevice _gpu);
-		VkCommandPool createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-		VkCommandPool getCommandPool(VkQueueFlagBits type);
+		//VkCommandPool createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+		VkCommandPool createCommandPool(VkQueueFlagBits type, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 		uint32_t getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found=nullptr);
 		uint32_t getQueueFamilyIndex(VkQueueFlagBits queue_family);
+		void setupPresent(VkSurfaceKHR surface);
 		/*
 		operator VkSurfaceKHR() const {
 			return surface;

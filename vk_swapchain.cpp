@@ -39,12 +39,25 @@ namespace VKEngine{
 		swapchain_CI.imageArrayLayers = 1;
 		swapchain_CI.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		swapchain_CI.oldSwapchain=swapchain;
-		QueueFamilyIndice indice = ctx->findQueueFamilies(gpu);
-		ctx->setupPresentFamily();
+		//QueueFamilyIndice indice = ctx->findQueueFamilies(gpu);
+		//ctx->setupPresentFamily();
+		printf("SwaphainSupport check\n");
+		uint32_t queue_family_indices[2];
+		if(ctx->queue_family_indices.graphics.has_value()){
+			queue_family_indices[0] = ctx->queue_family_indices.graphics.value();
+		}else{
+			std::runtime_error("Swapchain::create() No Graphics Queue Supported\n");
+		}
 
-		uint32_t queue_family_indices[2] = { indice.graphics.value(), indice.present.value() };
+		if(ctx->queue_family_indices.present.has_value()){
+			queue_family_indices[1] = ctx->queue_family_indices.present.value();
+		}else{
+			printf("no present queue\n");
+			queue_family_indices[1] = ctx->queue_family_indices.graphics.value();
+		}
 
-		if( indice.present != indice.graphics){
+		printf("SwaphainSupport check\n");
+		if( queue_family_indices[0] != queue_family_indices[1]){
 			swapchain_CI.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			swapchain_CI.queueFamilyIndexCount = 2;
 			swapchain_CI.pQueueFamilyIndices = queue_family_indices;
@@ -66,6 +79,7 @@ namespace VKEngine{
 		image_format = _surface_format.format;
 		extent = _extent;
 		setupImageViews();
+		printf("Swapchain create Done!\n");
 	}
 
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats){

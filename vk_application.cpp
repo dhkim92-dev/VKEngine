@@ -2,6 +2,7 @@
 #define __VK_APPLICATION_CPP__
 
 #include "vk_application.h"
+#include <GLFW/glfw3.h>
 
 using namespace std;
 
@@ -30,13 +31,17 @@ namespace VKEngine{
 	}
 
 	void Application::initVulkan(){
+		LOG("VKEngine init!\n");
 		engine->init();
-		LOG("engine init\n");
-		initWindow();
+		LOG("Application::createSurcace()!\n");
 		createSurface();
+		LOG("Application::createContext()!\n");
 		createContext();
+		LOG("Application::initSwapchain()!\n");
 		initSwapchain();
+		LOG("Application::setupSwapchain()!\n");
 		setupSwapchain();
+		LOG("Application::setupCommandQueue()!\n");
 		setupCommandQueue();
 		setupPipelineCache();
 		setupDepthStencilAttachment();
@@ -55,7 +60,7 @@ namespace VKEngine{
 
 	void Application::createContext(){
 		VkInstance instance = VkInstance(*engine);
-		context = new Context(instance, 0, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT
+		context = new Context(instance, 0, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, surface
 							  , device_extension_names, validation_names); //new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
 	}
 

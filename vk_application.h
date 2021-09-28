@@ -1,6 +1,7 @@
 #ifndef __VK_APPLICATION_H__
 #define __VK_APPLICATION_H__
 
+#define GLFW_INCLUDE_VULKAN
 #include <vulkan/vulkan.h>
 #include <string>
 #include <vector>

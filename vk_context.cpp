@@ -4,13 +4,6 @@
 #include "vk_context.h"
 
 using namespace std;
-
-#ifdef VKENGINE_GRAPHICS_MODE
-bool graphics_mode=true;
-#else
-bool graphics_mode=false;
-#endif
-
 namespace VKEngine{
 	Context::Context(){
 
@@ -18,27 +11,68 @@ namespace VKEngine{
 	Context::Context(const VkInstance _instance,
 		const uint32_t gpu_id, 
 		const VkQueueFlags request_queues,
+		VkSurfaceKHR surface,
 		const vector<const char *>_extension_names,
 		const vector<const char *>_validation_names
 	){
-		create(_instance, gpu_id, request_queues, _extension_names, _validation_names);
+		create(_instance, gpu_id, request_queues, surface, _extension_names, _validation_names);
 	}
 
 	Context::~Context(){
 		destroy();
 	}
 
-	void Context::create(VkInstance _instance, uint32_t gpu_id, VkQueueFlags request_queues, vector<const char *> device_extensions, vector<const char *> validation_extensions){
+	void Context::create(VkInstance _instance, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface, vector<const char *> device_extensions, vector<const char *> validation_extensions){
 		this->instance = _instance;
 		selectGPU(gpu_id);
 		setupQueueFamilyIndices();
+
+		if(surface != VK_NULL_HANDLE){
+			setupSurface(surface);
+		}
+
 		setupDevice(request_queues, device_extensions, validation_extensions);
 		setupMemoryProperties();
 	}
 
+	VkCommandPool Context::createCommandPool(VkQueueFlagBits type, VkCommandPoolCreateFlags flags){
+		VkCommandPool pool = VK_NULL_HANDLE;
+		uint32_t queue_index = 255;
+		switch(type){
+			case VK_QUEUE_GRAPHICS_BIT : 
+				queue_index = queue_family_indices.graphics.value();
+				break;
+			case VK_QUEUE_COMPUTE_BIT :
+				queue_index = queue_family_indices.compute.value();
+				break;
+			case VK_QUEUE_TRANSFER_BIT : 
+				queue_index = queue_family_indices.transfer.value();
+				break;
+			default :
+				break;
+		}
+		VkCommandPoolCreateInfo info = infos::commandPoolCreateInfo(queue_index, flags);
+		VK_CHECK_RESULT(vkCreateCommandPool(device, &info, nullptr, &pool));
+		return pool;
+	}
 
 	void Context::setupMemoryProperties(){
 		vkGetPhysicalDeviceMemoryProperties(gpu, &memory_properties);
+	}
+
+	void Context::setupSurface(VkSurfaceKHR surface){
+		VkBool32 surface_support = VK_FALSE;
+		vector<VkQueueFamilyProperties> properties = enumerateQueueFamilyProperties(gpu);
+		for(uint32_t i = 0 ; i < properties.size() ; ++i){
+			vkGetPhysicalDeviceSurfaceSupportKHR(gpu, i, surface, &surface_support);
+			if(surface_support == VK_SUCCESS){
+				queue_family_indices.present = i;
+			}
+		}
+
+		if(surface_support == VK_FALSE){
+			std::runtime_error("This GPU has no surface support.");
+		}
 	}
 
 	uint32_t Context::getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found){
@@ -93,7 +127,6 @@ namespace VKEngine{
 		set<uint32_t> unique_queue_families;
 		VkDeviceCreateInfo device_CI = infos::deviceCreateInfo();
 		float queue_priorities = 1.0f;
-		LOG("unique queue family size : %d\n", unique_queue_families.size());
 
 		if(request_queue & VK_QUEUE_GRAPHICS_BIT){
 			if(!queue_family_indices.graphics.has_value()){
@@ -124,6 +157,11 @@ namespace VKEngine{
 			}
 		}
 
+		if(queue_family_indices.present.has_value()){
+			unique_queue_families.insert(queue_family_indices.present.value());
+		}
+
+		LOG("unique queue family size : %d\n", unique_queue_families.size());
 		if(unique_queue_families.size() == 0){
 			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
 		}
@@ -145,29 +183,6 @@ namespace VKEngine{
 		device_CI.queueCreateInfoCount = static_cast<uint32_t>(device_queue_CI.size());
 		device_CI.pQueueCreateInfos = device_queue_CI.data();
 		VK_CHECK_RESULT( vkCreateDevice(gpu, &device_CI, nullptr, &device) );
-	}
-
-	VkCommandPool Context::createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags){
-		VkCommandPool pool;
-		VkCommandPoolCreateInfo command_pool_CI = infos::commandPoolCreateInfo(queue_index,flags);
-		VK_CHECK_RESULT( vkCreateCommandPool(device, &command_pool_CI, nullptr, &pool) );
-		return pool;
-	}
-
-	VkCommandPool Context::getCommandPool(VkQueueFlagBits type){
-		VkCommandPool ret = VK_NULL_HANDLE;
-		switch(type){
-			case VK_QUEUE_GRAPHICS_BIT : 
-				ret = graphics_pool;
-				break;
-			case VK_QUEUE_COMPUTE_BIT :
-				ret = compute_pool;
-				break;
-			default :
-				ret = graphics_pool;
-		}
-		assert(ret!=VK_NULL_HANDLE);
-		return ret;
 	}
 
 	void Context::setupQueueFamilyIndices(){

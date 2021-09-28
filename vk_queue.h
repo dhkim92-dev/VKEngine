@@ -57,6 +57,7 @@ namespace VKEngine{
 		void free(VkCommandBuffer command_buffer);
 		void resetFence();
 		void waitFence();
+		VkResult waitIdle();
 
 		operator VkQueue() const {
 			return queue;
