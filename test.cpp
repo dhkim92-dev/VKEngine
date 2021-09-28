@@ -276,36 +276,11 @@ class Scan{
 			d_srcs.push_back(d_grps[i]);
 			d_dsts.push_back(d_grps[i]);
 		}
-		/*
-		printf("run::d_srcs : ");
-		for(auto src : d_srcs){
-			printf("%p ,", src);
-		}
-		printf("\n");
-		printf("run::d_dsts : ");
-		for(auto dst : d_dsts){
-			printf("%p ,", dst);
-		}
-		printf("\n");
-		printf("run::d_grps : ");
-		for(auto grp : d_grps){
-			printf("%p ,", grp);
-		}
-		printf("\n");
-		*/
-		
-		/*
-		VkEvent prev, cur;
-		VkEventCreateInfo event_CI = {};
-		event_CI.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-		vkCreateEvent(VkDevice(*ctx), &event_CI, nullptr, &prev);
-		vkCreateEvent(VkDevice(*ctx), &event_CI, nullptr, &cur);
-		*/
-		VkSubmitInfo submit_info = infos::submitInfo();
 		for(uint32_t i = 0 ; i < nr_grps ; ++i){
 			if(d_grps[i] != nullptr){
 				//printf("run scan kernel\n");
 				//std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+                queue->waitIdle();
 				u_limit.copyFrom(&limits[i], sizeof(uint32_t));
 				scan.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
@@ -313,30 +288,7 @@ class Scan{
 					{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr},
 					{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &u_limit.descriptor, nullptr}
 				});
-				/*
-				cmd_buffer = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, 0);
-				queue->beginCommandBuffer(cmd_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-				if(i == 0){
-					d_srcs[i]->barrier( cmd_buffer,
-									VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, 
-									VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				}else{
-					d_srcs[i]->barrier( cmd_buffer,
-										VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT ,
-										VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				}
-								vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan.pipeline);
-				vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan.layout, 0, 1, &scan.descriptors.set, 0, nullptr);
-				vkCmdDispatch(cmd_buffer, g_sizes[i], 1, 1);
-				d_grps[i]->barrier(cmd_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				d_dsts[i]->barrier(cmd_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				queue->endCommandBuffer(cmd_buffer);
-				submit_info.commandBufferCount=1;
-				submit_info.pCommandBuffers = &cmd_buffer;
-				queue->submit(submit_info, VK_TRUE);
-				queue->free(cmd_buffer);
-				*/
-				queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_TRUE);
+                queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_TRUE);
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				//printf("scan() gws : %d , lws : 64\n", g_sizes[i]);
 				//printf("scan() d_src : %p d_dst : %p d_grps : %p u_limit :%d\n", d_srcs[i], d_dsts[i], d_grps[i] ,limits[i]);
@@ -344,25 +296,12 @@ class Scan{
 			}else{
 				//printf("run scan_ed kernel\n");
 				//std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+                queue->waitIdle();
 				scan_ed.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 				});
-				/*
-				cmd_buffer = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, 0);
-				queue->beginCommandBuffer(cmd_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-				d_srcs[i]->barrier(cmd_buffer, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan_ed.pipeline);
-				vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, scan_ed.layout, 0, 1, &scan_ed.descriptors.set, 0, nullptr);
-				vkCmdDispatch(cmd_buffer, g_sizes[i], 1, 1);
-				d_dsts[i]->barrier(cmd_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				queue->endCommandBuffer(cmd_buffer);
-				submit_info.commandBufferCount = 1;
-				submit_info.pCommandBuffers = &cmd_buffer;
-				queue->submit(submit_info, VK_TRUE);
-				queue->free(cmd_buffer);
-				*/
-				queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_TRUE);
+                queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_TRUE);
 				//printf("scan_ed() gws : %d, lws : %d\n", g_sizes[i], limits[limits.size() - 1]);
 				//printf("scan_ed() d_src : %p d_dst : %p d_grps : %p\n", d_srcs[i], d_dsts[i], d_grps[i]);
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
@@ -373,25 +312,12 @@ class Scan{
 		for(int i = nr_grps-1 ; i >=0 ; --i){
 			if(d_grps[i] != nullptr){
 				//printf("run uniform_update() \n");
+                queue->waitIdle();
 				propagation.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
-				
-				cmd_buffer = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, 0);
-				queue->beginCommandBuffer(cmd_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-				d_grps[i]->barrier(cmd_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, propagation.pipeline);
-				vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, propagation.layout, 0, 1, &propagation.descriptors.set, 0, nullptr);
-				vkCmdDispatch(cmd_buffer, g_sizes[i], 1, 1);
-				d_dsts[i]->barrier(cmd_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-				queue->endCommandBuffer(cmd_buffer);
-				submit_info.commandBufferCount = 1;
-				submit_info.pCommandBuffers = &cmd_buffer;
-				queue->submit(submit_info, VK_TRUE);
-				queue->free(cmd_buffer);
-				//std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-				//queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_TRUE);
+                queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_TRUE);
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				//printf("uniform update() gws : %d l_size : 64 \n", g_sizes[i]);
 				//printf("uniformUpdate() d_dst : %p d_grps : %p\n", d_dsts[i], d_grps[i]);
@@ -727,76 +653,20 @@ class MarchingCube{
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
 		});
+        queue->waitIdle();
 		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_TRUE);
 		printf("edgeTest() end()\n");
 	}
 
 	void edgeTestPrefixSum(){
 		printf("edgeScan() start\n");
-		uint32_t x,y,z;
-		x = Volume.size.x;
-		y = Volume.size.y;
-		z = Volume.size.z;
-		edge_scan.run( &edge_test.d_dst, &prefix_sum.edge_out);
-
-		
-		uint32_t *data = new uint32_t[ (x-1) * (y-1) * (z-1)  * 3];
-		uint32_t *prev = new uint32_t[(x-1) * (y-1) * (z-1) * 3];
-	
-		uint32_t nr_element = (x-1) * (y-1) * (z-1) * 3;
-		queue->enqueueCopy(&edge_test.d_dst, prev, 0, 0, sizeof(uint32_t) * nr_element, true);
-		queue->enqueueCopy(&prefix_sum.edge_out, data, 0, 0, sizeof(uint32_t) * nr_element, true);
-		bool check = true;
-		for(uint32_t i = 1 ; i < nr_element ; i++){
-			prev[i] += prev[i-1];
-		}
-
-		for(uint32_t i = 1 ; i < nr_element ; i++){
-			if(prev[i] != data[i]){
-				check = false;
-			}
-		}
-
-		printf("edge prefix sum cpu result : %d \n", prev[nr_element - 1]);
-		printf("edge prefix sum gpu result : %d \n", data[nr_element - 1]);
-		printf("edge prefix sum elementwise compare : %d\n", check);
-
-		delete [] prev;
-		delete [] data;
-		printf("edgeScan() end\n");
+        edge_scan.run( &edge_test.d_dst, &prefix_sum.edge_out);
+        printf("edgeScan() end\n");
 	}
 
 	void cellTestPrefixSum(){
 		printf("cellScan() start\n");
-		uint32_t x,y,z;
-		x = Volume.size.x;
-		y = Volume.size.y;
-		z = Volume.size.z;
-		cell_scan.run(&cell_test.tri_counts, &prefix_sum.cell_out);
-
-		uint32_t nr_cell = (x-2) * (y-2) * (z-2);
-		uint32_t *data = new uint32_t[nr_cell];
-		uint32_t *prev = new uint32_t[nr_cell];
-	
-		queue->enqueueCopy(&cell_test.tri_counts, prev, 0, 0, sizeof(uint32_t) * nr_cell, true);
-		queue->enqueueCopy(&prefix_sum.cell_out, data, 0, 0, sizeof(uint32_t) * nr_cell, true);
-		bool check = true;
-		for(uint32_t i = 1 ; i < nr_cell ; i++){
-			prev[i] += prev[i-1];
-		}
-
-		for(uint32_t i = 1 ; i < nr_cell ; i++){
-			if(prev[i] != data[i]){
-				check = false;
-			}
-		}
-
-		printf("cell prefix sum cpu result : %d \n", prev[nr_cell - 1]);
-		printf("cell prefix sum gpu result : %d \n", data[nr_cell - 1]);
-		printf("cell prefix sum elementwise compare : %d\n", check);
-		delete [] prev;
-		delete [] data;
-
+        cell_scan.run(&cell_test.tri_counts, &prefix_sum.cell_out);
 		printf("cellScan() end\n");
 	}
 
@@ -806,41 +676,19 @@ class MarchingCube{
 		x = Volume.size.x;
 		y = Volume.size.y;
 		z = Volume.size.z;
-		/*
+		
 		queue->enqueueCopy(&prefix_sum.edge_out,
 							&output.nr_vertices,
 							sizeof(uint32_t)*(x-1)*(y-1)*(z-1)*3 - sizeof(uint32_t) , 0, 
 							sizeof(uint32_t));
-		*/
-		uint32_t sz_mem = (x-1) *(y-1) * (z-1) * sizeof(uint32_t);
-		VkCommandBuffer cmd_buf = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		queue->beginCommandBuffer(cmd_buf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		Buffer staging = Buffer(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT , 4, nullptr);
-		VkBufferCopy region;
-		region.srcOffset = sz_mem - sizeof(uint32_t);
-		region.dstOffset = 0;
-		region.size = 4;
-		prefix_sum.edge_out.barrier(cmd_buf, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT , VK_PIPELINE_STAGE_TRANSFER_BIT);
-		vkCmdCopyBuffer(cmd_buf, VkBuffer(prefix_sum.edge_out), staging, 1, &region);
-		prefix_sum.edge_out.barrier(cmd_buf, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT , VK_PIPELINE_STAGE_HOST_BIT);
-		queue->endCommandBuffer(cmd_buf);
-		VkSubmitInfo info = infos::submitInfo();
-		info.commandBufferCount = 1;
-		info.pCommandBuffers = &cmd_buf;
-		queue->submit(info, VK_TRUE);
-		queue->free(cmd_buf);
 		
-		queue->waitIdle();
-
-		staging.copyTo(&output.nr_vertices, 4);
-		staging.destroy();
-
 		printf("edgeCompact()::nr_vertices : %d\n",output.nr_vertices);
 		edge_compact.kernel.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &prefix_sum.edge_out.descriptor, nullptr}
 		});
+        queue->waitIdle();
 		queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1}, VK_TRUE);
 		printf("edgeCompact() end\n");
 	}
@@ -849,12 +697,14 @@ class MarchingCube{
 		printf("generateNormal() start\n");
 		uint32_t dim[3] = { output.nr_faces, output.nr_faces, output.nr_faces  };
 		queue->enqueueCopy(dim, &general.dim, 0, 0, sizeof(uint32_t) * 3  );
+        queue->waitIdle();
 		output.gen_normal.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.indices.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.dim.descriptor, nullptr},
 			{3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.normals.descriptor, nullptr},
 		});
+        queue->waitIdle();
 		queue->ndRangeKernel(&output.gen_normal, {output.nr_faces,1,1}, VK_TRUE);
 		printf("generateNormal() end\n");
 	}
@@ -869,6 +719,7 @@ class MarchingCube{
 		uint32_t dim[3] = {x,y,z};
 		queue->enqueueCopy(dim, &general.dim,0,0,sizeof(uint32_t)*3);
 
+        queue->waitIdle();
 		output.gen_vertices.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.raw.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &prefix_sum.edge_out.descriptor, nullptr},
@@ -878,6 +729,7 @@ class MarchingCube{
 			{5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr}
 		});
 		
+        queue->waitIdle();
 		queue->ndRangeKernel(&output.gen_vertices, {output.nr_vertices, 1, 1}, VK_TRUE);
 		printf("genVertices() end\n");
 	}
@@ -888,8 +740,9 @@ class MarchingCube{
 		y = Volume.size.y;
 		z = Volume.size.z;
 
-		queue->enqueueCopy(&prefix_sum.cell_out, &output.nr_faces, sizeof(uint32_t) *(x-2)*(y-2)*(z-2) - sizeof(uint32_t), 0,
-				sizeof(uint32_t));
+        queue->waitIdle();
+		queue->enqueueCopy(&prefix_sum.cell_out, &output.nr_faces, sizeof(uint32_t) *(x-2)*(y-2)*(z-2) - sizeof(uint32_t), 0,sizeof(uint32_t));
+        queue->waitIdle();
 
 		printf("generateIndices() : nr_faces %d\n", output.nr_faces);
 		output.gen_indices.setKernelArgs({
@@ -902,6 +755,7 @@ class MarchingCube{
 			{6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.cast_table.descriptor, nullptr}
 		});
 
+        queue->waitIdle();
 		queue->ndRangeKernel(&output.gen_indices, {x-2, y-2, z-2}, VK_TRUE);
 		printf("genVertices() end\n");
 	}
