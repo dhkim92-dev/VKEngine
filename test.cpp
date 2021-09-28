@@ -360,10 +360,8 @@ class MarchingCube{
 		Buffer vertices;
 		Buffer indices;
 		Buffer ubo;
-		Buffer normals;
 		Kernel gen_indices;
 		Kernel gen_vertices;
-		Kernel gen_normal;
 		uint32_t nr_faces = 0;
 		uint32_t nr_vertices = 0;
 		uint32_t nr_normals = 0;
@@ -373,8 +371,6 @@ class MarchingCube{
 		Buffer edge_out;
 		Buffer cell_out;
 	}prefix_sum;
-
-	VkSemaphore compute_complete;
 
 	Scan edge_scan;
 	Scan cell_scan;
@@ -398,7 +394,6 @@ class MarchingCube{
 
 		float *vertices = new float[3*output.nr_vertices];
 		uint32_t *indices = new uint32_t[3*output.nr_faces];
-		float *normals = new float[3 * output.nr_faces];
 		queue->enqueueCopy(&output.vertices, vertices, 0, 0 ,3 * output.nr_vertices*sizeof(float) );
 		queue->enqueueCopy(&output.indices, indices, 0, 0, 3 * output.nr_faces*sizeof(uint32_t));
 
@@ -406,19 +401,13 @@ class MarchingCube{
 		for(uint32_t i = 0 ; i < output.nr_vertices ; ++i){
 			os << "v " << vertices[3*i] << " " << vertices[3*i + 1] << " " << vertices[3*i + 2] << endl;
 		}
-		/*
-		for(uint32_t i = 0 ; i < output.nr_faces ; ++i){
-			os << "vn " << normals[3*i] << " " << normals[3*i+1] << " " << normals[3*i+2] << endl;
-		}
-		*/
-		
+			
 		for(uint32_t i = 0 ; i < output.nr_faces ; ++i){
 			os << "f " << indices[3*i] + 1 << " " << indices[3*i + 1]  + 1<< " " << indices[3*i + 2] + 1<< endl;
 		}
 
 		delete [] vertices;
 		delete [] indices;
-		delete [] normals;
 		os.close();
 		printf("save end()\n");
 	}
@@ -445,9 +434,6 @@ class MarchingCube{
 	}
 
 	void init(){
-		VkSemaphoreCreateInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*ctx), &info, nullptr, &compute_complete ));
 		setupDescriptorPool();
 		uint32_t x = Volume.size.x;
 		uint32_t y = Volume.size.y;
@@ -515,9 +501,6 @@ class MarchingCube{
 		output.ubo.create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 							VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 							sizeof(UniformMatrices), &uniform_matrix);
-		//output.normals.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-		//					(3*(x-1)*(y-1)*(z-1) / 4) * 3 * sizeof(float), nullptr);
-		//output.ubo.map();
 
 		uint32_t dim[3] = {x,y,z};
 		uint32_t edim[3] = {x-1,y-1,z-1};
@@ -545,10 +528,8 @@ class MarchingCube{
 		edge_test.kernel.create(ctx, "shaders/marching_cube/edge_test.comp.spv");
 		cell_test.kernel.create(ctx, "shaders/marching_cube/cell_test.comp.spv");
 		edge_compact.kernel.create(ctx, "shaders/marching_cube/edge_compact.comp.spv");
-		//cell_compact.kernel.create(ctx, "shaders/marching_cube/cell_compact.comp.spv");
 		output.gen_vertices.create(ctx, "shaders/marching_cube/gen_vertices.comp.spv");
 		output.gen_indices.create(ctx, "shaders/marching_cube/gen_indices.comp.spv");
-		//output.gen_normal.create(ctx, "shaders/marching_cube/gen_normals.comp.spv");
 		printf("MarchingCube::createKernel() end\n");
 	}
 
@@ -573,15 +554,7 @@ class MarchingCube{
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4)
 		});
-		/*
-		output.gen_normal.setupDescriptorSetLayout({
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2),
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3),
-		});
-		*/
-
+		
 		output.gen_vertices.setupDescriptorSetLayout({
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
@@ -605,7 +578,6 @@ class MarchingCube{
 		edge_test.kernel.allocateDescriptorSet(desc_pool);
 		edge_compact.kernel.allocateDescriptorSet(desc_pool);
 		cell_test.kernel.allocateDescriptorSet(desc_pool);
-		//output.gen_normal.allocateDescriptorSet(desc_pool);
 		output.gen_vertices.allocateDescriptorSet(desc_pool);
 		output.gen_indices.allocateDescriptorSet(desc_pool);
 
@@ -613,7 +585,6 @@ class MarchingCube{
 		edge_test.kernel.build(cache, nullptr);
 		edge_compact.kernel.build(cache, nullptr);
 		cell_test.kernel.build(cache, nullptr);
-		//output.gen_normal.build(cache, nullptr);
 		output.gen_indices.build(cache,nullptr);
 		output.gen_vertices.build(cache, nullptr);
 		printf("MarchingCube::setupKernel() end()\n");
@@ -692,23 +663,6 @@ class MarchingCube{
 		queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1}, VK_TRUE);
 		printf("edgeCompact() end\n");
 	}
-
-	void generateNormals(){
-		printf("generateNormal() start\n");
-		uint32_t dim[3] = { output.nr_faces, output.nr_faces, output.nr_faces  };
-		queue->enqueueCopy(dim, &general.dim, 0, 0, sizeof(uint32_t) * 3  );
-        queue->waitIdle();
-		output.gen_normal.setKernelArgs({
-			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
-			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.indices.descriptor, nullptr},
-			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.dim.descriptor, nullptr},
-			{3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.normals.descriptor, nullptr},
-		});
-        queue->waitIdle();
-		queue->ndRangeKernel(&output.gen_normal, {output.nr_faces,1,1}, VK_TRUE);
-		printf("generateNormal() end\n");
-	}
-
 
 	void generateVertices(){
 		printf("genVertices() start\n");
@@ -806,9 +760,11 @@ class App : public VKEngine::Application{
 
 
 	void prepareCompute(){
-		uniform_matrix.model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		uniform_matrix.view = camera.matrices.view;
-		uniform_matrix.proj = camera.matrices.proj;
+		uniform_matrix.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		uniform_matrix.model = glm::rotate(uniform_matrix.model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		uniform_matrix.view = glm::lookAt(glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));//camera.matrices.view;
+		uniform_matrix.proj = glm::perspective(glm::radians(45.0f), (width/(float)height), 0.1f, 10.0f);//camera.matrices.proj;
+		uniform_matrix.proj[1][1] *= -1;
 		mc.create(context, compute_queue);
 		mc.init();
 		mc.setupVolume();
@@ -887,13 +843,8 @@ class App : public VKEngine::Application{
 	}
 
 	void updateUniform(){
-		static auto start_time = std::chrono::high_resolution_clock::now();
-		auto cur_time = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(cur_time - start_time).count();
-		uniform_matrix.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-		uniform_matrix.view = glm::lookAt(glm::vec3(1.0f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		uniform_matrix.proj = glm::perspective(glm::radians(45.0f), width/(float)height, 0.1f, 10.0f);
-		uniform_matrix.proj[1][1] *= -1;
+		uniform_matrix.model = glm::rotate(uniform_matrix.model,glm::radians(3.0f), glm::vec3(0.0f, 1.0, 0.0f));
+		//uniform_matrix.proj[1][1] *= -1;
 		mc.output.ubo.copyFrom(&uniform_matrix, sizeof(UniformMatrices));
 	}
 
@@ -910,7 +861,7 @@ class App : public VKEngine::Application{
 		//PROFILING(mc.generateNormals(), "generateNormals()");
 		std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 		printf("Marching Cube spent %.4lf seconds\n", t.count()); 
-		mc.save();
+		//mc.save();
 	}
 
 	void run(){
