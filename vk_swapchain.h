@@ -19,10 +19,12 @@ namespace VKEngine{
 
 	class SwapChain{
 		private:
+		Context *ctx;
 		VkInstance instance;
 		VkPhysicalDevice gpu;
 		VkDevice device;
 		VkSurfaceKHR surface;
+		Context context;
 		public:
 		VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 		SwapChainSupportDetail detail;

@@ -12,31 +12,30 @@ bool graphics_mode=false;
 #endif
 
 namespace VKEngine{
+	Context::Context(){
+
+	}
 	Context::Context(const VkInstance _instance,
 		const uint32_t gpu_id, 
-		const VkSurfaceKHR _surface, 
-		const VkQueueFlags _queue_family_flags,
+		const VkQueueFlags request_queues,
 		const vector<const char *>_extension_names,
 		const vector<const char *>_validation_names
-		) : instance(_instance), surface(_surface), validation_names(_validation_names),extension_names(_extension_names), queue_family_flags(_queue_family_flags)
-		{
-		
-		selectGPU(gpu_id);
-		LOG("GPU selected\n");
-		if(gpu == VK_NULL_HANDLE){
-			throw runtime_error("Failed to set GPU. maybe your computer has no suitable GPU for Vulkan API");
-		}
-		LOG("logical Device will set\n");
-		setupDevice();
-		QueueFamilyIndice indices = findQueueFamilies(gpu, surface);
-		graphics_pool = createCommandPool(indices.graphics.value());
-		compute_pool = createCommandPool(indices.compute.value());
-		setupMemoryProperties();
+	){
+		create(_instance, gpu_id, request_queues, _extension_names, _validation_names);
 	}
 
 	Context::~Context(){
 		destroy();
 	}
+
+	void Context::create(VkInstance _instance, uint32_t gpu_id, VkQueueFlags request_queues, vector<const char *> device_extensions, vector<const char *> validation_extensions){
+		this->instance = _instance;
+		selectGPU(gpu_id);
+		setupQueueFamilyIndices();
+		setupDevice(request_queues, device_extensions, validation_extensions);
+		setupMemoryProperties();
+	}
+
 
 	void Context::setupMemoryProperties(){
 		vkGetPhysicalDeviceMemoryProperties(gpu, &memory_properties);
@@ -67,50 +66,68 @@ namespace VKEngine{
 		graphics_pool = VK_NULL_HANDLE;
 		if(compute_pool) vkDestroyCommandPool(device, compute_pool, nullptr);
 		compute_pool = VK_NULL_HANDLE;
-		if(surface) vkDestroySurfaceKHR(instance, surface, nullptr);
+		//if(surface) vkDestroySurfaceKHR(instance, surface, nullptr);
 		if(device) vkDestroyDevice(device, nullptr);
 		device = VK_NULL_HANDLE;
 	}
 
 	void Context::selectGPU(const uint32_t gpu_id){
 		vector<VkPhysicalDevice> gpus(enumerateGPU(instance));
-		VkPhysicalDevice selected_gpu = VK_NULL_HANDLE;
-
-		LOG("searched GPU count : %d\n", gpus.size() );
-
-		bool is_suitable = false;
-		int i = 0 ;
-		for(VkPhysicalDevice _gpu : gpus){
-			LOG("_gpu : %p \n",_gpu);
-			is_suitable = isSuitableGPU(_gpu);
-			LOG("GPU : %d suitable : %d\n", i, is_suitable);
-			if(is_suitable){
-				selected_gpu = _gpu;
-				break;
-			}
-			++i;
-		}
-		
-		gpu = (gpu == VK_NULL_HANDLE) ? selected_gpu : VK_NULL_HANDLE;
+		gpu = gpus[gpu_id];
 	}
 
-	void Context::setupDevice(){
+	void Context::setupDevice(VkQueueFlags request_queue, vector<const char*> device_exts, vector<const char*> valid_exts){
 		LOG("setupDevice!\n");
 		LOG("Selected GPU : %p!\n", gpu);
-		for(const char * name : extension_names){
+		/*
+		for(const char * name : device_exts){
 			LOG("Request Extension : %s\n", name);
 		}
-		for(const char * name : validation_names){
+		for(const char * name : valid_exts){
 			LOG("Requested Validation : %s\n", name);
 		}
+		*/
 		LOG("setupDevice!\n");
-		QueueFamilyIndice indice = findQueueFamilies();
+		queue_family_indices = findQueueFamilies(gpu);
 		vector<VkDeviceQueueCreateInfo> device_queue_CI;
-		set<uint32_t> unique_queue_families = { indice.graphics.value(), indice.compute.value(), indice.transfer.value(), indice.present.value() };
-		LOG("unique queue family size : %d\n", unique_queue_families.size());
+		set<uint32_t> unique_queue_families;
 		VkDeviceCreateInfo device_CI = infos::deviceCreateInfo();
 		float queue_priorities = 1.0f;
-		
+		LOG("unique queue family size : %d\n", unique_queue_families.size());
+
+		if(request_queue & VK_QUEUE_GRAPHICS_BIT){
+			if(!queue_family_indices.graphics.has_value()){
+				std::runtime_error("This device not support Graphics Queue Family.");
+			}
+			unique_queue_families.insert( queue_family_indices.graphics.value() );
+		}
+
+		if(request_queue & VK_QUEUE_COMPUTE_BIT){
+			if(!queue_family_indices.compute.has_value()){
+				if(!queue_family_indices.graphics.has_value()){
+					std::runtime_error("This device has no suitable compute queue");
+				}
+				unique_queue_families.insert(queue_family_indices.graphics.value());
+			}else{
+				unique_queue_families.insert(queue_family_indices.compute.value());
+			}
+		}
+
+		if(request_queue & VK_QUEUE_TRANSFER_BIT){
+			if(!queue_family_indices.transfer.has_value()){
+				if(!queue_family_indices.graphics.has_value()){
+					std::runtime_error("This device has no suitable transfer queue");
+				}
+				unique_queue_families.insert(queue_family_indices.graphics.value());
+			}else{
+				unique_queue_families.insert(queue_family_indices.transfer.value());
+			}
+		}
+
+		if(unique_queue_families.size() == 0){
+			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
+		}
+
 		for(uint32_t queue_family : unique_queue_families){
 			VkDeviceQueueCreateInfo queue_CI = infos::deviceQueueCreateInfo();
 			queue_CI.queueCount = 1;
@@ -121,13 +138,12 @@ namespace VKEngine{
 
 		device_features ={};
 		device_CI.pEnabledFeatures = &device_features;
-		device_CI.enabledLayerCount = static_cast<uint32_t>(validation_names.size());
-		device_CI.enabledExtensionCount = static_cast<uint32_t>(extension_names.size());
-		device_CI.ppEnabledLayerNames = validation_names.data();
-		device_CI.ppEnabledExtensionNames = extension_names.data();
+		device_CI.enabledLayerCount = static_cast<uint32_t>(valid_exts.size());
+		device_CI.enabledExtensionCount = static_cast<uint32_t>(device_exts.size());
+		device_CI.ppEnabledLayerNames = valid_exts.data();
+		device_CI.ppEnabledExtensionNames = device_exts.data();
 		device_CI.queueCreateInfoCount = static_cast<uint32_t>(device_queue_CI.size());
 		device_CI.pQueueCreateInfos = device_queue_CI.data();
-
 		VK_CHECK_RESULT( vkCreateDevice(gpu, &device_CI, nullptr, &device) );
 	}
 
@@ -154,22 +170,11 @@ namespace VKEngine{
 		return ret;
 	}
 
-	bool Context::isSuitableGPU(VkPhysicalDevice _gpu){
-		bool result = false;
-		LOG("isSuitableGPU for %p \n");
-		QueueFamilyIndice indice = findQueueFamilies(_gpu, surface);
-		LOG("indice : %d %d %d\n", indice.graphics.value(), indice.transfer.value(), indice.compute.value());
-		result = indice.isSupport(graphics_mode);
-		LOG("is Suitable result : %d\n", result);
-
-		return result;
+	void Context::setupQueueFamilyIndices(){
+		queue_family_indices = findQueueFamilies(gpu);
 	}
 
-	QueueFamilyIndice Context::findQueueFamilies(){
-		return findQueueFamilies(gpu, surface);
-	}
-
-	QueueFamilyIndice Context::findQueueFamilies(VkPhysicalDevice _gpu, VkSurfaceKHR _surface){
+	QueueFamilyIndice Context::findQueueFamilies(VkPhysicalDevice _gpu){
 		QueueFamilyIndice indice;
 		vector<VkQueueFamilyProperties> properties(enumerateQueueFamilyProperties(_gpu));
 		if(properties.size() <= 0){
@@ -183,24 +188,13 @@ namespace VKEngine{
 			}
 			if(property.queueFlags & VK_QUEUE_TRANSFER_BIT){
 				indice.transfer = i;
-			}else{
-				indice.transfer = indice.graphics.value();
 			}
 
 			if(property.queueFlags & VK_QUEUE_COMPUTE_BIT){
 				indice.compute = i;
-			}else{
-				indice.compute = indice.graphics.value();
 			}
 
-			VkBool32 present_support = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(_gpu, i, _surface, &present_support);
-
-			if(present_support){
-				indice.present = i;
-			}
-
-			if(indice.isSupport(graphics_mode)){
+			if(indice.isSupport(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT)){
 				break;
 			}
 

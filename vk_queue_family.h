@@ -13,7 +13,7 @@ namespace VKEngine{
 		optional<uint32_t> transfer;
 		optional<uint32_t> compute;
 		optional<uint32_t> present;
-		bool isSupport(VkQueueFlags flags, bool present_mode = true) ;
+		bool isSupport(VkQueueFlags flags) ;
 	};
 }
 

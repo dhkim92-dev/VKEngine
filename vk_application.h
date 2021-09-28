@@ -61,9 +61,9 @@ namespace VKEngine{
 		
 		protected :
 		virtual void destroy();
-		virtual void initWindow(){LOG("Application::initWindow()\n");};
+		virtual void initWindow();
 		virtual void setupCamera();
-		virtual void createSurface(){LOG("Application::initSurface()\n");};
+		virtual void createSurface();
 		virtual void createContext();
 		virtual void mainLoop(){};
 		virtual void initSwapchain();

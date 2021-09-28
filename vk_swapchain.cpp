@@ -8,6 +8,7 @@ using namespace std;
 namespace VKEngine{
 
 	void SwapChain::connect(Engine *engine, Context *context, VkSurfaceKHR _surface){
+		ctx = context;
 		connect( VkInstance(*engine), VkPhysicalDevice(*context), VkDevice(*context), _surface );
 	}
 
@@ -38,7 +39,8 @@ namespace VKEngine{
 		swapchain_CI.imageArrayLayers = 1;
 		swapchain_CI.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		swapchain_CI.oldSwapchain=swapchain;
-		QueueFamilyIndice indice = Context::findQueueFamilies(gpu, surface);
+		QueueFamilyIndice indice = ctx->findQueueFamilies(gpu);
+		ctx->setupPresentFamily();
 
 		uint32_t queue_family_indices[2] = { indice.graphics.value(), indice.present.value() };
 

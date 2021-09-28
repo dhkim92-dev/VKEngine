@@ -32,6 +32,7 @@ namespace VKEngine{
 	void Application::initVulkan(){
 		engine->init();
 		LOG("engine init\n");
+		initWindow();
 		createSurface();
 		createContext();
 		initSwapchain();
@@ -45,11 +46,22 @@ namespace VKEngine{
 		setupSubmitInfo();
 	}
 
+	void Application::initWindow(){
+		LOG("App Init Window\n");
+		glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
+	}
 
 	void Application::createContext(){
 		VkInstance instance = VkInstance(*engine);
-		context = new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
-	}	
+		context = new Context(instance, 0, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT
+							  , device_extension_names, validation_names); //new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
+	}
+
+	void Application::createSurface(){
+		VK_CHECK_RESULT(glfwCreateWindowSurface(VkInstance(*engine), window, nullptr, &surface));
+	}
 	
 	void Application::initSwapchain(){
 		swapchain.connect(engine, context, surface);
