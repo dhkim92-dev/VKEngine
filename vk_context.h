@@ -33,13 +33,13 @@ namespace VKEngine{
 		void setupMemoryProperties();
 		public :
 		QueueFamilyIndice queue_family_indices;
+		Context();
 		Context(const VkInstance instance,
 			const uint32_t gpu_id,  
 			const VkQueueFlags request_queues,
 			VkSurfaceKHR surface,
 			const vector<const char *> _extension_names,
 			const vector<const char *> _validation_names);
-		Context();
 
 		void setupSurface(VkSurfaceKHR _surface);		
 		void setupQueueFamilyIndices();

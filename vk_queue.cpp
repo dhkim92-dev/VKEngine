@@ -3,18 +3,6 @@
 
 #include "vk_queue.h"
 namespace VKEngine{
-	CommandQueue::CommandQueue(
-		Context *_context,
-		VkQueueFlagBits _type,
-		VkCommandPool _pool)
-	{
-		context = _context;
-		device = VkDevice(*context);
-		type = _type;
-		pool = _pool;
-		createCommandQueue();
-	}
-
 	CommandQueue::CommandQueue(Context * _context, VkQueueFlagBits _type){
 		context = _context;
 		device = VkDevice(*context);
@@ -61,10 +49,13 @@ namespace VKEngine{
 		}
 	}
 
-	VkCommandBuffer CommandQueue::createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage){
+	VkCommandBuffer CommandQueue::createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage, bool begin){
 		VkCommandBuffer command_buffer = VK_NULL_HANDLE;
 		VkCommandBufferAllocateInfo command_buffer_AI = infos::commandBufferAllocateInfo(pool, level, 1);
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &command_buffer_AI, &command_buffer));
+		if(begin){
+			beginCommandBuffer(command_buffer, usage);
+		}
 		return command_buffer;
 	}
 
@@ -80,58 +71,58 @@ namespace VKEngine{
 		VK_CHECK_RESULT(vkEndCommandBuffer(command_buffer));
 	}
 
-	void CommandQueue::submit(VkCommandBuffer command_buffer, VkSemaphore *wait, VkSemaphore *signal, VkPipelineStageFlags *stage, VkBool32 fenced){
-		VkSubmitInfo command_buffer_SI = infos::submitInfo();
-		command_buffer_SI.commandBufferCount = 1;
-		command_buffer_SI.pCommandBuffers = &command_buffer;
-
-		if(wait != nullptr){
-			command_buffer_SI.pWaitSemaphores = wait;
-			command_buffer_SI.waitSemaphoreCount = 1;
-			command_buffer_SI.pWaitDstStageMask = stage;
-		}
-
-		if(signal != nullptr){
-			command_buffer_SI.pSignalSemaphores = signal;
-			command_buffer_SI.signalSemaphoreCount = 1;
-		}
-
-		if(fenced == VK_TRUE){
-			resetFence();
-			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &command_buffer_SI, fence));
-			waitFence();
-		}else{
-			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &command_buffer_SI, VK_NULL_HANDLE));
-		}
-		VK_CHECK_RESULT(vkQueueWaitIdle(queue));
+	void CommandQueue::copyBuffer(VkCommandBuffer command_buffer, Buffer *src, Buffer *dst, uint32_t src_offset, uint32_t dst_offset, uint32_t size ){
+		VkBufferCopy copy;
+		copy.dstOffset = dst_offset;
+		copy.srcOffset = src_offset;
+		copy.size = size;
+		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(*dst), 1, &copy );
 	}
 
-	void CommandQueue::submit(VkSubmitInfo submit_info, VkBool32 fenced){
-		if(fenced == VK_TRUE){
-			resetFence();
-			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submit_info, fence));
-			waitFence();
-		}else{
-			VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE));
-		}
-		vkQueueWaitIdle(queue);
+	void CommandQueue::dispatch(VkCommandBuffer command_buffer, uint32_t gx, uint32_t gy, uint32_t gz){
+		vkCmdDispatch(command_buffer, gx, gy, gz);
 	}
 
-	void CommandQueue::resetFence(){
-		if(fence == VK_NULL_HANDLE){
-			VkFenceCreateInfo fence_CI = infos::fenceCreateInfo(0);
-			VK_CHECK_RESULT(vkCreateFence(device, &fence_CI, nullptr, &fence));
-		}else{
-			VK_CHECK_RESULT(vkResetFences(device, 1, &fence));
-		}
+	VkResult CommandQueue::submit(VkCommandBuffer* commands, uint32_t nr_commands,
+					VkPipelineStageFlags wait_signal_stage_mask,
+					VkSemaphore *wait_smps, uint32_t nr_wait_smps,
+					VkSemaphore *signal_smps, uint32_t nr_signal_smps, VkFence fence){
+		VkSubmitInfo info = infos::submitInfo();
+		info.commandBufferCount = nr_commands;
+		info.pCommandBuffers = commands;
+		info.signalSemaphoreCount = nr_signal_smps;
+		info.pSignalSemaphores = signal_smps;
+		info.waitSemaphoreCount = nr_wait_smps;
+		info.pWaitSemaphores = wait_smps;
+		info.pWaitDstStageMask = &wait_signal_stage_mask;
+		return vkQueueSubmit(queue, 1, &info, fence);
 	}
 
-	void CommandQueue::waitFence(){
-		VK_CHECK_RESULT(vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX));
-		//vkDestroyFence(device, fence, nullptr);
-		//fence = VK_NULL_HANDLE;
+	VkFence CommandQueue::createFence(VkFenceCreateFlagBits flag){
+		VkFenceCreateInfo info = infos::fenceCreateInfo(flag);
+		VkDevice device = VkDevice(*context);
+		VkFence fence;
+		VK_CHECK_RESULT(vkCreateFence(device, &info, nullptr, &fence));
+		return fence;
+	}
+	VkResult CommandQueue::resetFences(VkFence *fences, uint32_t nr_fences){
+		VkDevice device = VkDevice(*context);
+		return vkResetFences(device, nr_fences, fences);
+	}	
+	
+	VkResult CommandQueue::waitIdle(){
+		return vkQueueWaitIdle(queue);
 	}
 
+	VkResult CommandQueue::waitFences(VkFence* fences, uint32_t nr_fences, bool wait_all, uint64_t timeout){
+		return vkWaitForFences(device, nr_fences, fences, wait_all, timeout);
+	}
+
+	void CommandQueue::destroyFence(VkFence fence){
+		vkDestroyFence(VkDevice(*context), fence, nullptr);
+	}
+
+	// ------------------------- Legacy Functions ------------------------------------
 	void CommandQueue::enqueueCopy(Buffer *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking){
 		/**
 		 * copy src buffer to dst buffer,
@@ -144,8 +135,11 @@ namespace VKEngine{
 		region.dstOffset = dst_offset;
 		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(*dst),1, &region );
 		endCommandBuffer(command_buffer);
-
-		submit(command_buffer, nullptr, nullptr, nullptr, (is_blocking ? VK_TRUE: VK_FALSE));
+		VkSubmitInfo submit_info = infos::submitInfo();
+		submit_info.pCommandBuffers = &command_buffer;
+		submit_info.commandBufferCount = 1;
+		vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+		if(is_blocking) waitIdle();
 		free(command_buffer);
 	}
 
@@ -167,10 +161,12 @@ namespace VKEngine{
 		staging.copyTo(dst, size);
 		staging.destroy();
 	}
+	// ------------------------- Legacy Functions ------------------------------------
 
-	void CommandQueue::ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkBool32 fenced)
+	//@Legacy Function.
+	//@Will be Deleted
+	void CommandQueue::ndRangeKernel(Kernel *kernel, WorkGroupSize gw)
 	{
-		VkEvent event;
 		VkSubmitInfo submit_info = infos::submitInfo();
 		VkPipeline pipeline = kernel->pipeline;
 		VkPipelineLayout layout = kernel->layout;
@@ -180,18 +176,15 @@ namespace VKEngine{
 		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		vkCmdBindPipeline(command_buffer, point, pipeline);
 		vkCmdBindDescriptorSets(command_buffer, point, layout, 0, 1, &descriptor_set, 0, nullptr);
-		//LOG("dispatch size : %d %d %d\n", gw.x, gw.y, gw.z);
 		vkCmdDispatch(command_buffer, gw.x, gw.y, gw.z);
 		endCommandBuffer(command_buffer);
 		submit_info.commandBufferCount =1;
 		submit_info.pCommandBuffers = &command_buffer;
-		submit(submit_info, fenced);
+		vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+		waitIdle();
 		free(command_buffer);
 	}
 
-	VkResult CommandQueue::waitIdle(){
-		return vkQueueWaitIdle(queue);
-	}
 
 }
 #endif

@@ -40,6 +40,7 @@ namespace VKEngine{
 		ImageAttachment color_attachment, depth_attachment;
 		VkRenderPass render_pass = VK_NULL_HANDLE;
 		vector<VkFramebuffer> framebuffers;
+		VkFence draw_fence = VK_NULL_HANDLE;
 		//Camera camera(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f));	
 		GraphicTools::Camera camera;
 		struct Semaphores

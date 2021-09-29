@@ -209,25 +209,7 @@ class Scan{
 		}
 		u_limit.create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
 					VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, sizeof(uint32_t), &limits[0]);
-
-		/*
-		printf("g_sizes : [ ");
-		for(uint32_t i = 0 ; i < g_sizes.size() ; ++i){
-			printf("%d ", g_sizes[i]);
 		}
-		printf(" ] \n");
-		printf("l_sizes : [ ");
-		for(uint32_t i = 0 ; i < l_sizes.size() ; ++i){
-			printf(" %d ", l_sizes[i]);
-		}
-		printf(" ]\n");
-		printf("limits : [ ");
-		for(uint32_t i : limits){
-			printf(" %d ", i);
-		}
-		printf(" ]\n");
-		*/
-	}
 
 	void buildKernels(){
 		//TODO 
@@ -280,7 +262,6 @@ class Scan{
 			if(d_grps[i] != nullptr){
 				//printf("run scan kernel\n");
 				//std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-                queue->waitIdle();
 				u_limit.copyFrom(&limits[i], sizeof(uint32_t));
 				scan.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
@@ -288,7 +269,7 @@ class Scan{
 					{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr},
 					{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &u_limit.descriptor, nullptr}
 				});
-                queue->ndRangeKernel( &scan, {g_sizes[i],1,1}, VK_TRUE);
+                queue->ndRangeKernel( &scan, {g_sizes[i],1,1});
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				//printf("scan() gws : %d , lws : 64\n", g_sizes[i]);
 				//printf("scan() d_src : %p d_dst : %p d_grps : %p u_limit :%d\n", d_srcs[i], d_dsts[i], d_grps[i] ,limits[i]);
@@ -296,12 +277,11 @@ class Scan{
 			}else{
 				//printf("run scan_ed kernel\n");
 				//std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-                queue->waitIdle();
 				scan_ed.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 				});
-                queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1}, VK_TRUE);
+                queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1});
 				//printf("scan_ed() gws : %d, lws : %d\n", g_sizes[i], limits[limits.size() - 1]);
 				//printf("scan_ed() d_src : %p d_dst : %p d_grps : %p\n", d_srcs[i], d_dsts[i], d_grps[i]);
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
@@ -317,7 +297,7 @@ class Scan{
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
-                queue->ndRangeKernel( &propagation, {g_sizes[i],1,1}, VK_TRUE);
+                queue->ndRangeKernel( &propagation, {g_sizes[i],1,1});
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				//printf("uniform update() gws : %d l_size : 64 \n", g_sizes[i]);
 				//printf("uniformUpdate() d_dst : %p d_grps : %p\n", d_dsts[i], d_grps[i]);
@@ -474,16 +454,22 @@ class MarchingCube{
 		z = Volume.size.z;
 		general.raw.create( ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
 							VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, raw_size * sizeof(float32), nullptr);
+
 		general.isovalue.create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
 									 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, sizeof(float), &Volume.isovalue);
+
 		edge_test.d_dst.create(ctx,  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 							   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sizeof(uint32_t) * 3 * (x-1) * (y-1) * (z-1), nullptr);
+
 		cell_test.tri_counts.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 							   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sizeof(uint32_t) * (x-2) * (y-2) * (z-2));
+
 		cell_test.cell_types.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 							   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sizeof(uint32_t) * (x-2) * (y-2) * (z-2));
+
 		prefix_sum.edge_out.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 3*(x-1)*(y-1)*(z-1)*sizeof(uint32_t), nullptr);
+
 		prefix_sum.cell_out.create(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 									VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (x-2)*(y-2)*(z-2)*sizeof(uint32_t) , nullptr);
 
@@ -572,7 +558,6 @@ class MarchingCube{
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 5),
 			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 6),
-			infos::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 7)
 		});
 
 		edge_test.kernel.allocateDescriptorSet(desc_pool);
@@ -610,7 +595,7 @@ class MarchingCube{
 			{4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.dim.descriptor, nullptr},
 		});
 
-		queue->ndRangeKernel(&cell_test.kernel, {x, y, z}, VK_TRUE);
+		queue->ndRangeKernel(&cell_test.kernel, {x, y, z});
 		printf("cellTest() end\n");
 	}
 
@@ -625,7 +610,7 @@ class MarchingCube{
 			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
 		});
         queue->waitIdle();
-		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz}, VK_TRUE);
+		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz});
 		printf("edgeTest() end()\n");
 	}
 
@@ -660,7 +645,7 @@ class MarchingCube{
 			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &prefix_sum.edge_out.descriptor, nullptr}
 		});
         queue->waitIdle();
-		queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1}, VK_TRUE);
+		queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1});
 		printf("edgeCompact() end\n");
 	}
 
@@ -684,7 +669,7 @@ class MarchingCube{
 		});
 		
         queue->waitIdle();
-		queue->ndRangeKernel(&output.gen_vertices, {output.nr_vertices, 1, 1}, VK_TRUE);
+		queue->ndRangeKernel(&output.gen_vertices, {output.nr_vertices, 1, 1});
 		printf("genVertices() end\n");
 	}
 	void generateIndices(){
@@ -710,7 +695,7 @@ class MarchingCube{
 		});
 
         queue->waitIdle();
-		queue->ndRangeKernel(&output.gen_indices, {x-2, y-2, z-2}, VK_TRUE);
+		queue->ndRangeKernel(&output.gen_indices, {x-2, y-2, z-2});
 		printf("genVertices() end\n");
 	}
 };
@@ -861,7 +846,7 @@ class App : public VKEngine::Application{
 		//PROFILING(mc.generateNormals(), "generateNormals()");
 		std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 		printf("Marching Cube spent %.4lf seconds\n", t.count()); 
-		//mc.save();
+		mc.save();
 	}
 
 	void run(){

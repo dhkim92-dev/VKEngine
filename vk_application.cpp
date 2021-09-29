@@ -229,6 +229,7 @@ namespace VKEngine{
 		VkSemaphoreCreateInfo info = infos::semaphoreCreateInfo();
 		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.render_complete ));
 		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.present_complete ));
+		draw_fence = graphics_queue->createFence();
 	}
 
 	void Application::setupSubmitInfo(){
@@ -238,6 +239,7 @@ namespace VKEngine{
 		render_SI.pSignalSemaphores = &semaphores.render_complete;
 		render_SI.signalSemaphoreCount = 1;
 		render_SI.pWaitDstStageMask = &submit_pipeline_stages;
+
 	}
 
 	void Application::prepareFrame(){
@@ -267,7 +269,9 @@ namespace VKEngine{
 		prepareFrame();
 		render_SI.pCommandBuffers = &draw_command_buffers[current_frame_index];
 		render_SI.commandBufferCount = 1;
-		graphics_queue->submit(render_SI, VK_TRUE);
+		graphics_queue->resetFences(&draw_fence, 1);
+		vkQueueSubmit( VkQueue(*graphics_queue), 1, & render_SI, draw_fence);
+		graphics_queue->waitFences(&draw_fence, 1, true, UINT64_MAX);
 		submitFrame();
 		current_frame_index+=1;
 		current_frame_index%=swapchain.buffers.size();
@@ -293,6 +297,7 @@ namespace VKEngine{
 			cache = VK_NULL_HANDLE;
 		}
 
+		graphics_queue->destroyFence(draw_fence);
 		vkDestroySemaphore(device, semaphores.present_complete, nullptr);
 		vkDestroySemaphore(device, semaphores.render_complete, nullptr);
 		destroyFramebuffers();
