@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS += -std=c++17 -DDEBUG -DVKENGINE_GRAPHICS_MODE -DGLFW_INCLUDE_VULKAN
 LDFLAGS += -lvulkan -lpthread -lglfw -I/usr/local/include -L/usr/local/lib
-DEPENDENCIES += vk_engine.o vk_context.o vk_utils.o vk_infos.o vk_queue_family.o vk_application.o vk_queue.o vk_swapchain.o vk_buffer.o vk_program.o vk_shader.o vk_compute.o #vk_image.o
+DEPENDENCIES += vk_engine.o vk_context.o vk_utils.o vk_infos.o vk_queue_family.o vk_application.o vk_queue.o vk_swapchain.o vk_buffer.o vk_program.o vk_shader.o vk_compute.o vk_image.o
 TARGET=test
 
 $(TARGET) : $(DEPENDENCIES)
@@ -35,6 +35,9 @@ vk_swapchain.o : vk_swapchain.cpp
 #	$(CC) $(CFLAGS) -c $^ $(LDFLAGS)
 
 vk_buffer.o : vk_buffer.cpp
+	$(CC) $(CFLAGS) -c $^ $(LDFLAGS)
+
+vk_image.o : vk_image.cpp
 	$(CC) $(CFLAGS) -c $^ $(LDFLAGS)
 
 vk_program.o : vk_program.cpp
