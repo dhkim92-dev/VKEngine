@@ -79,6 +79,14 @@ namespace VKEngine{
 		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(*dst), 1, &copy );
 	}
 
+	void CommandQueue::bindKernel(VkCommandBuffer command_buffer, Kernel *kernel){
+		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, kernel->pipeline);
+		vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, 
+								kernel->layout, 0, 
+								1, &kernel->descriptors.set, 
+								0, nullptr );
+	}
+
 	void CommandQueue::dispatch(VkCommandBuffer command_buffer, uint32_t gx, uint32_t gy, uint32_t gz){
 		vkCmdDispatch(command_buffer, gx, gy, gz);
 	}

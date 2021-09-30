@@ -48,6 +48,8 @@ namespace VKEngine{
 		VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage=0x0, bool begin=false);
 		void beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage=0x0);
 		void endCommandBuffer(VkCommandBuffer command_buffer);
+
+		void bindKernel(VkCommandBuffer command_buffer, Kernel *kernel);
 		VkResult submit(VkCommandBuffer* commands, uint32_t nr_commands,
 					VkPipelineStageFlags wait_signal_stage_mask,
 					VkSemaphore *wait_smps, uint32_t nr_wait_smps, 

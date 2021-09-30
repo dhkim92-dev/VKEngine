@@ -241,6 +241,7 @@ class Scan{
 		propagation.build(cache, nullptr);
 		//cout << "scan ed local size : " << s_data[1] << endl;
 	}
+	
 	public :
 	void run(Buffer *d_src, Buffer *d_dst){
 		// d_src = edge_test_result
@@ -258,6 +259,10 @@ class Scan{
 			d_srcs.push_back(d_grps[i]);
 			d_dsts.push_back(d_grps[i]);
 		}
+
+		VkCommandBuffer scan_command = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, 
+										0, false);
+		VkFence fence = queue->createFence(VK_FENCE_CREATE_SIGNALED_BIT);
 		for(uint32_t i = 0 ; i < nr_grps ; ++i){
 			if(d_grps[i] != nullptr){
 				//printf("run scan kernel\n");
@@ -269,7 +274,26 @@ class Scan{
 					{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr},
 					{3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &u_limit.descriptor, nullptr}
 				});
-                queue->ndRangeKernel( &scan, {g_sizes[i],1,1});
+				queue->beginCommandBuffer(scan_command, 0);
+				if(i == 0 ){
+					d_srcs[i]->barrier(scan_command, 
+										VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+										VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				}else{
+					d_srcs[i]->barrier(scan_command, 
+										VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+										VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+					d_grps[i]->barrier(scan_command,
+								VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+								VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				}
+				queue->bindKernel(scan_command, &scan);
+				queue->dispatch(scan_command, g_sizes[i], 1, 1);
+				queue->endCommandBuffer(scan_command);
+				queue->resetFences(&fence, 1);
+				queue->submit(&scan_command, 1, 0, nullptr, 0, nullptr, 0 , fence);
+				queue->waitFences(&fence, 1);
+				//queue->ndRangeKernel( &scan, {g_sizes[i],1,1});
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				//printf("scan() gws : %d , lws : 64\n", g_sizes[i]);
 				//printf("scan() d_src : %p d_dst : %p d_grps : %p u_limit :%d\n", d_srcs[i], d_dsts[i], d_grps[i] ,limits[i]);
@@ -277,11 +301,27 @@ class Scan{
 			}else{
 				//printf("run scan_ed kernel\n");
 				//std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+				queue->beginCommandBuffer(scan_command);
 				scan_ed.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_srcs[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 				});
-                queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1});
+
+				d_srcs[i]->barrier(scan_command, 
+									VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+									VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				d_dsts[i]->barrier(scan_command,
+									VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+									VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+				);
+				queue->bindKernel(scan_command, &scan_ed);
+				queue->dispatch(scan_command, g_sizes[i], 1, 1);
+				queue->endCommandBuffer(scan_command);
+				queue->resetFences(&fence, 1);
+				queue->submit(&scan_command, 1, 0, nullptr, 0, nullptr, 0 , fence);
+				queue->waitFences(&fence, 1);
+			
+                //queue->ndRangeKernel( &scan_ed, {g_sizes[i],1,1});
 				//printf("scan_ed() gws : %d, lws : %d\n", g_sizes[i], limits[limits.size() - 1]);
 				//printf("scan_ed() d_src : %p d_dst : %p d_grps : %p\n", d_srcs[i], d_dsts[i], d_grps[i]);
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
@@ -292,18 +332,32 @@ class Scan{
 		for(int i = nr_grps-1 ; i >=0 ; --i){
 			if(d_grps[i] != nullptr){
 				//printf("run uniform_update() \n");
-                queue->waitIdle();
+				queue->beginCommandBuffer(scan_command);
 				propagation.setKernelArgs({
 					{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_dsts[i]->descriptor, nullptr},
 					{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &d_grps[i]->descriptor, nullptr}
 				});
-                queue->ndRangeKernel( &propagation, {g_sizes[i],1,1});
+				
+				d_dsts[i]->barrier(scan_command, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT,
+									VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				queue->bindKernel(scan_command, &propagation);
+				queue->dispatch(scan_command, g_sizes[i], 1, 1);
+				queue->endCommandBuffer(scan_command);
+				queue->resetFences(&fence, 1);
+				queue->submit(&scan_command, 1, 0, nullptr, 0, nullptr, 0 , fence);
+				queue->waitFences(&fence, 1);
+
+                //queue->ndRangeKernel( &propagation, {g_sizes[i],1,1});
 				//std::chrono::duration<double> t = std::chrono::system_clock::now() - start;
 				//printf("uniform update() gws : %d l_size : 64 \n", g_sizes[i]);
 				//printf("uniformUpdate() d_dst : %p d_grps : %p\n", d_dsts[i], d_grps[i]);
 				//printf("uniform_update kernel spent : %.3f seconds\n", t.count());
 			}
 		}
+		
+		queue->waitIdle();
+		queue->free(scan_command);
+		queue->destroyFence(fence);
 	}
 };
 
@@ -609,8 +663,19 @@ class MarchingCube{
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr}
 		});
-        queue->waitIdle();
-		queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz});
+		//queue->ndRangeKernel(&edge_test.kernel, {gx,gy,gz});
+		
+		VkFence fence = queue->createFence();
+		VkCommandBuffer command = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, true);
+		queue->bindKernel(command, &edge_test.kernel);
+		queue->dispatch(command, gx , gy, gz);
+		queue->endCommandBuffer(command);
+		queue->resetFences(&fence, 1);
+		queue->submit(&command, 1, 0, nullptr, 0, nullptr, 0, fence);
+		queue->waitFences(&fence, 1);
+		queue->waitIdle();
+		queue->destroyFence(fence);
+		queue->free(command);
 		printf("edgeTest() end()\n");
 	}
 
@@ -633,19 +698,54 @@ class MarchingCube{
 		y = Volume.size.y;
 		z = Volume.size.z;
 		
+		/*
 		queue->enqueueCopy(&prefix_sum.edge_out,
 							&output.nr_vertices,
 							sizeof(uint32_t)*(x-1)*(y-1)*(z-1)*3 - sizeof(uint32_t) , 0, 
 							sizeof(uint32_t));
-		
-		printf("edgeCompact()::nr_vertices : %d\n",output.nr_vertices);
+		*/
 		edge_compact.kernel.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &edge_test.d_dst.descriptor, nullptr},
 			{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &prefix_sum.edge_out.descriptor, nullptr}
 		});
-        queue->waitIdle();
-		queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1});
+
+		Buffer staging(ctx, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+						VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+						sizeof(uint32_t), nullptr);
+
+		
+		VkFence fence = queue->createFence();	
+		VkCommandBuffer copy_command = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, true);
+		VkCommandBuffer command = queue->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, true);
+		//prefix_sum.edge_out.barrier(command, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+		queue->copyBuffer(copy_command, &prefix_sum.edge_out, &staging, sizeof(uint32_t)*(x-1)*(y-1)*(z-1) * 3 - sizeof(uint32_t), 0, sizeof(uint32_t));
+		staging.barrier(copy_command, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+		queue->endCommandBuffer(copy_command);
+		queue->resetFences(&fence, 1);
+		queue->submit(&copy_command, 1, 0, nullptr, 0, nullptr, 0, fence);
+		queue->waitFences(&fence, 1, true, UINT32_MAX);
+		queue->free(copy_command);
+		staging.copyTo(&output.nr_vertices, sizeof(uint32_t));
+		staging.destroy();
+
+		printf("edgeCompact()::nr_vertices : %d\n",output.nr_vertices);
+		//queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1});
+
+		
+		queue->bindKernel(command, &edge_compact.kernel);
+		queue->dispatch(command, 3*(x-1)*(y-1)*(z-1), 1, 1);
+		queue->endCommandBuffer(command);
+		queue->resetFences(&fence, 1);
+		queue->submit(&command, 1, 0, nullptr, 0, nullptr, 0, fence);
+		queue->waitFences(&fence, 1, true, UINT64_MAX);
+		queue->waitIdle();
+		queue->free(command);
+		queue->destroyFence(fence);
+
+		uint32_t first[3];
+		//queue->enqueueCopy(&output.vertices, first, 0, 0, 12);		
+		//printf("vertex index : %d %d %d\n", first[0], first[1], first[2]);
 		printf("edgeCompact() end\n");
 	}
 
@@ -658,7 +758,6 @@ class MarchingCube{
 		uint32_t dim[3] = {x,y,z};
 		queue->enqueueCopy(dim, &general.dim,0,0,sizeof(uint32_t)*3);
 
-        queue->waitIdle();
 		output.gen_vertices.setKernelArgs({
 			{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &general.raw.descriptor, nullptr},
 			{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &prefix_sum.edge_out.descriptor, nullptr},
@@ -667,9 +766,12 @@ class MarchingCube{
 			{4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &general.isovalue.descriptor, nullptr},
 			{5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, &output.vertices.descriptor, nullptr}
 		});
-		
-        queue->waitIdle();
+
 		queue->ndRangeKernel(&output.gen_vertices, {output.nr_vertices, 1, 1});
+        queue->waitIdle();
+
+		uint32_t first[24];
+		queue->enqueueCopy(&output.vertices, first, 0, 0, 96 );
 		printf("genVertices() end\n");
 	}
 	void generateIndices(){
