@@ -8,22 +8,23 @@ namespace VKEngine{
 	Context::Context(){
 
 	}
-	Context::Context(const VkInstance _instance,
+	Context::Context(
+		Engine *_engine,
 		const uint32_t gpu_id, 
 		const VkQueueFlags request_queues,
-		VkSurfaceKHR surface,
-		const vector<const char *>_extension_names,
-		const vector<const char *>_validation_names
+		VkSurfaceKHR surface
 	){
-		create(_instance, gpu_id, request_queues, surface, _extension_names, _validation_names);
+		create(_engine, gpu_id, request_queues, surface);
 	}
 
 	Context::~Context(){
 		destroy();
 	}
 
-	void Context::create(VkInstance _instance, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface, vector<const char *> device_extensions, vector<const char *> validation_extensions){
-		this->instance = _instance;
+	void Context::create(Engine *_engine, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface){
+		//this->instance = _instance;
+		this->engine= _engine;
+		this->instance = VkInstance(*_engine);
 		selectGPU(gpu_id);
 		setupQueueFamilyIndices();
 
@@ -31,7 +32,7 @@ namespace VKEngine{
 			setupSurface(surface);
 		}
 
-		setupDevice(request_queues, device_extensions, validation_extensions);
+		setupDevice(request_queues, engine->device_extensions, engine->validations);
 		setupMemoryProperties();
 	}
 
@@ -96,11 +97,6 @@ namespace VKEngine{
 	}
 
 	void Context::destroy(){
-		if(graphics_pool) vkDestroyCommandPool(device, graphics_pool, nullptr);
-		graphics_pool = VK_NULL_HANDLE;
-		if(compute_pool) vkDestroyCommandPool(device, compute_pool, nullptr);
-		compute_pool = VK_NULL_HANDLE;
-		//if(surface) vkDestroySurfaceKHR(instance, surface, nullptr);
 		if(device) vkDestroyDevice(device, nullptr);
 		device = VK_NULL_HANDLE;
 	}

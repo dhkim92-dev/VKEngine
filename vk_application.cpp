@@ -14,15 +14,15 @@ namespace VKEngine{
 		const vector<const char *> _device_extension_names,
 		const vector<const char *> _validation_names){
 		LOG("application create called!\n");
-		instance_extension_names.resize(_instance_extension_names.size());
-		device_extension_names.resize(_device_extension_names.size());
-		validation_names.resize(_validation_names.size());
-		instance_extension_names.assign(_instance_extension_names.begin(), _instance_extension_names.end());
-		device_extension_names.assign(_device_extension_names.begin(), _device_extension_names.end());
-		validation_names.assign(_validation_names.begin(), _validation_names.end());
+		//instance_extension_names.resize(_instance_extension_names.size());
+		//device_extension_names.resize(_device_extension_names.size());
+		//validation_names.resize(_validation_names.size());
+		//instance_extension_names.assign(_instance_extension_names.begin(), _instance_extension_names.end());
+		//device_extension_names.assign(_device_extension_names.begin(), _device_extension_names.end());
+		//validation_names.assign(_validation_names.begin(), _validation_names.end());
 		height = _height;
 		width = _width;
-		engine = new Engine(app_name, engine_name, instance_extension_names, validation_names);
+		engine = new Engine(app_name, engine_name, _instance_extension_names, _device_extension_names ,_validation_names);
 		camera.init( glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f) );
 	}	
 
@@ -60,8 +60,7 @@ namespace VKEngine{
 
 	void Application::createContext(){
 		VkInstance instance = VkInstance(*engine);
-		context = new Context(instance, 0, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, surface
-							  , device_extension_names, validation_names); //new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
+		context = new Context(engine, 0, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, surface); //new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
 	}
 
 	void Application::createSurface(){

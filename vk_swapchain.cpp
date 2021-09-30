@@ -56,7 +56,6 @@ namespace VKEngine{
 			queue_family_indices[1] = ctx->queue_family_indices.graphics.value();
 		}
 
-		printf("SwaphainSupport check\n");
 		if( queue_family_indices[0] != queue_family_indices[1]){
 			swapchain_CI.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			swapchain_CI.queueFamilyIndexCount = 2;

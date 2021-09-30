@@ -14,19 +14,12 @@ using namespace std;
 namespace VKEngine{
 	class Context{
 		private :
+		Engine *engine = nullptr;
 		VkInstance instance;
-		//const VkSurfaceKHR surface;
 		VkPhysicalDevice gpu = VK_NULL_HANDLE;
 		VkDevice device = VK_NULL_HANDLE;
-		//const vector<const char *> validation_names;
-		//const vector<const char *> extension_names;
-		//VkQueue graphics_queue, compute_queue, transfer_queue, present_queue;
 		VkPhysicalDeviceFeatures device_features;
 		VkPhysicalDeviceMemoryProperties memory_properties;
-
-		VkCommandPool graphics_pool = VK_NULL_HANDLE; // default command pool for graphics.
-		VkCommandPool compute_pool = VK_NULL_HANDLE; // default command pool for compute.
-		VkCommandPool transfer_pool = VK_NULL_HANDLE; // default command pool for transfer;
 
 		private :
 		void destroy();
@@ -34,19 +27,18 @@ namespace VKEngine{
 		public :
 		QueueFamilyIndice queue_family_indices;
 		Context();
-		Context(const VkInstance instance,
+		Context(Engine *_engine,
 			const uint32_t gpu_id,  
 			const VkQueueFlags request_queues,
-			VkSurfaceKHR surface,
-			const vector<const char *> _extension_names,
-			const vector<const char *> _validation_names);
+			VkSurfaceKHR surface
+		);
 
 		void setupSurface(VkSurfaceKHR _surface);		
 		void setupQueueFamilyIndices();
 
 		~Context();
 
-		void create(VkInstance instance, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface, vector<const char*> device_extensions, vector<const char*> validation_extensions);
+		void create(Engine *_engine, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface);
 		void selectGPU(const uint32_t gpu_id);
 		void setupDevice(VkQueueFlags request_queue, vector<const char*>device_exts, vector<const char*> valid_exts);
 		QueueFamilyIndice findQueueFamilies(VkPhysicalDevice _gpu);

@@ -731,7 +731,6 @@ class MarchingCube{
 
 		printf("edgeCompact()::nr_vertices : %d\n",output.nr_vertices);
 		//queue->ndRangeKernel(&edge_compact.kernel, {3*(x-1)*(y-1)*(z-1), 1, 1});
-
 		
 		queue->bindKernel(command, &edge_compact.kernel);
 		queue->dispatch(command, 3*(x-1)*(y-1)*(z-1), 1, 1);
@@ -744,8 +743,6 @@ class MarchingCube{
 		queue->destroyFence(fence);
 
 		uint32_t first[3];
-		//queue->enqueueCopy(&output.vertices, first, 0, 0, 12);		
-		//printf("vertex index : %d %d %d\n", first[0], first[1], first[2]);
 		printf("edgeCompact() end\n");
 	}
 
@@ -960,7 +957,6 @@ class App : public VKEngine::Application{
 		preparePrograms();
 		prepareCommandBuffer();
 		mainLoop();
-		//runMarchingCube();
 	}
 };
 
@@ -968,25 +964,13 @@ int main(int argc, const char *argv[])
 {
 	vector<const char*> instance_extensions(getRequiredExtensions());
 	vector<const char *> validations={"VK_LAYER_KHRONOS_validation"};
-	vector<const char *>device_extensions={VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+	vector<const char *> device_extensions={VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 	string _name = "vulkan";
 	string engine_name = "engine";
-	
-	/*
-	string file_path(argv[1]);
-	size_t x = atoi(argv[2]);
-	size_t y = atoi(argv[3]);
-	size_t z = atoi(argv[4]);
-	
-	float isovalue = atof(argv[5]);
-	*/
 	string file_path = "assets/dragon_vrip_FLT32_128_128_64.raw";
 	Volume.file_path = file_path;
-	cout << "Volume file path set \n";
 	Volume.size = {128,128,64};
-	cout << "Volume size set \n";
 	Volume.isovalue = 0.0f;
-	cout << "volume isovalue set done\n";
 	Volume.data = new float[Volume.size.x * Volume.size.y * Volume.size.z];
 	loadVolume(file_path, Volume.data);
 	try {

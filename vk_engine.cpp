@@ -24,9 +24,10 @@ namespace VKEngine{
 	
 	Engine::Engine(const string _app_name, 
 				   const string _engine_name,
-				   const vector<const char * > _extensions,
+				   const vector<const char * > _instance_extensions,
+				   vector<const char*> _device_extensions,
 				   const vector<const char * > _validations
-				   ) : app_name(_app_name), engine_name(_engine_name), extensions(_extensions), validations(_validations){};
+				   ) : app_name(_app_name), engine_name(_engine_name), instance_extensions(_instance_extensions), device_extensions(_device_extensions) ,validations(_validations) {};
 
 	Engine::~Engine(){
 		destroy();
@@ -58,8 +59,8 @@ namespace VKEngine{
 
 		VkInstanceCreateInfo instance_info = infos::instanceCreateInfo();
 		instance_info.pApplicationInfo = &app_info;
-		instance_info.ppEnabledExtensionNames = extensions.data();
-		instance_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+		instance_info.ppEnabledExtensionNames = instance_extensions.data();
+		instance_info.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
 		VkDebugUtilsMessengerCreateInfoEXT debug_info{};
 
 		if(validationEnable){

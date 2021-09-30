@@ -19,9 +19,9 @@ namespace VKEngine{
 	
 	class Application{
 		public :
-		vector<const char *>instance_extension_names;
-		vector<const char *>device_extension_names;
-		vector<const char *>validation_names;
+		//vector<const char *>instance_extension_names;
+		//vector<const char *>device_extension_names;
+		//vector<const char *>validation_names;
 		#if defined(GLFW_INCLUDE_VULKAN)
 		GLFWwindow *window;
 		#endif

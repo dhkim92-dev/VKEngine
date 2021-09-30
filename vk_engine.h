@@ -29,15 +29,18 @@ namespace VKEngine{
 		const string engine_name;
 		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 		vector<VkQueueFamilyProperties> queue_family_properties;
+		const vector<const char *> validations;
+		const vector<const char *> instance_extensions;
+		const vector<const char*>  device_extensions;
+
 		private :
 		VkInstance instance = VK_NULL_HANDLE;
-		const vector<const char *> validations;
-		const vector<const char *> extensions;
-		
+				
 		public :
 		explicit Engine(const string _app_name, 
 						const string _engine_name, 
-						const vector< const char* > _extensions, 
+						const vector< const char* > instance_extensions, 
+						const vector <const char*> device_extensions,
 						const vector< const char* > _validations
 		);
 		~Engine();
