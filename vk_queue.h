@@ -55,6 +55,9 @@ namespace VKEngine{
 					VkSemaphore *wait_smps, uint32_t nr_wait_smps, 
 					VkSemaphore *signal_smps, uint32_t nr_signal_smps, VkFence fence=VK_NULL_HANDLE);
 		void copyBuffer(VkCommandBuffer cmd, Buffer *src, Buffer *dst, uint32_t src_offset, uint32_t dst_offset, uint32_t size);
+		void bindDescriptorSets(VkCommandBuffer command, VkPipelineBindPoint bind_point,  VkPipelineLayout pipeline_layout, 
+								uint32_t first_set, VkDescriptorSet* sets, uint32_t nr_sets, 
+								uint32_t nr_dynamic_offset = 0, uint32_t* dynamic_offsets= nullptr);
 		void dispatch(VkCommandBuffer cmd, uint32_t gx, uint32_t gy, uint32_t gz);
 		//void copyImage();
 		//void copyImage();

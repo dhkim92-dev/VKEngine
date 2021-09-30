@@ -87,6 +87,11 @@ namespace VKEngine{
 								0, nullptr );
 	}
 
+	void CommandQueue::bindDescriptorSets(VkCommandBuffer command, VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, 
+							uint32_t first_set, VkDescriptorSet* sets, uint32_t nr_sets, uint32_t nr_dynamic_offset, uint32_t* dynamic_offsets){
+		vkCmdBindDescriptorSets(command, bind_point, pipeline_layout, first_set,  nr_sets,  sets, nr_dynamic_offset, dynamic_offsets);
+	}
+
 	void CommandQueue::dispatch(VkCommandBuffer command_buffer, uint32_t gx, uint32_t gy, uint32_t gz){
 		vkCmdDispatch(command_buffer, gx, gy, gz);
 	}
