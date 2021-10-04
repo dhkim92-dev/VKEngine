@@ -65,6 +65,11 @@ void destroy();
 
 void copyFrom(void *src, VkDeviceSize size);
 void copyTo(void *dst, VkDeviceSize size);
+void setLayout(VkCommandBuffer command, VkImageAspectFlags aspect_mask, 
+			   VkImageLayout old_layout, VkImageLayout new_layout,
+			   VkImageSubresourceRange subresource_range,
+			   VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage,
+			   VkAccessFlags src_mask, VkAccessFlags dst_mask);
 
 operator VkImage() const {
 	return this->image;
@@ -78,6 +83,10 @@ operator VkSampler() const{
 operator VkImageView() const {
 	assert(view == VK_NULL_HANDLE);
 	return this->view;
+}
+
+operator VkImageLayout() const{
+	return this->layout;
 }
 
 };

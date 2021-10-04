@@ -1,0 +1,41 @@
+#version 450
+layout(local_size_x = 4, local_size_y=4, local_size_z=1) in;
+
+layout(binding = 0, rgba8) uniform readonly image2D input_image;
+layout(binding = 1, rgba8) uniform image2D result_image;
+
+const float kernel[9] = {
+	1/16.0, 2/16.0, 1/16.0,
+	2/16.0, 4/16.0, 2/16.0,
+	1/16.0, 2/16.0, 1/16.0 
+};
+
+shared vec3 lmem[36];
+
+vec3 conv(ivec2 lid){
+	vec3 res;
+	lid += 1;
+	
+	for(int i = 0 ; i < 3; i++){
+		for(int j = 0 ; j < 3 ; j++){
+			res+= (lmem[  (lid.y + i) * 6 + (lid.x+j) ] * kernel[i * 3 + j]);
+		}
+	}
+	return res;
+}
+
+
+void main(){
+	ivec2 off = ivec2(gl_WorkGroupID.x * gl_WorkGroupSize.x, gl_WorkGroupID.y * gl_WorkGroupID.y);
+	ivec2 lid = ivec2(gl_LocalInvocationID.xy);
+	for(int i = -1 ; i < 2 ; i++){
+		for(int j = -1 ; j < 2 ; j++){
+			lmem[ (lid.y+i + 1) * (gl_WorkGroupSize.x + 2) + (lid.x + j + 1)] =  imageLoad( input_image,  ivec2(off+lid) + ivec2(i,j) ).rgb;
+		}
+	}
+	barrier();
+	memoryBarrierShared();
+	vec4 res = vec4(conv(lid), 0.0);
+	//imageStore(result_image, ivec2(off+lid), res);
+	imageStore(result_image, ivec2(off+lid), vec4(1,1,1,1));
+}

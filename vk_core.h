@@ -12,4 +12,5 @@
 #include "vk_infos.h"
 #include "vk_image.h"
 #include "vk_compute.h"
+#include "vk_queue_family.h"
 #endif

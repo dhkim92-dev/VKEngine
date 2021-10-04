@@ -20,7 +20,6 @@ namespace VKEngine{
 		VkDevice device = VK_NULL_HANDLE;
 
 		private :
-		void destroy();
 		void setupMemoryProperties();
 		public :
 		VkPhysicalDeviceFeatures device_features;
@@ -34,6 +33,7 @@ namespace VKEngine{
 			VkSurfaceKHR surface
 		);
 
+		void destroy();
 		void setupSurface(VkSurfaceKHR _surface);		
 		void setupQueueFamilyIndices();
 

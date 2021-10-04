@@ -79,6 +79,19 @@ namespace VKEngine{
 		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(*dst), 1, &copy );
 	}
 
+	void CommandQueue::copyImage(VkCommandBuffer command_buffer, 
+								Image *src, Image *dst, VkImageCopy *region){
+		vkCmdCopyImage(command_buffer, VkImage(*src), VkImageLayout(*src), VkImage(*dst), VkImageLayout(*dst), 1,region);
+	}
+
+	void CommandQueue::copyBufferToImage(VkCommandBuffer command_buffer, Buffer *src, Image *dst, VkBufferImageCopy *region){
+		vkCmdCopyBufferToImage(command_buffer, VkBuffer(*src), VkImage(*dst), VkImageLayout(*dst), 1, region);
+	}
+
+	void CommandQueue::copyImageToBuffer(VkCommandBuffer command_buffer, Image *src, Buffer *dst, VkBufferImageCopy *region){
+		vkCmdCopyImageToBuffer(command_buffer, VkImage(*src), VkImageLayout(*src), VkBuffer(*dst), 1, region);
+	}
+
 	void CommandQueue::bindKernel(VkCommandBuffer command_buffer, Kernel *kernel){
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, kernel->pipeline);
 		vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, 

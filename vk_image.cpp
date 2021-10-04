@@ -15,6 +15,10 @@ Image::Image(Context *ctx){
 }
 
 Image::~Image(){
+	destroy();
+}
+
+void Image::destroy(){
 	if(image != VK_NULL_HANDLE){vkDestroyImage(device, image, nullptr);}
 	if(view != VK_NULL_HANDLE){vkDestroyImageView(device, view, nullptr);}
 	if(memory != VK_NULL_HANDLE){vkFreeMemory(device, memory, nullptr);}
@@ -136,10 +140,35 @@ void Image::copyFrom(void *src, VkDeviceSize size){
 void Image::copyTo(void *dst, VkDeviceSize size){
 	map(0, VK_WHOLE_SIZE);
 	assert(data);
+	memcpy(dst, data, size);
 	if(!(memory_properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
 		invalidate(0, VK_WHOLE_SIZE);
-	memcpy(dst, data, size);
 	unmap();
+}
+
+void Image::setLayout(VkCommandBuffer command_buffer, VkImageAspectFlags aspect_mask,
+					VkImageLayout old_layout, VkImageLayout new_layout, 
+					VkImageSubresourceRange subresource_range,
+					VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage,
+					VkAccessFlags src_mask, VkAccessFlags dst_mask
+					){
+		
+	VkImageMemoryBarrier barrier = infos::imageMemoryBarrier(old_layout, new_layout);
+	barrier.image = this->image;
+	barrier.srcAccessMask = src_mask;
+	barrier.dstAccessMask = dst_mask;
+	barrier.subresourceRange = subresource_range;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	vkCmdPipelineBarrier(command_buffer,
+		src_stage, dst_stage, 
+		0, 
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+	layout = new_layout;
+	setupDescriptor();
 }
 
 
