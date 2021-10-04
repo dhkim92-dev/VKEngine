@@ -18,13 +18,14 @@ namespace VKEngine{
 		VkInstance instance;
 		VkPhysicalDevice gpu = VK_NULL_HANDLE;
 		VkDevice device = VK_NULL_HANDLE;
-		VkPhysicalDeviceFeatures device_features;
-		VkPhysicalDeviceMemoryProperties memory_properties;
 
 		private :
 		void destroy();
 		void setupMemoryProperties();
 		public :
+		VkPhysicalDeviceFeatures device_features;
+		VkPhysicalDeviceProperties device_properties;
+		VkPhysicalDeviceMemoryProperties memory_properties;
 		QueueFamilyIndice queue_family_indices;
 		Context();
 		Context(Engine *_engine,

@@ -100,18 +100,19 @@ namespace VKEngine{
 	void Buffer::copyTo(void* dst, VkDeviceSize _size){
 		map(0, VK_WHOLE_SIZE);
 		assert(data);
-		invalidate(0, VK_WHOLE_SIZE);
+		if(!(VK_MEMORY_PROPERTY_HOST_COHERENT_BIT & memory_properties ))
+			invalidate(0, VK_WHOLE_SIZE);
 		memcpy(dst, data, _size);
 		unmap();
 	}
 
 	void Buffer::copyFrom(void *src, VkDeviceSize _size){
 		// LOG("copyFrom called\n");
-		assert(src);
 		map(0, VK_WHOLE_SIZE);
+		assert(src);
+		memcpy(data, src, _size);
 		if( !(memory_properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) )
 			flush(0,VK_WHOLE_SIZE);
-		memcpy(data, src, _size);
 		unmap();
 	}
 

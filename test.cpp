@@ -927,13 +927,52 @@ class App : public VKEngine::Application{
 		mc.save();
 	}
 
+	void imageTest(){
+		float data[48] = {0.0f};
+
+		LOG("image test start\n");
+		Image image(context);
+		image.createImage(4, 4, 3 ,VK_IMAGE_TYPE_3D, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, 1, 1);
+		LOG("image create done\n");
+		image.alloc(4*4*3*sizeof(float), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		LOG("memory allocation done\n");
+		VkImageSubresourceRange range;
+		range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		range.baseMipLevel = 0;
+		range.levelCount = 1;
+		range.baseArrayLayer = 0;
+		range.layerCount = 1;
+		image.bind(0);
+		LOG("image memory bind done\n");
+		VK_CHECK_RESULT(image.createImageView(VK_IMAGE_VIEW_TYPE_3D, range));
+		LOG("image view create done\n");
+		VkSamplerCreateInfo sampler_CI = infos::samplerCreateInfo();
+		sampler_CI.compareOp = VK_COMPARE_OP_NEVER;
+		sampler_CI.magFilter = VK_FILTER_NEAREST;
+		sampler_CI.minFilter = VK_FILTER_NEAREST;
+		sampler_CI.minLod = 0.0f;
+		sampler_CI.maxLod = 1.0f;
+		sampler_CI.mipLodBias = 0.0f;
+		sampler_CI.maxAnisotropy = context->device_properties.limits.maxSamplerAnisotropy;
+		sampler_CI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		sampler_CI.unnormalizedCoordinates = VK_FALSE;
+		VK_CHECK_RESULT(image.createSampler(&sampler_CI));
+
+		image.copyFrom(data, sizeof(float)*4*4*3);
+		image.setupDescriptor();
+		LOG("sampler create done\n");
+		LOG("image test done\n");
+	}
+
 	void run(){
 		Application::init();
-		prepareCompute();
-		runMarchingCube();
-		preparePrograms();
-		prepareCommandBuffer();
-		mainLoop();
+		//prepareCompute();
+		//runMarchingCube();
+		//preparePrograms();
+		//prepareCommandBuffer();
+		//mainLoop();
+		imageTest();
 		destroy();
 	}
 

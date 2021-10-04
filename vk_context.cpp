@@ -77,8 +77,8 @@ namespace VKEngine{
 	}
 
 	uint32_t Context::getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found){
-		for(uint32_t i = 0 ; memory_properties.memoryTypeCount ; ++i){
-			if(type&1){
+		for(uint32_t i = 0 ; i <  memory_properties.memoryTypeCount ; ++i){
+			if((type&1)==1){
 				if((memory_properties.memoryTypes[i].propertyFlags&property)==property){
 					if(found)
 						*found = VK_TRUE;
@@ -89,6 +89,7 @@ namespace VKEngine{
 		}
 
 		if(found){
+			LOG("found : %d\n", found );
 			*found = VK_FALSE;
 			return 0;
 		}else{
@@ -178,6 +179,8 @@ namespace VKEngine{
 		device_CI.ppEnabledExtensionNames = device_exts.data();
 		device_CI.queueCreateInfoCount = static_cast<uint32_t>(device_queue_CI.size());
 		device_CI.pQueueCreateInfos = device_queue_CI.data();
+
+		vkGetPhysicalDeviceProperties(gpu, &device_properties);
 		VK_CHECK_RESULT( vkCreateDevice(gpu, &device_CI, nullptr, &device) );
 	}
 
