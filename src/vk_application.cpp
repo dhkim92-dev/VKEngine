@@ -46,7 +46,7 @@ namespace VKEngine{
 	}
 
 	void Application::initWindow(){
-		LOG("App Init Window\n");
+		// LOG("App Init Window\n");
 		glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
@@ -77,7 +77,7 @@ namespace VKEngine{
 	}
 
 	void Application::setupCommandQueue(){
-		LOG("Apllication::setupCommandQueue called\n");
+		// LOG("Apllication::setupCommandQueue called\n");
 		graphics_queue = new CommandQueue(context, VK_QUEUE_GRAPHICS_BIT);
 		compute_queue = new CommandQueue(context, VK_QUEUE_COMPUTE_BIT);
 	}

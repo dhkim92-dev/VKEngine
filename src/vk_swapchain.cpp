@@ -41,7 +41,6 @@ namespace VKEngine{
 		swapchain_CI.oldSwapchain=swapchain;
 		//QueueFamilyIndice indice = ctx->findQueueFamilies(gpu);
 		//ctx->setupPresentFamily();
-		printf("SwaphainSupport check\n");
 		uint32_t queue_family_indices[2];
 		if(ctx->queue_family_indices.graphics.has_value()){
 			queue_family_indices[0] = ctx->queue_family_indices.graphics.value();
@@ -52,7 +51,7 @@ namespace VKEngine{
 		if(ctx->queue_family_indices.present.has_value()){
 			queue_family_indices[1] = ctx->queue_family_indices.present.value();
 		}else{
-			printf("no present queue\n");
+			LOG("no present queue\n");
 			queue_family_indices[1] = ctx->queue_family_indices.graphics.value();
 		}
 
@@ -78,7 +77,6 @@ namespace VKEngine{
 		image_format = _surface_format.format;
 		extent = _extent;
 		setupImageViews();
-		printf("Swapchain create Done!\n");
 	}
 
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& available_formats){

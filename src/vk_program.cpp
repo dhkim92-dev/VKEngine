@@ -7,10 +7,10 @@ using namespace std;
 
 namespace VKEngine{
 	Program::Program(Context *_context){
-		LOG("Program::Program!\n");
+		// LOG("Program::Program!\n");
 		context = _context;
 		device = VkDevice(*context);
-		LOG("context : %p\n", context);
+		// LOG("context : %p\n", context);
 	}
 
 	Program::~Program(){
@@ -19,7 +19,7 @@ namespace VKEngine{
 
 	void Program::attachShader(const string file_path, VkShaderStageFlagBits stage){
 		Shader shader(context, file_path, stage);
-		LOG("Program::attachShader context : %p\n", context);
+		// LOG("Program::attachShader context : %p\n", context);
 		shaders.push_back(shader);
 	}
 
@@ -63,7 +63,7 @@ namespace VKEngine{
 	}
 
 	VkResult Program::allocDescriptorSet(VkDescriptorSet *descriptor_set, uint32_t set_idx, uint32_t nr_alloc){
-		LOG("descriptor pool : %p\n", descriptors.pool);
+		// LOG("descriptor pool : %p\n", descriptors.pool);
 		assert(descriptor_pool == VK_NULL_HANDLE);
 		VkDescriptorSetAllocateInfo descriptor_AI = infos::descriptorSetAllocateInfo(descriptors.pool, &descriptors.layouts[set_idx], nr_alloc);
 		return vkAllocateDescriptorSets(device, &descriptor_AI, descriptor_set);
@@ -74,7 +74,7 @@ namespace VKEngine{
 	}
 
 	void Program::uniformUpdate( VkDescriptorSet descriptor_set, VkDescriptorType type, uint32_t binding_idx, VkDescriptorBufferInfo *buffer_info, VkDescriptorImageInfo *image_info){
-		LOG("Program::uniformUpdate\n");
+		// LOG("Program::uniformUpdate\n");
 		VkWriteDescriptorSet write_info = infos::writeDescriptorSet( descriptor_set, type, 
 																	 binding_idx, 
 																	buffer_info, 

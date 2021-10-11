@@ -108,8 +108,8 @@ namespace VKEngine{
 	}
 
 	void Context::setupDevice(VkQueueFlags request_queue, vector<const char*> device_exts, vector<const char*> valid_exts){
-		LOG("setupDevice!\n");
-		LOG("Selected GPU : %p!\n", gpu);
+		// LOG("setupDevice!\n");
+		// LOG("Selected GPU : %p!\n", gpu);
 		/*
 		for(const char * name : device_exts){
 			LOG("Request Extension : %s\n", name);
@@ -118,7 +118,7 @@ namespace VKEngine{
 			LOG("Requested Validation : %s\n", name);
 		}
 		*/
-		LOG("setupDevice!\n");
+		// LOG("setupDevice!\n");
 		queue_family_indices = findQueueFamilies(gpu);
 		vector<VkDeviceQueueCreateInfo> device_queue_CI;
 		set<uint32_t> unique_queue_families;
@@ -158,7 +158,7 @@ namespace VKEngine{
 			unique_queue_families.insert(queue_family_indices.present.value());
 		}
 
-		LOG("unique queue family size : %d\n", unique_queue_families.size());
+		// LOG("unique queue family size : %d\n", unique_queue_families.size());
 		if(unique_queue_families.size() == 0){
 			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
 		}

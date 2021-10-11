@@ -19,9 +19,9 @@ namespace VKEngine{
 	}
 
 	void Shader::createShaderModule(){
-		LOG("Shader file_path : %s build, current module : %p\n", file_path.c_str(), module);
+		// LOG("Shader file_path : %s build, current module : %p\n", file_path.c_str(), module);
 		module = loadShader(file_path, device);
-		LOG("Shader file_path : %s build, current module : %p\n", file_path.c_str(), module);
+		// LOG("Shader file_path : %s build, current module : %p\n", file_path.c_str(), module);
 	}
 
 	void Shader::destroy(){
