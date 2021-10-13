@@ -30,10 +30,13 @@ namespace VKEngine{
 				   ) : app_name(_app_name), engine_name(_engine_name), instance_extensions(_instance_extensions), device_extensions(_device_extensions) ,validations(_validations) {};
 
 	Engine::~Engine(){
+		LOG("Engine::~Engine()\n");
 		destroy();
+		LOG("Engine::~Engine() end\n");
 	}
 
 	void Engine::destroy(){
+		LOG("Engine::destroy()\n");
 		if(debugMessenger != VK_NULL_HANDLE){
 			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 		}
@@ -41,6 +44,7 @@ namespace VKEngine{
 			vkDestroyInstance(instance, nullptr);
 			instance = VK_NULL_HANDLE;
 		}
+		LOG("Engine::destroy() end\n");
 	}
 
 	void Engine::init(){

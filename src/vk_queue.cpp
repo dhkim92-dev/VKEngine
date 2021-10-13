@@ -16,7 +16,9 @@ namespace VKEngine{
 	}
 
 	CommandQueue::~CommandQueue(){
+		LOG("CommandQueue::~CommandQueue()\n");
 		destroy();
+		LOG("CommandQueue::~CommandQueue() end\n");
 	}
 
 	void CommandQueue::destroy(){

@@ -18,7 +18,9 @@ namespace VKEngine{
 	}
 
 	Context::~Context(){
+		LOG("Context::~Context()\n");
 		destroy();
+		LOG("Context::~Context() end.\n");
 	}
 
 	void Context::create(Engine *_engine, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface){
