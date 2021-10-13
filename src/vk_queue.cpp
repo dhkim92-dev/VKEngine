@@ -22,9 +22,11 @@ namespace VKEngine{
 	void CommandQueue::destroy(){
 		if(fence){
 			vkDestroyFence(device, fence, nullptr);
+			fence = VK_NULL_HANDLE;
 		}
 		if(pool != VK_NULL_HANDLE){
 			vkDestroyCommandPool(device, pool, nullptr);
+			pool =VK_NULL_HANDLE;
 		}
 	}
 

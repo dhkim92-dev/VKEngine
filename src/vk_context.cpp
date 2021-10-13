@@ -108,17 +108,7 @@ namespace VKEngine{
 	}
 
 	void Context::setupDevice(VkQueueFlags request_queue, vector<const char*> device_exts, vector<const char*> valid_exts){
-		// LOG("setupDevice!\n");
 		// LOG("Selected GPU : %p!\n", gpu);
-		/*
-		for(const char * name : device_exts){
-			LOG("Request Extension : %s\n", name);
-		}
-		for(const char * name : valid_exts){
-			LOG("Requested Validation : %s\n", name);
-		}
-		*/
-		// LOG("setupDevice!\n");
 		queue_family_indices = findQueueFamilies(gpu);
 		vector<VkDeviceQueueCreateInfo> device_queue_CI;
 		set<uint32_t> unique_queue_families;
