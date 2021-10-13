@@ -35,7 +35,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 12,
+				"line" : 13,
 				"parent" : 0
 			},
 			{
@@ -53,19 +53,19 @@
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 13,
+				"line" : 14,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 34,
 				"parent" : 0
 			},
 			{
 				"command" : 5,
 				"file" : 0,
 				"line" : 35,
-				"parent" : 0
-			},
-			{
-				"command" : 5,
-				"file" : 0,
-				"line" : 36,
 				"parent" : 0
 			}
 		]
@@ -108,7 +108,7 @@
 				},
 				{
 					"backtrace" : 6,
-					"path" : "/Users/cenovis/workspace/VKEngine/core/include"
+					"path" : "/Users/cenovis/workspace/VKEngine/include"
 				},
 				{
 					"backtrace" : 7,
@@ -207,79 +207,79 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_engine.cpp",
+			"path" : "src/vk_engine.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_context.cpp",
+			"path" : "src/vk_context.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_swapchain.cpp",
+			"path" : "src/vk_swapchain.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_buffer.cpp",
+			"path" : "src/vk_buffer.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_image.cpp",
+			"path" : "src/vk_image.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_queue.cpp",
+			"path" : "src/vk_queue.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_queue_family.cpp",
+			"path" : "src/vk_queue_family.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_utils.cpp",
+			"path" : "src/vk_utils.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_compute.cpp",
+			"path" : "src/vk_compute.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_program.cpp",
+			"path" : "src/vk_program.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_shader.cpp",
+			"path" : "src/vk_shader.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_infos.cpp",
+			"path" : "src/vk_infos.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "core/src/vk_application.cpp",
+			"path" : "src/vk_application.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

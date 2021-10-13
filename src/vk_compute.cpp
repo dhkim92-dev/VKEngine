@@ -13,19 +13,7 @@ Kernel::Kernel(Context *_context, const string _file_path){
 }
 
 Kernel::~Kernel(){
-	if(layout){
-		vkDestroyPipelineLayout(device, layout, nullptr);
-		layout = VK_NULL_HANDLE;
-	}
-	if(pipeline){
-		vkDestroyPipeline(device, pipeline, nullptr);
-		pipeline = VK_NULL_HANDLE;
-	}
-
-	if(descriptors.layout){
-		vkDestroyDescriptorSetLayout(device, descriptors.layout, nullptr);
-		descriptors.layout = VK_NULL_HANDLE;
-	}
+	destroy();
 }
 
 void Kernel::create(Context *_context, const string _file_path){
@@ -116,9 +104,19 @@ void Kernel::allocateDescriptorSet(VkDescriptorPool descriptor_pool){
 }
 
 void Kernel::destroy(){
-	vkDestroyDescriptorSetLayout(device, descriptors.layout, nullptr);
-	vkDestroyPipelineLayout(device, layout, nullptr);
-	vkDestroyPipeline(device, pipeline, nullptr);
+	if(layout){
+		vkDestroyPipelineLayout(device, layout, nullptr);
+		layout = VK_NULL_HANDLE;
+	}
+	if(pipeline){
+		vkDestroyPipeline(device, pipeline, nullptr);
+		pipeline = VK_NULL_HANDLE;
+	}
+
+	if(descriptors.layout){
+		vkDestroyDescriptorSetLayout(device, descriptors.layout, nullptr);
+		descriptors.layout = VK_NULL_HANDLE;
+	}
 	destroyShaderModule();
 }
 
