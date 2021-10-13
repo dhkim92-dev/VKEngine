@@ -20,14 +20,17 @@ namespace VKEngine{
 	}
 
 	void CommandQueue::destroy(){
+		LOG("CommandQueue::destroy()\n");
 		if(fence){
 			vkDestroyFence(device, fence, nullptr);
 			fence = VK_NULL_HANDLE;
 		}
-		if(pool != VK_NULL_HANDLE){
+		if(pool){
 			vkDestroyCommandPool(device, pool, nullptr);
 			pool =VK_NULL_HANDLE;
 		}
+
+		LOG("CommandQueue::destroy() done\n");
 	}
 
 	void CommandQueue::createCommandQueue(){

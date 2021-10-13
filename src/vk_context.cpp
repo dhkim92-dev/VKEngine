@@ -98,8 +98,12 @@ namespace VKEngine{
 	}
 
 	void Context::destroy(){
-		if(device) vkDestroyDevice(device, nullptr);
-		device = VK_NULL_HANDLE;
+		LOG("Context::destroy()\n");
+		if(device) {
+			vkDestroyDevice(device, nullptr);
+			device = VK_NULL_HANDLE;
+		}
+		LOG("Context::destroy() end\n");
 	}
 
 	void Context::selectGPU(const uint32_t gpu_id){

@@ -37,7 +37,10 @@ namespace VKEngine{
 		if(debugMessenger != VK_NULL_HANDLE){
 			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 		}
-		vkDestroyInstance(instance, nullptr);
+		if(instance){
+			vkDestroyInstance(instance, nullptr);
+			instance = VK_NULL_HANDLE;
+		}
 	}
 
 	void Engine::init(){

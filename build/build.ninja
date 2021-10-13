@@ -182,13 +182,13 @@ build CMakeFiles/VKEngine.dir/src/vk_application.cpp.o: CXX_COMPILER__VKEngine_D
 
 
 #############################################
-# Link the shared library lib/libVKEngine.0.1.1.dylib
+# Link the shared library lib/libVKEngine.0.1.2.dylib
 
-build lib/libVKEngine.0.1.1.dylib: CXX_SHARED_LIBRARY_LINKER__VKEngine_Debug CMakeFiles/VKEngine.dir/src/vk_engine.cpp.o CMakeFiles/VKEngine.dir/src/vk_context.cpp.o CMakeFiles/VKEngine.dir/src/vk_swapchain.cpp.o CMakeFiles/VKEngine.dir/src/vk_buffer.cpp.o CMakeFiles/VKEngine.dir/src/vk_image.cpp.o CMakeFiles/VKEngine.dir/src/vk_queue.cpp.o CMakeFiles/VKEngine.dir/src/vk_queue_family.cpp.o CMakeFiles/VKEngine.dir/src/vk_utils.cpp.o CMakeFiles/VKEngine.dir/src/vk_compute.cpp.o CMakeFiles/VKEngine.dir/src/vk_program.cpp.o CMakeFiles/VKEngine.dir/src/vk_shader.cpp.o CMakeFiles/VKEngine.dir/src/vk_infos.cpp.o CMakeFiles/VKEngine.dir/src/vk_application.cpp.o
+build lib/libVKEngine.0.1.2.dylib: CXX_SHARED_LIBRARY_LINKER__VKEngine_Debug CMakeFiles/VKEngine.dir/src/vk_engine.cpp.o CMakeFiles/VKEngine.dir/src/vk_context.cpp.o CMakeFiles/VKEngine.dir/src/vk_swapchain.cpp.o CMakeFiles/VKEngine.dir/src/vk_buffer.cpp.o CMakeFiles/VKEngine.dir/src/vk_image.cpp.o CMakeFiles/VKEngine.dir/src/vk_queue.cpp.o CMakeFiles/VKEngine.dir/src/vk_queue_family.cpp.o CMakeFiles/VKEngine.dir/src/vk_utils.cpp.o CMakeFiles/VKEngine.dir/src/vk_compute.cpp.o CMakeFiles/VKEngine.dir/src/vk_program.cpp.o CMakeFiles/VKEngine.dir/src/vk_shader.cpp.o CMakeFiles/VKEngine.dir/src/vk_infos.cpp.o CMakeFiles/VKEngine.dir/src/vk_application.cpp.o
   ARCH_FLAGS = -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX11.3.sdk
   INSTALLNAME_DIR = @rpath/
   LANGUAGE_COMPILE_FLAGS = -g
-  LINK_FLAGS = -current_version 0.1.1
+  LINK_FLAGS = -current_version 0.1.2
   LINK_LIBRARIES = -Wl,-rpath,/usr/local/lib  -lvulkan  -lglfw
   LINK_PATH = -L/usr/local/lib
   OBJECT_DIR = CMakeFiles/VKEngine.dir
@@ -196,14 +196,14 @@ build lib/libVKEngine.0.1.1.dylib: CXX_SHARED_LIBRARY_LINKER__VKEngine_Debug CMa
   PRE_LINK = :
   SONAME = libVKEngine.0.dylib
   SONAME_FLAG = -install_name
-  TARGET_FILE = lib/libVKEngine.0.1.1.dylib
+  TARGET_FILE = lib/libVKEngine.0.1.2.dylib
   TARGET_PDB = VKEngine.dylib.dbg
 
 
 #############################################
 # Create library symlink lib/libVKEngine.dylib
 
-build lib/libVKEngine.0.dylib lib/libVKEngine.dylib: CMAKE_SYMLINK_LIBRARY lib/libVKEngine.0.1.1.dylib
+build lib/libVKEngine.0.dylib lib/libVKEngine.dylib: CMAKE_SYMLINK_LIBRARY lib/libVKEngine.0.1.2.dylib
   POST_BUILD = :
 
 # =============================================================================
