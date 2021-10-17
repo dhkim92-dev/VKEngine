@@ -75,7 +75,7 @@ namespace VKEngine{
 		VkResult waitIdle();
 
 		//----------------------------------------------------------------------------- legacy functions, will be deleted
-		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw);
+		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkFence fence = VK_NULL_HANDLE);
 		void enqueueCopy(void *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true );
 		void enqueueCopy(Buffer *src, void *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true);
 		void enqueueCopy(Buffer *src, Buffer *dst,VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true);

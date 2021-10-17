@@ -201,7 +201,7 @@ namespace VKEngine{
 
 	//@Legacy Function.
 	//@Will be Deleted
-	void CommandQueue::ndRangeKernel(Kernel *kernel, WorkGroupSize gw)
+	void CommandQueue::ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkFence fence)
 	{
 		VkSubmitInfo submit_info = infos::submitInfo();
 		VkPipeline pipeline = kernel->pipeline;
@@ -216,8 +216,14 @@ namespace VKEngine{
 		endCommandBuffer(command_buffer);
 		submit_info.commandBufferCount =1;
 		submit_info.pCommandBuffers = &command_buffer;
-		vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-		waitIdle();
+		if(fence){
+			resetFences(&fence, 1);
+		}
+		vkQueueSubmit(queue, 1, &submit_info, fence);
+		if(fence){
+			waitFences(&fence, 1, true, UINT64_MAX);
+		}
+		//waitIdle();
 		free(command_buffer);
 	}
 
