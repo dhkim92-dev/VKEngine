@@ -163,6 +163,7 @@ namespace VKEngine{
 		/**
 		 * copy src buffer to dst buffer,
 		 */
+		VkFence f = createFence();
 		VkCommandBuffer command_buffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		VkBufferCopy region = {};
@@ -174,8 +175,9 @@ namespace VKEngine{
 		VkSubmitInfo submit_info = infos::submitInfo();
 		submit_info.pCommandBuffers = &command_buffer;
 		submit_info.commandBufferCount = 1;
-		vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-		if(is_blocking) waitIdle();
+		resetFences(&f, 1);
+		vkQueueSubmit(queue, 1, &submit_info, f);
+		waitFences(&f,1);
 		free(command_buffer);
 	}
 
