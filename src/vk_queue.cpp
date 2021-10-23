@@ -178,6 +178,7 @@ namespace VKEngine{
 		resetFences(&f, 1);
 		vkQueueSubmit(queue, 1, &submit_info, f);
 		waitFences(&f,1);
+		destroyFence(f);
 		free(command_buffer);
 	}
 
