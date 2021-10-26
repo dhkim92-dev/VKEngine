@@ -45,6 +45,7 @@ namespace VKEngine{
 		QueueFamilyIndice findQueueFamilies(VkPhysicalDevice _gpu);
 		//VkCommandPool createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 		VkCommandPool createCommandPool(VkQueueFlagBits type, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
 		uint32_t getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found=nullptr);
 		uint32_t getQueueFamilyIndex(VkQueueFlagBits queue_family);
 		void setupPresent(VkSurfaceKHR surface);
@@ -53,6 +54,15 @@ namespace VKEngine{
 			return surface;
 		}
 		*/
+
+		// 0.1.3 add
+		VkResult createSemaphore(VkSemaphore *semaphore);
+		VkResult createEvent(VkEvent *event);
+		VkResult createFence(VkFence *fence);
+
+		void destroySemaphore(VkSemaphore *semaphore);
+		void destroyEvent(VkEvent *event);
+		void destroyFence(VkFence *fence);
 
 		operator VkPhysicalDevice() const{
 			return gpu;

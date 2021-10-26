@@ -1,0 +1,67 @@
+[
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_engine.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_engine.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_engine.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_context.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_context.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_context.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_swapchain.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_swapchain.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_swapchain.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_buffer.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_buffer.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_buffer.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_image.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_image.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_image.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_queue.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_queue.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_queue.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_queue_family.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_queue_family.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_queue_family.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_utils.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_utils.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_utils.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_compute.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_compute.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_compute.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_program.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_program.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_program.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_shader.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_shader.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_shader.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_infos.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_infos.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_infos.cpp"
+},
+{
+  "directory": "/Users/cenovis/workspace/VKEngine/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DDEBUG -DGLFW_INCLUDE_VULKAN -DVKEngine_EXPORTS -I/usr/local/include -I/Users/cenovis/workspace/VKEngine/include -I/Users/cenovis/workspace/VKEngine/core/src -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.0.sdk -fPIC -Wall -std=gnu++17 -o CMakeFiles/VKEngine.dir/src/vk_application.cpp.o -c /Users/cenovis/workspace/VKEngine/src/vk_application.cpp",
+  "file": "/Users/cenovis/workspace/VKEngine/src/vk_application.cpp"
+}
+]

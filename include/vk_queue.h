@@ -49,7 +49,6 @@ namespace VKEngine{
 		void beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage=0x0);
 		void endCommandBuffer(VkCommandBuffer command_buffer);
 
-		void bindKernel(VkCommandBuffer command_buffer, Kernel *kernel);
 		VkResult submit(VkCommandBuffer* commands, uint32_t nr_commands,
 					VkPipelineStageFlags wait_signal_stage_mask,
 					VkSemaphore *wait_smps, uint32_t nr_wait_smps, 
@@ -64,25 +63,25 @@ namespace VKEngine{
 								uint32_t first_set, VkDescriptorSet* sets, uint32_t nr_sets, 
 								uint32_t nr_dynamic_offset = 0, uint32_t* dynamic_offsets= nullptr);
 		void dispatch(VkCommandBuffer cmd, uint32_t gx, uint32_t gy, uint32_t gz);
-		//void copyImage();
-		//void copyImage();
-		//void copyImage();
 		void free(VkCommandBuffer command_buffer);
-		VkFence createFence(VkFenceCreateFlagBits flag = VK_FENCE_CREATE_SIGNALED_BIT);
 		VkResult resetFences(VkFence *fences, uint32_t nr_fences);
 		VkResult waitFences(VkFence* fences, uint32_t nr_fences, bool wait_all=true, uint64_t timeout = UINT64_MAX);
-		void destroyFence(VkFence fence);
 		VkResult waitIdle();
 
-		//----------------------------------------------------------------------------- legacy functions, will be deleted
-		void ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkFence fence = VK_NULL_HANDLE);
+		// 0.1.3 add
+		void free(VkCommandBuffer *command_buffers, uint32_t nr_command_buffers);
+		void bindPipeline(VkCommandBuffer command, VkPipelineBindPoint bind_point, VkPipeline pipeline);
+
+		//----------------------------------------------------------------------------- legacy functions
 		void enqueueCopy(void *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true );
 		void enqueueCopy(Buffer *src, void *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true);
 		void enqueueCopy(Buffer *src, Buffer *dst,VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true);
-		//void enqueueCopy(Image *src, Buffer *dst, VkDeviceSize from, VkDeviceSize to);
-		//void enqueueCopy(Buffer *src, Image *dst, VkDeviceSize from, VkDeviceSize to);
-		//void enqueueCopy(Image *src, void *dst, VkDeviceSize from, VkDeviceSize to);
 		//---------------------------------------------------------------------------------------------------------------
+		
+		//@deprecated
+		VkFence createFence(VkFenceCreateFlagBits flag = VK_FENCE_CREATE_SIGNALED_BIT);
+		void bindKernel(VkCommandBuffer command_buffer, Kernel *kernel);
+		void destroyFence(VkFence fence);
 		operator VkQueue() const {
 			return queue;
 		}

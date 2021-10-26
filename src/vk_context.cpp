@@ -213,6 +213,37 @@ namespace VKEngine{
 
 		return indice;
 	}
+
+	VkResult Context::createFence(VkFence *fence){
+		VkFenceCreateInfo CI = infos::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+		return vkCreateFence(device, &CI, nullptr, fence);
+	}
+
+	VkResult Context::createEvent(VkEvent *event){
+		VkEventCreateInfo CI = {};
+		CI.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+		return vkCreateEvent(device, &CI, nullptr, event);
+	}
+
+	VkResult Context::createSemaphore(VkSemaphore *semaphore){
+		VkSemaphoreCreateInfo CI = infos::semaphoreCreateInfo();
+		return vkCreateSemaphore(device, &CI, nullptr, semaphore);
+	}
+
+	void Context::destroyFence(VkFence *fence){
+		vkDestroyFence(device, *fence, nullptr);
+		*fence = VK_NULL_HANDLE;
+	}
+	
+	void Context::destroyEvent(VkEvent *event){
+		vkDestroyEvent(device, *event, nullptr);
+		*event = VK_NULL_HANDLE;
+	}
+	
+	void Context::destroySemaphore(VkSemaphore *semaphore){
+		vkDestroySemaphore(device, *semaphore, nullptr);
+		*semaphore = VK_NULL_HANDLE;
+	}
 }
 
 #endif

@@ -37,41 +37,21 @@ void Kernel::destroyShaderModule(){
 	}
 }
 
-void Kernel::setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings){
+VkResult Kernel::setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings){
 	//LOG("Kernel::setupDescriptorSetLayout()\n");
 	//LOG("bindings size : %d\n", bindings.size());
 	VkDescriptorSetLayoutCreateInfo layout_CI =  infos::descriptorSetLayoutCreateInfo(bindings);
-	VK_CHECK_RESULT( vkCreateDescriptorSetLayout(device, &layout_CI, nullptr, &descriptors.layout) );
+	return vkCreateDescriptorSetLayout(device, &layout_CI, nullptr, &layouts.descriptor);
 }
-
-/*
-void Kernel::build(VkPipelineCache cache){
-	LOG("Kernel::build()\n");
-	VkPipelineLayoutCreateInfo layout_CI = infos::pipelineLayoutCreateInfo(
-		&descriptors.layout, 1
-	);
-
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &layout_CI, nullptr, &layout));
-	VkComputePipelineCreateInfo compute_pipeline_CI = infos::computePipelineCreateInfo(layout);
-	VkPipelineShaderStageCreateInfo shader_stage_CI = infos::shaderStageCreateInfo(
-		"main",
-		module,
-		VK_SHADER_STAGE_COMPUTE_BIT
-	);
-	
-	compute_pipeline_CI.stage = shader_stage_CI;
-	VK_CHECK_RESULT( vkCreateComputePipelines(device, cache, 1, &compute_pipeline_CI, nullptr, &pipeline) );
-}
-*/
 
 void Kernel::build(VkPipelineCache cache, VkSpecializationInfo *info){
 	//LOG("Kernel::build()\n");
 	VkPipelineLayoutCreateInfo layout_CI = infos::pipelineLayoutCreateInfo(
-		&descriptors.layout, 1
+		&layouts.descriptor, 1
 	);
 
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &layout_CI, nullptr, &layout));
-	VkComputePipelineCreateInfo compute_pipeline_CI = infos::computePipelineCreateInfo(layout);
+	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &layout_CI, nullptr, &layouts.pipeline));
+	VkComputePipelineCreateInfo compute_pipeline_CI = infos::computePipelineCreateInfo(layouts.pipeline);
 	VkPipelineShaderStageCreateInfo shader_stage_CI = infos::shaderStageCreateInfo(
 		"main",
 		module,
@@ -83,39 +63,39 @@ void Kernel::build(VkPipelineCache cache, VkSpecializationInfo *info){
 
 }
 
-void Kernel::setKernelArgs(vector<KernelArgs> args){
+void Kernel::setKernelArgs(VkDescriptorSet set, vector<KernelArgs> args){
 	uint32_t sz_args = static_cast<uint32_t>(args.size());
 	vector<VkWriteDescriptorSet> writes;
 	for(uint32_t i = 0 ; i < sz_args ; ++i){
 		VkWriteDescriptorSet write = infos::writeDescriptorSet(
-			descriptors.set, args[i].type, args[i].binding_idx, args[i].buffer_info, args[i].image_info
+			set, args[i].type, args[i].binding_idx, args[i].buffer_info, args[i].image_info
 		);
 		writes.push_back(write);
 	}
 	vkUpdateDescriptorSets(device, writes.size(), writes.data(), 0, nullptr);
 }
 
-void Kernel::allocateDescriptorSet(VkDescriptorPool descriptor_pool){
+VkResult Kernel::allocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet *set, uint32_t nr_descriptor_set){
 	VkDescriptorSetAllocateInfo info = infos::descriptorSetAllocateInfo(descriptor_pool,
-		&descriptors.layout,
-		1
+		&layouts.descriptor,
+		nr_descriptor_set
 	);
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &info, &descriptors.set));
+	return vkAllocateDescriptorSets(device, &info, set);
 }
 
 void Kernel::destroy(){
-	if(layout){
-		vkDestroyPipelineLayout(device, layout, nullptr);
-		layout = VK_NULL_HANDLE;
+	if(layouts.pipeline){
+		vkDestroyPipelineLayout(device, layouts.pipeline, nullptr);
+		layouts.pipeline = VK_NULL_HANDLE;
 	}
 	if(pipeline){
 		vkDestroyPipeline(device, pipeline, nullptr);
 		pipeline = VK_NULL_HANDLE;
 	}
 
-	if(descriptors.layout){
-		vkDestroyDescriptorSetLayout(device, descriptors.layout, nullptr);
-		descriptors.layout = VK_NULL_HANDLE;
+	if(layouts.descriptor){
+		vkDestroyDescriptorSetLayout(device, layouts.descriptor, nullptr);
+		layouts.descriptor = VK_NULL_HANDLE;
 	}
 	destroyShaderModule();
 }

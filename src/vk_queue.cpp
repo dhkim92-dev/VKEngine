@@ -59,6 +59,13 @@ namespace VKEngine{
 		}
 	}
 
+	void CommandQueue::free(VkCommandBuffer *command_buffers, uint32_t nr_command_buffers){
+		vkFreeCommandBuffers(device, pool, nr_command_buffers, command_buffers);
+		for(uint32_t i = 0 ; i < nr_command_buffers ; ++i){
+			command_buffers[i] = VK_NULL_HANDLE;
+		}
+	}
+
 	VkCommandBuffer CommandQueue::createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage, bool begin){
 		VkCommandBuffer command_buffer = VK_NULL_HANDLE;
 		VkCommandBufferAllocateInfo command_buffer_AI = infos::commandBufferAllocateInfo(pool, level, 1);
@@ -104,10 +111,14 @@ namespace VKEngine{
 
 	void CommandQueue::bindKernel(VkCommandBuffer command_buffer, Kernel *kernel){
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, kernel->pipeline);
-		vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, 
-								kernel->layout, 0, 
-								1, &kernel->descriptors.set, 
-								0, nullptr );
+		// vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, 
+								// kernel->layout, 0, 
+								// 1, &kernel->descriptors.set, 
+								// 0, nullptr );
+	}
+
+	void CommandQueue::bindPipeline(VkCommandBuffer command, VkPipelineBindPoint bind_point, VkPipeline pipeline){
+		vkCmdBindPipeline(command, bind_point ,pipeline);;
 	}
 
 	void CommandQueue::bindDescriptorSets(VkCommandBuffer command, VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, 
@@ -163,7 +174,8 @@ namespace VKEngine{
 		/**
 		 * copy src buffer to dst buffer,
 		 */
-		VkFence f = createFence();
+		VkFence f;
+		context->createFence(&f);//createFence();
 		VkCommandBuffer command_buffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		VkBufferCopy region = {};
@@ -178,7 +190,7 @@ namespace VKEngine{
 		resetFences(&f, 1);
 		vkQueueSubmit(queue, 1, &submit_info, f);
 		waitFences(&f,1);
-		destroyFence(f);
+		context->destroyFence(&f);
 		free(command_buffer);
 	}
 
@@ -202,34 +214,7 @@ namespace VKEngine{
 	}
 	// ------------------------- Legacy Functions ------------------------------------
 
-	//@Legacy Function.
-	//@Will be Deleted
-	void CommandQueue::ndRangeKernel(Kernel *kernel, WorkGroupSize gw, VkFence fence)
-	{
-		VkSubmitInfo submit_info = infos::submitInfo();
-		VkPipeline pipeline = kernel->pipeline;
-		VkPipelineLayout layout = kernel->layout;
-		VkPipelineBindPoint point = VK_PIPELINE_BIND_POINT_COMPUTE;
-		VkDescriptorSet descriptor_set = kernel->descriptors.set;
-		VkCommandBuffer command_buffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		beginCommandBuffer(command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-		vkCmdBindPipeline(command_buffer, point, pipeline);
-		vkCmdBindDescriptorSets(command_buffer, point, layout, 0, 1, &descriptor_set, 0, nullptr);
-		vkCmdDispatch(command_buffer, gw.x, gw.y, gw.z);
-		endCommandBuffer(command_buffer);
-		submit_info.commandBufferCount =1;
-		submit_info.pCommandBuffers = &command_buffer;
-		if(fence){
-			resetFences(&fence, 1);
-		}
-		vkQueueSubmit(queue, 1, &submit_info, fence);
-		if(fence){
-			waitFences(&fence, 1, true, UINT64_MAX);
-		}
-		//waitIdle();
-		free(command_buffer);
-	}
-
+	
 
 }
 #endif

@@ -28,11 +28,10 @@ class Kernel{
 	Context *context = nullptr;
 	VkDevice device = VK_NULL_HANDLE;
 	public : 
-	struct{
-		VkDescriptorSetLayout layout = VK_NULL_HANDLE;
-		VkDescriptorSet set = VK_NULL_HANDLE;
-	}descriptors;
-	VkPipelineLayout layout = VK_NULL_HANDLE;
+	struct Layouts{
+		VkDescriptorSetLayout descriptor = VK_NULL_HANDLE;
+		VkPipelineLayout pipeline = VK_NULL_HANDLE;
+	}layouts;
 	VkPipeline pipeline = VK_NULL_HANDLE;
 	VkShaderModule module = VK_NULL_HANDLE;
 	string file_path;
@@ -42,13 +41,12 @@ class Kernel{
 	Kernel(Context *_context, const string _file_path);
 	~Kernel();
 	void create(Context *_context, const string _file_path);
-	void build(VkPipelineCache cache);
 	void build(VkPipelineCache cache, VkSpecializationInfo *info=nullptr);
 	void loadShaderModule();
 	void destroyShaderModule();
-	void setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings);
-	void allocateDescriptorSet(VkDescriptorPool pool);
-	void setKernelArgs(vector<KernelArgs> args);
+	VkResult setupDescriptorSetLayout(vector<VkDescriptorSetLayoutBinding> bindings);
+	VkResult allocateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet *set, uint32_t nr_descriptor_set);
+	void setKernelArgs(VkDescriptorSet set, vector<KernelArgs> args);
 	void destroy();
 };
 }
