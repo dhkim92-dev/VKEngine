@@ -70,7 +70,16 @@ namespace VKEngine{
 
 		// 0.1.3 add
 		void free(VkCommandBuffer *command_buffers, uint32_t nr_command_buffers);
-		void bindPipeline(VkCommandBuffer command, VkPipelineBindPoint bind_point, VkPipeline pipeline);
+		void bindPipeline(VkCommandBuffer command_buffer, VkPipelineBindPoint bind_point, VkPipeline pipeline);
+		void setEvent(VkCommandBuffer command_buffer, VkEvent event, VkPipelineStageFlags stage_mask);
+		void waitEvents(VkCommandBuffer command_buffer, VkEvent *p_wait_events, uint32_t nr_wait_events, 
+						VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask, 
+						VkMemoryBarrier *memory_barriers ,uint32_t nr_memory_barrier,
+						VkBufferMemoryBarrier *buffer_memory_barrier, uint32_t nr_buffer_memory_barrier,
+						VkImageMemoryBarrier *image_memory_barrier, uint32_t nr_image_memory_barrier);
+		void resetEvent(VkEvent event);
+		void barrier();
+
 
 		//----------------------------------------------------------------------------- legacy functions
 		void enqueueCopy(void *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true );
