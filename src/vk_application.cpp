@@ -13,7 +13,6 @@ namespace VKEngine{
 		const vector<const char *> _instance_extension_names,
 		const vector<const char *> _device_extension_names,
 		const vector<const char *> _validation_names){
-		LOG("application create called!\n");
 		height = _height;
 		width = _width;
 		engine = new Engine(app_name, engine_name, _instance_extension_names, _device_extension_names ,_validation_names);
@@ -290,9 +289,19 @@ namespace VKEngine{
 			cache = VK_NULL_HANDLE;
 		}
 
-		graphics_queue->destroyFence(draw_fence);
-		vkDestroySemaphore(device, semaphores.present_complete, nullptr);
-		vkDestroySemaphore(device, semaphores.render_complete, nullptr);
+		if(draw_fence){
+			graphics_queue->destroyFence(draw_fence);
+			draw_fence = VK_NULL_HANDLE;
+		}
+
+		if(semaphores.present_complete){
+			vkDestroySemaphore(device, semaphores.present_complete, nullptr);
+			semaphores.present_complete = VK_NULL_HANDLE;
+		}
+		if(semaphores.render_complete){
+			vkDestroySemaphore(device, semaphores.render_complete, nullptr);
+			semaphores.render_complete = VK_NULL_HANDLE;
+		}
 		destroyFramebuffers();
 		delete graphics_queue;
 		delete compute_queue;

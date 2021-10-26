@@ -48,7 +48,9 @@ namespace VKEngine{
 	}
 
 	void Engine::init(){
+		LOG("Engine::init() createInstance()\n");
 		createInstance();
+		LOG("Engine::init() setupDebugMessenger()\n");
 		setupDebugMessenger();
 	}
 
