@@ -214,6 +214,36 @@ namespace VKEngine{
 	}
 	// ------------------------- Legacy Functions ------------------------------------
 
+	void CommandQueue::setEvent(VkCommandBuffer command_buffer, VkEvent event, VkPipelineStageFlags stage_mask){
+		vkCmdSetEvent(command_buffer, event, stage_mask);
+	}
+
+	void CommandQueue::waitEvents(
+	VkCommandBuffer command_buffer, 
+	VkEvent *p_wait_events, uint32_t nr_wait_events, 
+	VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask, 
+	VkMemoryBarrier *memory_barriers ,uint32_t nr_memory_barrier,
+	VkBufferMemoryBarrier *buffer_memory_barrier, uint32_t nr_buffer_memory_barrier,
+	VkImageMemoryBarrier *image_memory_barrier, uint32_t nr_image_memory_barrier){
+		vkCmdWaitEvents( command_buffer, nr_wait_events, p_wait_events, src_stage_mask, dst_stage_mask,
+		nr_memory_barrier, memory_barriers,
+		nr_buffer_memory_barrier, buffer_memory_barrier,
+		nr_image_memory_barrier, image_memory_barrier);
+	}
+
+	void CommandQueue::resetEvent(VkCommandBuffer command_buffer, VkEvent event, VkPipelineStageFlags stage_mask){
+		vkCmdResetEvent(command_buffer, event, stage_mask);
+	}
+
+	void CommandQueue::barrier(
+		VkCommandBuffer command_buffer, 
+		VkPipelineStageFlags src_masks, VkPipelineStageFlags dst_masks,
+		VkDependencyFlags dependencies,
+		VkMemoryBarrier *p_memory_barriers, uint32_t nr_memory_barriers,
+		VkBufferMemoryBarrier * p_buffer_barriers, uint32_t nr_buffer_barriers,
+		VkImageMemoryBarrier *p_image_barriers, uint32_t nr_image_barriers){
+		vkCmdPipelineBarrier(command_buffer, src_masks, dst_masks, dependencies, nr_memory_barriers, p_memory_barriers, nr_buffer_barriers, p_buffer_barriers, nr_image_barriers, p_image_barriers);
+	}
 	
 
 }

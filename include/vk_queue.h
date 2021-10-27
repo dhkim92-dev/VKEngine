@@ -77,9 +77,15 @@ namespace VKEngine{
 						VkMemoryBarrier *memory_barriers ,uint32_t nr_memory_barrier,
 						VkBufferMemoryBarrier *buffer_memory_barrier, uint32_t nr_buffer_memory_barrier,
 						VkImageMemoryBarrier *image_memory_barrier, uint32_t nr_image_memory_barrier);
-		void resetEvent(VkEvent event);
-		void barrier();
+		void resetEvent(VkCommandBuffer command_buffer, VkEvent event, VkPipelineStageFlags stage_mask);
 
+		void barrier(
+			VkCommandBuffer command_buffer, 
+			VkPipelineStageFlags src_masks, VkPipelineStageFlags dst_masks,
+			VkDependencyFlags dependencies,
+			VkMemoryBarrier *p_memory_barriers, uint32_t nr_memory_barriers,
+			VkBufferMemoryBarrier * p_buffer_barriers, uint32_t nr_buffer_barriers,
+			VkImageMemoryBarrier *p_image_barriers, uint32_t nr_image_barriers);
 
 		//----------------------------------------------------------------------------- legacy functions
 		void enqueueCopy(void *src, Buffer *dst, VkDeviceSize src_offset, VkDeviceSize dst_offset, VkDeviceSize size, bool is_blocking=true );

@@ -171,6 +171,20 @@ void Image::setLayout(VkCommandBuffer command_buffer, VkImageAspectFlags aspect_
 	setupDescriptor();
 }
 
+VkImageMemoryBarrier Image::barrier(
+	VkImageLayout old_layout, VkImageLayout new_layout, 
+	VkImageSubresourceRange range, 
+	uint32_t src_queue_index, uint32_t dst_queue_index){
+	VkImageMemoryBarrier barrier = infos::imageMemoryBarrier(old_layout, new_layout);
+	barrier.subresourceRange = range;
+	barrier.srcQueueFamilyIndex = src_queue_index;
+	barrier.dstQueueFamilyIndex = dst_queue_index;
+	barrier.image = image;
+	barrier.srcAccessMask = old_layout;
+	barrier.dstAccessMask = new_layout;
+	return barrier;
+}
+
 
 }
 #endif

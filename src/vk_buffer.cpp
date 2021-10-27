@@ -129,26 +129,15 @@ namespace VKEngine{
 		}
 	}
 
-	void Buffer::barrier(
-		VkCommandBuffer command_buffer, 
-		VkAccessFlags src_access, 
-		VkAccessFlags dst_access, 
-		VkPipelineStageFlags src_stage, 
-		VkPipelineStageFlags dst_stage
-	){	
+	VkBufferMemoryBarrier Buffer::barrier(VkAccessFlags src_access, VkAccessFlags dst_access, uint32_t src_queue_index, uint32_t dst_queue_index){	
 		VkBufferMemoryBarrier barrier = infos::bufferMemoryBarrier();
 		barrier.buffer=buffer;
 		barrier.srcAccessMask = src_access;
 		barrier.dstAccessMask = dst_access;
+		barrier.srcQueueFamilyIndex = src_queue_index;
+		barrier.dstQueueFamilyIndex = dst_queue_index;
 		barrier.size = size;
-		vkCmdPipelineBarrier(
-			command_buffer,
-			src_stage, dst_stage,
-			0,
-			0, nullptr,
-			1, &barrier,
-			0, nullptr
-		);
+		return barrier;
 	}
 
 }

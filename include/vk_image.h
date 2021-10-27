@@ -70,6 +70,11 @@ void setLayout(VkCommandBuffer command, VkImageAspectFlags aspect_mask,
 			   VkImageSubresourceRange subresource_range,
 			   VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage,
 			   VkAccessFlags src_mask, VkAccessFlags dst_mask);
+VkImageMemoryBarrier barrier(
+	VkImageLayout old_layout, VkImageLayout new_layout, 
+	VkImageSubresourceRange range, 
+	uint32_t src_queue_index = VK_QUEUE_FAMILY_IGNORED, uint32_t dst_queue_index = VK_QUEUE_FAMILY_IGNORED);
+
 
 operator VkImage() const {
 	return this->image;

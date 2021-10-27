@@ -50,7 +50,7 @@ namespace VKEngine
 		void setupDescriptor(VkDeviceSize offset, VkDeviceSize size);
 		void copyTo(void* dst, VkDeviceSize size = VK_WHOLE_SIZE);
 		void copyFrom(void* src, VkDeviceSize size = VK_WHOLE_SIZE);
-		void barrier(VkCommandBuffer command_buffer, VkAccessFlags src_access, VkAccessFlags dst_access, VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage);
+		VkBufferMemoryBarrier barrier(VkAccessFlags src_access, VkAccessFlags dst_access, uint32_t src_queue_index = VK_QUEUE_FAMILY_IGNORED, uint32_t dst_queue_index = VK_QUEUE_FAMILY_IGNORED);
 		void destroy();
 		
 		operator VkBuffer() const{
