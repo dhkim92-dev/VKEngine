@@ -46,8 +46,8 @@ namespace VKEngine{
 
 
 		VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandBufferUsageFlags usage=0x0, bool begin=false);
-		void beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage=0x0);
-		void endCommandBuffer(VkCommandBuffer command_buffer);
+		VkResult beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage=0x0);
+		VkResult endCommandBuffer(VkCommandBuffer command_buffer);
 
 		VkResult submit(VkCommandBuffer* commands, uint32_t nr_commands,
 					VkPipelineStageFlags wait_signal_stage_mask,

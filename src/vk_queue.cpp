@@ -76,16 +76,16 @@ namespace VKEngine{
 		return command_buffer;
 	}
 
-	void CommandQueue::beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage){
+	VkResult CommandQueue::beginCommandBuffer(VkCommandBuffer command_buffer, VkCommandBufferUsageFlags usage){
 		VkCommandBufferBeginInfo command_buffer_BI = infos::commandBufferBeginInfo();
 		if(usage & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT){
 			command_buffer_BI.flags=usage;
 		}
-		VK_CHECK_RESULT(vkBeginCommandBuffer(command_buffer, &command_buffer_BI));
+		return vkBeginCommandBuffer(command_buffer, &command_buffer_BI);
 	}
 
-	void CommandQueue::endCommandBuffer(VkCommandBuffer command_buffer){
-		VK_CHECK_RESULT(vkEndCommandBuffer(command_buffer));
+	VkResult CommandQueue::endCommandBuffer(VkCommandBuffer command_buffer){
+		return vkEndCommandBuffer(command_buffer);
 	}
 
 	void CommandQueue::copyBuffer(VkCommandBuffer command_buffer, Buffer *src, Buffer *dst, uint32_t src_offset, uint32_t dst_offset, uint32_t size ){
