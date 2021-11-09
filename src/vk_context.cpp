@@ -231,18 +231,24 @@ namespace VKEngine{
 	}
 
 	void Context::destroyFence(VkFence *fence){
-		vkDestroyFence(device, *fence, nullptr);
-		*fence = VK_NULL_HANDLE;
+		if(*fence != VK_NULL_HANDLE){
+			vkDestroyFence(device, *fence, nullptr);
+			*fence = VK_NULL_HANDLE;
+		}
 	}
 	
 	void Context::destroyEvent(VkEvent *event){
-		vkDestroyEvent(device, *event, nullptr);
-		*event = VK_NULL_HANDLE;
+		if(*event != VK_NULL_HANDLE){
+			vkDestroyEvent(device, *event, nullptr);
+			*event = VK_NULL_HANDLE;
+		}
 	}
 	
 	void Context::destroySemaphore(VkSemaphore *semaphore){
-		vkDestroySemaphore(device, *semaphore, nullptr);
-		*semaphore = VK_NULL_HANDLE;
+		if(*semaphore != VK_NULL_HANDLE){
+			vkDestroySemaphore(device, *semaphore, nullptr);
+			*semaphore = VK_NULL_HANDLE;
+		}
 	}
 }
 
