@@ -24,6 +24,7 @@ namespace VKEngine{
 
 	class CommandQueue{
 		public:
+		uint32_t index = 0;
 		private:
 		Context *context = nullptr;
 		VkDevice device = VK_NULL_HANDLE;
@@ -50,7 +51,7 @@ namespace VKEngine{
 		VkResult endCommandBuffer(VkCommandBuffer command_buffer);
 
 		VkResult submit(VkCommandBuffer* commands, uint32_t nr_commands,
-					VkPipelineStageFlags wait_signal_stage_mask,
+					VkPipelineStageFlags *wait_signal_stage_mask,
 					VkSemaphore *wait_smps, uint32_t nr_wait_smps, 
 					VkSemaphore *signal_smps, uint32_t nr_signal_smps, VkFence fence=VK_NULL_HANDLE);
 		void copyBuffer(VkCommandBuffer cmd, Buffer *src, Buffer *dst, uint32_t src_offset, uint32_t dst_offset, uint32_t size);

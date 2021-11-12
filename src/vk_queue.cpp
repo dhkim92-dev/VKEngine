@@ -38,7 +38,7 @@ namespace VKEngine{
 	void CommandQueue::createCommandQueue(){
 		VkDeviceQueueCreateInfo queue_CI = infos::deviceQueueCreateInfo();
 		QueueFamilyIndice indices = context->queue_family_indices;
-		uint32_t index = 0;
+		//uint32_t index = 0;
 
 		switch(type){
 			case VK_QUEUE_GRAPHICS_BIT : 
@@ -131,7 +131,7 @@ namespace VKEngine{
 	}
 
 	VkResult CommandQueue::submit(VkCommandBuffer* commands, uint32_t nr_commands,
-					VkPipelineStageFlags wait_signal_stage_mask,
+					VkPipelineStageFlags *wait_signal_stage_mask,
 					VkSemaphore *wait_smps, uint32_t nr_wait_smps,
 					VkSemaphore *signal_smps, uint32_t nr_signal_smps, VkFence fence){
 		VkSubmitInfo info = infos::submitInfo();
@@ -141,7 +141,7 @@ namespace VKEngine{
 		info.pSignalSemaphores = signal_smps;
 		info.waitSemaphoreCount = nr_wait_smps;
 		info.pWaitSemaphores = wait_smps;
-		info.pWaitDstStageMask = &wait_signal_stage_mask;
+		info.pWaitDstStageMask = wait_signal_stage_mask;
 		return vkQueueSubmit(queue, 1, &info, fence);
 	}
 
