@@ -9,7 +9,7 @@ namespace VKEngine{
 	Program::Program(Context *_context){
 		// LOG("Program::Program!\n");
 		context = _context;
-		device = VkDevice(*context);
+		device = _context->getDevice();
 		// LOG("context : %p\n", context);
 	}
 

@@ -53,15 +53,16 @@ namespace VKEngine
 		VkBufferMemoryBarrier barrier(VkAccessFlags src_access, VkAccessFlags dst_access, uint32_t src_queue_index = VK_QUEUE_FAMILY_IGNORED, uint32_t dst_queue_index = VK_QUEUE_FAMILY_IGNORED);
 		void destroy();
 		
-		operator VkBuffer() const{
-			return buffer;
+		VkBuffer getBuffer() const {
+			return this->buffer;
 		}
-		operator VkBufferUsageFlags() const{
+
+		VkBufferUsageFlags getBufferUsageFlags() const {
 			return this->usage;
 		}
 
-		operator VkDeviceSize() const {
-			return size;
+		VkDeviceSize getSize() const {
+			return this->size;
 		}
 	};
 };

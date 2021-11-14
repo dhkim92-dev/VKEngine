@@ -75,25 +75,21 @@ VkImageMemoryBarrier barrier(
 	VkImageSubresourceRange range, 
 	uint32_t src_queue_index = VK_QUEUE_FAMILY_IGNORED, uint32_t dst_queue_index = VK_QUEUE_FAMILY_IGNORED);
 
+	VkImage getImage() const{
+		return this->image;
+	}
 
-operator VkImage() const {
-	return this->image;
-}
+	VkImageView getView() const{
+		return this->view;
+	}
 
-operator VkSampler() const{
-	assert(sampler == VK_NULL_HANDLE);
-	return this->sampler;
-}
+	VkSampler getSampler() const{
+		return this->sampler;
+	}
 
-operator VkImageView() const {
-	assert(view == VK_NULL_HANDLE);
-	return this->view;
-}
-
-operator VkImageLayout() const{
-	return this->layout;
-}
-
+	VkImageLayout getLayout() const {
+		return this->layout;
+	}
 };
 
 

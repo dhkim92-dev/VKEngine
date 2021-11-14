@@ -64,12 +64,12 @@ namespace VKEngine{
 		void destroyEvent(VkEvent *event);
 		void destroyFence(VkFence *fence);
 
-		operator VkPhysicalDevice() const{
-			return gpu;
+		VkPhysicalDevice getPhysicalDevice() const {
+			return this->gpu;
 		}
 
-		operator VkDevice() const{
-			return device;
+		VkDevice getDevice(){
+			return this->device;
 		}
 	};
 }

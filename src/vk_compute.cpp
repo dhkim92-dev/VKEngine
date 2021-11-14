@@ -19,7 +19,7 @@ Kernel::~Kernel(){
 void Kernel::create(Context *_context, const string _file_path){
 	//LOG("Kernel create :: file_path : %s\n", _file_path.c_str() );
 	context = _context;
-	device = VkDevice(*context);
+	device = context->getDevice();
 	file_path = _file_path;
 	loadShaderModule();
 }

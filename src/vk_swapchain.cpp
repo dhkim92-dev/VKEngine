@@ -9,7 +9,7 @@ namespace VKEngine{
 
 	void SwapChain::connect(Engine *engine, Context *context, VkSurfaceKHR _surface){
 		ctx = context;
-		connect( VkInstance(*engine), VkPhysicalDevice(*context), VkDevice(*context), _surface );
+		connect( engine->getInstance(), context->getPhysicalDevice(), context->getDevice(), _surface );
 	}
 
 	void SwapChain::connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device, VkSurfaceKHR _surface){

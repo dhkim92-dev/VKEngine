@@ -52,12 +52,13 @@ namespace VKEngine{
 	}
 
 	void Application::createContext(){
-		VkInstance instance = VkInstance(*engine);
+		VkInstance instance = engine->getInstance();
 		context = new Context(engine, 0, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, surface); //new Context(instance, 0, surface, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, device_extension_names, validation_names);
 	}
 
 	void Application::createSurface(){
-		VK_CHECK_RESULT(glfwCreateWindowSurface(VkInstance(*engine), window, nullptr, &surface));
+		VkInstance instance = engine->getInstance();
+		VK_CHECK_RESULT(glfwCreateWindowSurface(instance, window, nullptr, &surface));
 	}
 	
 	void Application::initSwapchain(){
@@ -89,12 +90,12 @@ namespace VKEngine{
 	void Application::setupPipelineCache(){
 		VkPipelineCacheCreateInfo cache_CI = {};
 		cache_CI.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		VK_CHECK_RESULT( vkCreatePipelineCache(VkDevice(*context), &cache_CI, nullptr, &cache) );
+		VK_CHECK_RESULT( vkCreatePipelineCache(context->getDevice(), &cache_CI, nullptr, &cache) );
 	}
 
 	void Application::setupDepthStencilAttachment(){
-		VkDevice device = VkDevice(*context);
-		VkBool32 found = getDepthFormat( VkPhysicalDevice(*context), &depth_attachment.format);
+		VkDevice device = context->getDevice();
+		VkBool32 found = getDepthFormat( context->getPhysicalDevice(), &depth_attachment.format);
 		VkImageCreateInfo image_CI = infos::imageCreateInfo();
 		image_CI.imageType = VK_IMAGE_TYPE_2D;
 		image_CI.format = depth_attachment.format;
@@ -133,7 +134,7 @@ namespace VKEngine{
 	}
 	
 	void Application::setupRenderPass(){
-		VkDevice device = VkDevice(*context);
+		VkDevice device = context->getDevice();
 		std::array<VkAttachmentDescription, 2> attachments={};
 		//Color first
 		attachments[0].format = swapchain.image_format;
@@ -196,7 +197,7 @@ namespace VKEngine{
 	}
 
 	void Application::setupFramebuffer(){
-		VkDevice device = VkDevice(*context);
+		VkDevice device = context->getDevice();
 		uint32_t nr_framebuffers = static_cast<uint32_t>(swapchain.buffers.size());
 		framebuffers.clear();
 		framebuffers.resize(nr_framebuffers);
@@ -219,8 +220,9 @@ namespace VKEngine{
 
 	void Application::setupSemaphores(){
 		VkSemaphoreCreateInfo info = infos::semaphoreCreateInfo();
-		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.render_complete ));
-		VK_CHECK_RESULT(vkCreateSemaphore(VkDevice(*context), &info, nullptr, &semaphores.present_complete ));
+		VkDevice device = context->getDevice();
+		VK_CHECK_RESULT(vkCreateSemaphore(device, &info, nullptr, &semaphores.render_complete ));
+		VK_CHECK_RESULT(vkCreateSemaphore(device, &info, nullptr, &semaphores.present_complete ));
 		draw_fence = graphics_queue->createFence();
 	}
 
@@ -245,7 +247,7 @@ namespace VKEngine{
 	}
 
 	void Application::submitFrame(){
-		VkQueue queue = VkQueue(*graphics_queue);
+		VkQueue queue = graphics_queue->getQueue();
 		VkResult result = swapchain.queuePresent(queue, current_frame_index, semaphores.render_complete);
 		if(!(result == VK_SUCCESS) || (result == VK_SUBOPTIMAL_KHR)){
 			LOG("Application::submitFrame result is VK_SUCCESS or VK_SUBOPTIMAL_KHR\n");
@@ -262,7 +264,7 @@ namespace VKEngine{
 		render_SI.pCommandBuffers = &draw_command_buffers[current_frame_index];
 		render_SI.commandBufferCount = 1;
 		graphics_queue->resetFences(&draw_fence, 1);
-		vkQueueSubmit( VkQueue(*graphics_queue), 1, & render_SI, draw_fence);
+		vkQueueSubmit( graphics_queue->getQueue(), 1, & render_SI, draw_fence);
 		graphics_queue->waitFences(&draw_fence, 1, true, UINT64_MAX);
 		submitFrame();
 		current_frame_index+=1;
@@ -270,7 +272,7 @@ namespace VKEngine{
 	}
 
 	void Application::destroyFramebuffers(){
-		VkDevice device = VkDevice(*context);
+		VkDevice device = context->getDevice();
 		for(uint32_t i = 0 ; i < swapchain.buffers.size(); ++i){
 			vkDestroyFramebuffer(device, framebuffers[i], nullptr);
 		}
@@ -283,7 +285,7 @@ namespace VKEngine{
 	}
 	
 	void Application::destroy(){
-		VkDevice device = VkDevice(*context);
+		VkDevice device = context->getDevice();
 		if(cache){
 			vkDestroyPipelineCache(device, cache, nullptr);
 			cache = VK_NULL_HANDLE;

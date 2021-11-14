@@ -26,7 +26,7 @@ namespace VKEngine{
 	void Context::create(Engine *_engine, uint32_t gpu_id, VkQueueFlags request_queues, VkSurfaceKHR surface){
 		//this->instance = _instance;
 		this->engine= _engine;
-		this->instance = VkInstance(*_engine);
+		this->instance = _engine->getInstance();
 		selectGPU(gpu_id);
 		setupQueueFamilyIndices();
 

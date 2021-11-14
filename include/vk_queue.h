@@ -98,10 +98,19 @@ namespace VKEngine{
 		VkFence createFence(VkFenceCreateFlagBits flag = VK_FENCE_CREATE_SIGNALED_BIT);
 		void bindKernel(VkCommandBuffer command_buffer, Kernel *kernel);
 		void destroyFence(VkFence fence);
-		operator VkQueue() const {
+		
+		//
+		//template<typename VkQueue> operator VkQueue() const {
+		//	return queue;
+		//}
+		//template<typename VkCommandPool> operator VkCommandPool() const {
+		//	return pool;
+		//}
+		VkQueue getQueue() const{
 			return queue;
 		}
-		operator VkCommandPool() const {
+
+		VkCommandPool getCommandPool() const {
 			return pool;
 		}
 	};

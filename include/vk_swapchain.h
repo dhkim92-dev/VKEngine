@@ -45,11 +45,11 @@ namespace VKEngine{
 						  VkSemaphore wait_semaphore = VK_NULL_HANDLE);
 		void destroy();
 
-		operator VkPhysicalDevice() const {
+		VkPhysicalDevice getPhysicalDevice() const {
 			return gpu;
 		} 
 
-		operator VkDevice() const {
+		VkDevice getDevice() const {
 			return device;
 		}
 

@@ -22,7 +22,7 @@ namespace VKEngine{
 		void *ptr
 	){
 		context = _context;
-		device = VkDevice(*_context);
+		device = context->getDevice();
 		size = _size;
 		usage = _usage;
 		memory_properties = _memory_properties;

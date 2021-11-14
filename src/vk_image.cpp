@@ -27,7 +27,7 @@ void Image::destroy(){
 
 void Image::create(Context *ctx){
 	this->context = ctx;
-	device = VkDevice(*ctx);
+	device = ctx->getDevice();
 }
 
 VkResult Image::createImage(uint32_t w, uint32_t h, uint32_t ch,

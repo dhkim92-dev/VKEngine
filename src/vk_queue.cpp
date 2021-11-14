@@ -5,7 +5,7 @@
 namespace VKEngine{
 	CommandQueue::CommandQueue(Context * _context, VkQueueFlagBits _type){
 		context = _context;
-		device = VkDevice(*context);
+		device = _context->getDevice();
 		type = _type;
 		//pool = context->getCommandPool(type);
 		pool = context->createCommandPool(_type);
@@ -93,20 +93,23 @@ namespace VKEngine{
 		copy.dstOffset = dst_offset;
 		copy.srcOffset = src_offset;
 		copy.size = size;
-		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(*dst), 1, &copy );
+		vkCmdCopyBuffer(command_buffer, 
+						src->getBuffer(), 
+						dst->getBuffer(), 
+						1, &copy );
 	}
 
 	void CommandQueue::copyImage(VkCommandBuffer command_buffer, 
 								Image *src, Image *dst, VkImageCopy *region){
-		vkCmdCopyImage(command_buffer, VkImage(*src), VkImageLayout(*src), VkImage(*dst), VkImageLayout(*dst), 1,region);
+		vkCmdCopyImage(command_buffer, src->getImage(), src->getLayout(), dst->getImage(), dst->getLayout(), 1,region);
 	}
 
 	void CommandQueue::copyBufferToImage(VkCommandBuffer command_buffer, Buffer *src, Image *dst, VkBufferImageCopy *region){
-		vkCmdCopyBufferToImage(command_buffer, VkBuffer(*src), VkImage(*dst), VkImageLayout(*dst), 1, region);
+		vkCmdCopyBufferToImage(command_buffer, src->getBuffer(), dst->getImage(), dst->getLayout(), 1, region);
 	}
 
 	void CommandQueue::copyImageToBuffer(VkCommandBuffer command_buffer, Image *src, Buffer *dst, VkBufferImageCopy *region){
-		vkCmdCopyImageToBuffer(command_buffer, VkImage(*src), VkImageLayout(*src), VkBuffer(*dst), 1, region);
+		vkCmdCopyImageToBuffer(command_buffer, src->getImage(), src->getLayout(), dst->getBuffer(), 1, region);
 	}
 
 	void CommandQueue::bindKernel(VkCommandBuffer command_buffer, Kernel *kernel){
@@ -147,13 +150,13 @@ namespace VKEngine{
 
 	VkFence CommandQueue::createFence(VkFenceCreateFlagBits flag){
 		VkFenceCreateInfo info = infos::fenceCreateInfo(flag);
-		VkDevice device = VkDevice(*context);
+		VkDevice device = context->getDevice();
 		VkFence fence;
 		VK_CHECK_RESULT(vkCreateFence(device, &info, nullptr, &fence));
 		return fence;
 	}
 	VkResult CommandQueue::resetFences(VkFence *fences, uint32_t nr_fences){
-		VkDevice device = VkDevice(*context);
+		VkDevice device = context->getDevice();
 		return vkResetFences(device, nr_fences, fences);
 	}	
 	
@@ -166,7 +169,8 @@ namespace VKEngine{
 	}
 
 	void CommandQueue::destroyFence(VkFence fence){
-		vkDestroyFence(VkDevice(*context), fence, nullptr);
+		VkDevice device = context->getDevice();
+		vkDestroyFence(device, fence, nullptr);
 	}
 
 	// ------------------------- Legacy Functions ------------------------------------
@@ -182,7 +186,7 @@ namespace VKEngine{
 		region.size = size;
 		region.srcOffset = src_offset;
 		region.dstOffset = dst_offset;
-		vkCmdCopyBuffer(command_buffer, VkBuffer(*src), VkBuffer(*dst),1, &region );
+		vkCmdCopyBuffer(command_buffer, src->getBuffer(), dst->getBuffer(),1, &region );
 		endCommandBuffer(command_buffer);
 		VkSubmitInfo submit_info = infos::submitInfo();
 		submit_info.pCommandBuffers = &command_buffer;

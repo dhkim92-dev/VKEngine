@@ -9,7 +9,7 @@ namespace VKEngine{
 	Shader::Shader(Context *_context, const string _file_path, VkShaderStageFlagBits _stage){
 		assert(_context);
 		context = _context;
-		device = VkDevice(*context);
+		device = _context->getDevice();
 		file_path = _file_path;
 		stage = _stage;
 	}

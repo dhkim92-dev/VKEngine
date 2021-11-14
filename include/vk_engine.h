@@ -46,9 +46,16 @@ namespace VKEngine{
 		~Engine();
 		void init();
 		void destroy();
-		operator VkInstance() const {
+		/*
+		template<typename VkInstance> operator VkInstance() const {
 			return instance;
 		}
+		*/
+
+		VkInstance getInstance() const {
+			return this->instance;
+		}
+
 		private :
 		void createInstance();
 		bool checkValidationSupport();

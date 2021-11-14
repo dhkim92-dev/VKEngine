@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 PROJECT(VKEngine VERSION 0.1.3)
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_FLAGS "-O0 -fno-elide-constructors -ansi -Wextra -Wall     -Winit-self -Woverloaded-virtual -Wuninitialized -Wmissing-declarations    -Winit-self -std=c++17")
 
 
 add_definitions(-DGLFW_INCLUDE_VULKAN -DDEBUG)
