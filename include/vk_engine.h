@@ -14,31 +14,24 @@
 
 using namespace std;
 
-#ifdef DEBUG
-const bool validationEnable = true;
-#else
-const bool validationEnable = false;
-#endif
-
 namespace VKEngine{
 
 		class Engine {
 		//variables
 		public :
-		const string app_name;
-		const string engine_name;
+		const string name;
 		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 		vector<VkQueueFamilyProperties> queue_family_properties;
 		const vector<const char *> validations;
 		const vector<const char *> instance_extensions;
 		const vector<const char*>  device_extensions;
+		bool debug = false;
 
 		private :
 		VkInstance instance = VK_NULL_HANDLE;
 				
 		public :
-		explicit Engine(const string _app_name, 
-						const string _engine_name, 
+		explicit Engine(const string _name,
 						const vector< const char* > instance_extensions, 
 						const vector <const char*> device_extensions,
 						const vector< const char* > _validations
@@ -46,6 +39,7 @@ namespace VKEngine{
 		~Engine();
 		void init();
 		void destroy();
+		void setDebug(bool value);
 		/*
 		template<typename VkInstance> operator VkInstance() const {
 			return instance;

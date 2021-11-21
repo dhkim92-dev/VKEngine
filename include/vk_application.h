@@ -64,7 +64,7 @@ namespace VKEngine{
 		uint32_t current_frame_index = 0;
 		public :
 		explicit Application(
-			string app_name, string engine_name,
+			string name,
 			uint32_t _height, uint32_t _width, 
 			vector<const char *>_instance_extension_names,
 			vector<const char *> device_extension_names,

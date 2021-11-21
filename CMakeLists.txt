@@ -5,7 +5,7 @@ SET(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "-O0 -fno-elide-constructors -ansi -Wextra -Wall     -Winit-self -Woverloaded-virtual -Wuninitialized -Wmissing-declarations    -Winit-self -std=c++17")
 
 
-add_definitions(-DGLFW_INCLUDE_VULKAN -DDEBUG)
+add_definitions(-DGLFW_INCLUDE_VULKAN -DVK_ENGINE_DEBUG)
 ADD_COMPILE_OPTIONS(-Wall)
 LINK_LIBRARIES(vulkan glfw )
 

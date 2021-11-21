@@ -1,0 +1,3 @@
+/Users/cenovis/workspace/Graphics/Vulkan-MarchingCube/VKEngine/CMakeFiles/rebuild_cache.dir
+/Users/cenovis/workspace/Graphics/Vulkan-MarchingCube/VKEngine/CMakeFiles/edit_cache.dir
+/Users/cenovis/workspace/Graphics/Vulkan-MarchingCube/VKEngine/CMakeFiles/VKEngine.dir

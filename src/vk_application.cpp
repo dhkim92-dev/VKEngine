@@ -8,14 +8,14 @@ using namespace std;
 
 namespace VKEngine{
 	Application::Application(
-		string app_name, string engine_name,
+		string name,
 		uint32_t _height, uint32_t _width, 
 		const vector<const char *> _instance_extension_names,
 		const vector<const char *> _device_extension_names,
 		const vector<const char *> _validation_names){
 		height = _height;
 		width = _width;
-		engine = new Engine(app_name, engine_name, _instance_extension_names, _device_extension_names ,_validation_names);
+		engine = new Engine(name,_instance_extension_names, _device_extension_names ,_validation_names);
 		camera.init( glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f) );
 	}	
 

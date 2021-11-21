@@ -22,12 +22,11 @@ namespace VKEngine{
 	}
 
 	
-	Engine::Engine(const string _app_name, 
-				   const string _engine_name,
+	Engine::Engine(const string _name,
 				   const vector<const char * > _instance_extensions,
-				   vector<const char*> _device_extensions,
+				   const vector<const char*> _device_extensions,
 				   const vector<const char * > _validations
-				   ) : app_name(_app_name), engine_name(_engine_name), instance_extensions(_instance_extensions), device_extensions(_device_extensions) ,validations(_validations) {};
+				   ) : name(_name), instance_extensions(_instance_extensions), device_extensions(_device_extensions) ,validations(_validations) {};
 
 	Engine::~Engine(){
 		LOG("Engine::~Engine()\n");
@@ -52,17 +51,20 @@ namespace VKEngine{
 		createInstance();
 		LOG("Engine::init() setupDebugMessenger()\n");
 		setupDebugMessenger();
+		LOG("Engine::init() end()\n");
 	}
 
 	void Engine::createInstance(){
-		if(validationEnable && !checkValidationSupport()){
-			LOG("build failed\n");
-			throw std::runtime_error("validation layer requested but not available!");
+		if(debug){
+			if(!checkValidationSupport()){
+				LOG("build failed\n");
+				throw std::runtime_error("validation layer requested but not available!");
+			}
 		}
 		VkApplicationInfo app_info = infos::appCreateInfo();
-		app_info.pApplicationName = app_name.c_str();
+		app_info.pApplicationName = name.c_str();
 		app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		app_info.pEngineName = engine_name.c_str();
+		app_info.pEngineName = name.c_str();
 		app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 		app_info.apiVersion = VK_API_VERSION_1_2;
 
@@ -72,7 +74,8 @@ namespace VKEngine{
 		instance_info.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
 		VkDebugUtilsMessengerCreateInfoEXT debug_info{};
 
-		if(validationEnable){
+		if(debug){
+			LOG("Enigne::createInstance() => validation setting\n");
 			instance_info.ppEnabledLayerNames = validations.data();
 			instance_info.enabledLayerCount = static_cast<uint32_t>(validations.size());
 			debug_info = infos::debugMessengerCreateInfo();
@@ -102,14 +105,24 @@ namespace VKEngine{
 
 		return res;
 	}
-	 void Engine::setupDebugMessenger() {
-        if (!validationEnable) return;
+
+	void Engine::setDebug(bool value){
+		debug = value;
+	}
+
+	void Engine::setupDebugMessenger() {
+        if (!debug) return;
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
+		LOG("Engine::setupDebugMessenger()\n");
         createInfo = infos::debugMessengerCreateInfo();
+		LOG("Engine::setupDebugMessenger::createInfo()\n");
 		createInfo.pfnUserCallback = debugCallback;
+
+		LOG("Engine::setupDebugMessenger::debugCallback()\n");
         if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
             throw std::runtime_error("failed to set up debug messenger!");
         }
+		LOG("Engine::setupDebugMessenger::createDebugUtilsMessengerEXT()\n");
     }
 }
 

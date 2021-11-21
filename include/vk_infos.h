@@ -344,15 +344,6 @@ namespace VKEngine
 			return barrier;
 		}
 
-		inline VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo()
-		{
-			VkDebugUtilsMessengerCreateInfoEXT create_info;
-			create_info = {};
-			create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-			create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-			create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-			return create_info;
-		}
 
 		inline VkSwapchainCreateInfoKHR swapchainCreateInfo(){
 			VkSwapchainCreateInfoKHR info = {};
@@ -538,6 +529,17 @@ namespace VKEngine
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			return info;
 		}
+
+		inline VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo()
+		{
+			VkDebugUtilsMessengerCreateInfoEXT create_info;
+			create_info = {};
+			create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+			create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+			create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+			return create_info;
+		}
+
 	};
 };
 
