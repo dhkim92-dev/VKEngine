@@ -35,7 +35,7 @@ ENDIF()
 MESSAGE("VULKAN SDK PATH : ${VULKAN_SDK}")
 MESSAGE("GLFW PATH : ${GLFW_PATH}")
 
-ADD_LIBRARY(VKEngine SHARED 
+ADD_LIBRARY(VKEngine SHARED
 			src/vk_engine.cpp
 			src/vk_context.cpp
 			src/vk_swapchain.cpp
@@ -49,8 +49,10 @@ ADD_LIBRARY(VKEngine SHARED
 			src/vk_shader.cpp
 			src/vk_infos.cpp
 			src/vk_application.cpp)
-ADD_LIBRARY(VKEngine STATIC
-            src/vk_engine.cpp
+
+
+ADD_LIBRARY(VKEngineStatic STATIC
+			src/vk_engine.cpp
 			src/vk_context.cpp
 			src/vk_swapchain.cpp
 			src/vk_buffer.cpp
@@ -68,6 +70,11 @@ MESSAGE([ STATUS ]"PROJECT VERSION :  ${CMAKE_PROJECT_VERSION}")
 
 set_target_properties(VKEngine PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 set_target_properties(VKEngine PROPERTIES SOVERSION 0)
+set_target_properties(VKEngineStatic PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
+set_target_properties(VKEngineStatic PROPERTIES SOVERSION 0)
 target_include_directories(VKEngine PRIVATE include)
 target_include_directories(VKEngine PRIVATE src)
+target_include_directories(VKEngineStatic PRIVATE include)
+target_include_directories(VKEngineStatic PRIVATE src)
+
 #target_link_libraries(VKEngine PRIVATE ${GLFW_LINK})
