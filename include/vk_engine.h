@@ -17,7 +17,6 @@ using namespace std;
 namespace VKEngine{
 
 		class Engine {
-		//variables
 		public :
 		const string name;
 		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
@@ -40,11 +39,6 @@ namespace VKEngine{
 		void init();
 		void destroy();
 		void setDebug(bool value);
-		/*
-		template<typename VkInstance> operator VkInstance() const {
-			return instance;
-		}
-		*/
 
 		VkInstance getInstance() const {
 			return this->instance;
@@ -55,6 +49,9 @@ namespace VKEngine{
 		bool checkValidationSupport();
 		bool checkDeviceFeaturesSupport();
 		void setupDebugMessenger();
+
+		// 0.1.4 add
+		void setVkInstance(VkInstance *instance);
 		
 		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData){
 			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;

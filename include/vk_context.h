@@ -43,17 +43,11 @@ namespace VKEngine{
 		void selectGPU(const uint32_t gpu_id);
 		void setupDevice(VkQueueFlags request_queue, vector<const char*>device_exts, vector<const char*> valid_exts);
 		QueueFamilyIndice findQueueFamilies(VkPhysicalDevice _gpu);
-		//VkCommandPool createCommandPool(uint32_t queue_index, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 		VkCommandPool createCommandPool(VkQueueFlagBits type, VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
 		uint32_t getMemoryType(uint32_t type, VkMemoryPropertyFlags property, VkBool32 *found=nullptr);
 		uint32_t getQueueFamilyIndex(VkQueueFlagBits queue_family);
 		void setupPresent(VkSurfaceKHR surface);
-		/*
-		operator VkSurfaceKHR() const {
-			return surface;
-		}
-		*/
 
 		// 0.1.3 add
 		VkResult createSemaphore(VkSemaphore *semaphore);
@@ -63,6 +57,15 @@ namespace VKEngine{
 		void destroySemaphore(VkSemaphore *semaphore);
 		void destroyEvent(VkEvent *event);
 		void destroyFence(VkFence *fence);
+
+		// 0.1.4 add
+		void setVkEngine(Engine* _engine);
+		void setPhysicalDevice(VkPhysicalDevice *physical_device);
+		void setLogicalDevice(VkDevice *_device);
+		void setDeviceFeatures(VkPhysicalDeviceFeatures *features);
+		void setDevicePropertices(VkPhysicalDeviceProperties *properties);
+		void setMemoryProperties(VkPhysicalDeviceMemoryProperties *properties);
+
 
 		VkPhysicalDevice getPhysicalDevice() const {
 			return this->gpu;

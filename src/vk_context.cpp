@@ -214,6 +214,33 @@ namespace VKEngine{
 		return indice;
 	}
 
+	// 0.1.4 add
+	void Context::setVkEngine(Engine *_engine){
+		this->engine = _engine;
+	}
+
+	void Context::setPhysicalDevice(VkPhysicalDevice *physical_device){
+		this->gpu = *physical_device;
+	}
+
+	void Context::setLogicalDevice(VkDevice *_device){
+		this->device = *_device;
+	}
+	
+	void Context::setDeviceFeatures(VkPhysicalDeviceFeatures *features){
+		this->device_features = *features;
+	}
+
+	void Context::setDevicePropertices(VkPhysicalDeviceProperties *properties){
+		this->device_properties = *properties;
+	}
+
+	void Context::setMemoryProperties(VkPhysicalDeviceMemoryProperties *properties){
+		this->memory_properties = *properties;
+	}
+	// 0.1.4 add end
+
+
 	VkResult Context::createFence(VkFence *fence){
 		VkFenceCreateInfo CI = infos::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 		return vkCreateFence(device, &CI, nullptr, fence);

@@ -110,6 +110,13 @@ namespace VKEngine{
 		debug = value;
 	}
 
+	// 0.1.4 add
+
+	void Engine::setVkInstance(VkInstance *instance){
+		this->instance = *instance;
+	}
+
+	// 0.1.4 add end
 	void Engine::setupDebugMessenger() {
         if (!debug) return;
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
