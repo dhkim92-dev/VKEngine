@@ -34,7 +34,10 @@ namespace VKEngine{
 			setupSurface(surface);
 		}
 
-		setupDevice(request_queues, engine->device_extensions, engine->validations);
+		setupDevice(request_queues, 
+					engine->getDeviceExtensions(), 
+					engine->getValidationLayers()
+		);
 		setupMemoryProperties();
 	}
 

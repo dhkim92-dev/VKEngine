@@ -5,33 +5,19 @@
 using namespace std;
 
 namespace VKEngine{
-	
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-	    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-	    if (func != nullptr) {
-	        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-	    } else {
-	        return VK_ERROR_EXTENSION_NOT_PRESENT;
-	    }
+	Engine::Engine(string name)
+	{
+		this->name = name;
 	}
 
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-		if (func != nullptr) 
-			func(instance, debugMessenger, pAllocator);
-	}
-
-	
-	Engine::Engine(const string _name,
-				   const vector<const char * > _instance_extensions,
-				   const vector<const char*> _device_extensions,
-				   const vector<const char * > _validations
-				   ) : name(_name), instance_extensions(_instance_extensions), device_extensions(_device_extensions) ,validations(_validations) {};
+	Engine::Engine(string _name,
+				   vector<const char * > _instance_extensions,
+				   vector<const char*> _device_extensions,
+				   vector<const char * > _validations
+	) : name(_name), instance_extensions(_instance_extensions), device_extensions(_device_extensions) ,validations(_validations) {};
 
 	Engine::~Engine(){
-		LOG("Engine::~Engine()\n");
 		destroy();
-		LOG("Engine::~Engine() end\n");
 	}
 
 	void Engine::destroy(){
@@ -47,14 +33,17 @@ namespace VKEngine{
 	}
 
 	void Engine::init(){
-		LOG("Engine::init() createInstance()\n");
-		createInstance();
-		LOG("Engine::init() setupDebugMessenger()\n");
 		setupDebugMessenger();
-		LOG("Engine::init() end()\n");
 	}
 
 	void Engine::createInstance(){
+		if(instance != VK_NULL_HANDLE)
+		{
+			_createInstance();
+		}
+	}
+
+	void Engine::_createInstance(){
 		if(debug){
 			if(!checkValidationSupport()){
 				LOG("build failed\n");
@@ -106,17 +95,6 @@ namespace VKEngine{
 		return res;
 	}
 
-	void Engine::setDebug(bool value){
-		debug = value;
-	}
-
-	// 0.1.4 add
-
-	void Engine::setVkInstance(VkInstance *instance){
-		this->instance = *instance;
-	}
-
-	// 0.1.4 add end
 	void Engine::setupDebugMessenger() {
         if (!debug) return;
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -131,6 +109,50 @@ namespace VKEngine{
         }
 		LOG("Engine::setupDebugMessenger::createDebugUtilsMessengerEXT()\n");
     }
+
+	// setter
+	void Engine::setDebug(bool value){
+		debug = value;
+	}
+
+	void Engine::setInstance(VkInstance instance){
+		this->instance = instance;
+	}
+
+	void Engine::setQueueFamilyProperties(vector<VkQueueFamilyProperties> properties){
+		queue_family_properties.assign(properties.begin(), properties.end());
+	}
+
+	void Engine::setValidationLayers(vector<const char*> vlayers){
+		validations.assign(vlayers.begin(), vlayers.end());
+	}
+
+	void Engine::setDeviceExtensions(vector<const char *> extensions){
+		device_extensions.assign(extensions.begin(), extensions.end());
+	}
+
+	// getter
+
+	vector<VkQueueFamilyProperties> Engine::getQueueFamilyProperties()
+	{
+		return queue_family_properties;
+	}
+
+	vector<const char *> Engine::getDeviceExtensions()
+	{
+		return device_extensions;
+	}
+
+	vector<const char *> Engine::getInstanceExtensions()
+	{
+		return instance_extensions;
+	}
+
+	vector<const char *> Engine::getValidationLayers()
+	{
+		return validations;
+	}
+
 }
 
 #endif

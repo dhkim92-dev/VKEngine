@@ -12,5 +12,5 @@
 #include "vk_image.h"
 #include "vk_compute.h"
 #include "vk_queue_family.h"
-#include "vk_application.h"
+// #include "vk_application.h"
 #endif
