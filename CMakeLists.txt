@@ -48,7 +48,8 @@ ADD_LIBRARY(VKEngine SHARED
 			src/vk_program.cpp
 			src/vk_shader.cpp
 			src/vk_infos.cpp
-			src/vk_validations.cpp)
+			src/vk_validations.cpp
+			include/tools.h)
 
 ADD_LIBRARY(VKEngineStatic STATIC
 			src/vk_engine.cpp
@@ -63,7 +64,8 @@ ADD_LIBRARY(VKEngineStatic STATIC
 			src/vk_program.cpp
 			src/vk_shader.cpp
 			src/vk_infos.cpp
-			src/vk_validations.cpp)
+			src/vk_validations.cpp
+			include/tools.h)
 
 MESSAGE([ STATUS ]"PROJECT VERSION :  ${CMAKE_PROJECT_VERSION}")
 

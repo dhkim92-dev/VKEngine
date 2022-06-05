@@ -27,17 +27,22 @@ namespace VKEngine{
 		//this->instance = _instance;
 		this->engine= _engine;
 		this->instance = _engine->getInstance();
+		LOG("select GPU : %d\n", gpu_id);
 		selectGPU(gpu_id);
+		LOG("setupQueueFamilyIndices()\n");
 		setupQueueFamilyIndices();
 
 		if(surface != VK_NULL_HANDLE){
+			LOG("setupSurface()\n");
 			setupSurface(surface);
 		}
 
+		LOG("setupDevice()\n");
 		setupDevice(request_queues, 
 					engine->getDeviceExtensions(), 
 					engine->getValidationLayers()
 		);
+		LOG("setupMemoryProperties()\n");
 		setupMemoryProperties();
 	}
 
