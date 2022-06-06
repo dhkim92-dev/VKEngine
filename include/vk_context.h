@@ -20,8 +20,9 @@ public:
 
 //methods
 private:
-
 vector<VkDeviceQueueCreateInfo> createQueueCI(float *priorities);
+void setupQueueFamily();
+
 public:
 Context();
 Context(PhysicalDevice *pdevice, VkQueueFlags flags);
