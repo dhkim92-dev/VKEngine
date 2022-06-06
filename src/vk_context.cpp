@@ -36,6 +36,8 @@ VkResult Context::initDevice()
 	float queue_priorities = 1.0f;
 	VkPhysicalDevice _pdevice = pdevice->getPhysicalDevice();
 	VkBool32 found = pdevice->findQueueFamilyIndice(&indice, queue_flags);
+
+	LOG("Queue Family Found : %d\n", found);
 	if(found != VK_TRUE){
 		if(!indice.graphics.has_value())
 			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
@@ -48,6 +50,8 @@ VkResult Context::initDevice()
 	vector<VkDeviceQueueCreateInfo> dqueue_CI = createQueueCI(&queue_priorities);
 	Engine *engine = pdevice->getEngine();
 	VkDeviceCreateInfo device_CI = infos::deviceCreateInfo();
+	
+	LOG("Queue CI generate\n");
 	if(engine->isValidated()){
 		device_CI.enabledLayerCount = engine->getValidationLayers().size();
 		device_CI.ppEnabledLayerNames = engine->getValidationLayers().data();
@@ -68,6 +72,7 @@ VkResult Context::initDevice()
 		std::runtime_error("Context::initDevice() - Fail to create Vulkan device.\n");
 	}
 
+	LOG("init Device success\n");
 	return result;
 }
 
