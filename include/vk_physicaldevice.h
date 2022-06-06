@@ -20,6 +20,8 @@ private:
 // methods
 private:
 	void prepareDeviceProperties();
+	void prepareMemoryProperties();
+	void prepareDeviceFeatures();
 public: 
 	explicit PhysicalDevice(Engine* engine);
 	void init();

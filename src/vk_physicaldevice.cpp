@@ -13,6 +13,8 @@ PhysicalDevice::PhysicalDevice(Engine *engine)
 void PhysicalDevice::init()
 {
 	prepareDeviceProperties();
+	prepareMemoryProperties();
+	prepareDeviceFeatures();
 }
 
 
@@ -30,12 +32,22 @@ void PhysicalDevice::useGPU(int id)
 		LOG("Given GPU id is invalid. first gpu will be selected.");
 		id = 0;
 	}
-	setPhysicalDevice(pdevices[id]);
+	device = pdevices[id];
 }
 
 void PhysicalDevice::prepareDeviceProperties()
 {
 	vkGetPhysicalDeviceProperties(device, &properties);
+}
+
+void PhysicalDevice::prepareMemoryProperties()
+{
+	vkGetPhysicalDeviceMemoryProperties(device, &mem_properties);
+}
+
+void PhysicalDevice::prepareDeviceFeatures()
+{
+	vkGetPhysicalDeviceFeatures(device, &features);
 }
 
 VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQueueFlags flags)
