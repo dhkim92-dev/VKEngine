@@ -62,13 +62,13 @@ VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQue
 	int i = 0 ;
 	for(int i = 0 ;  i < queue_properties.size() ; i++){
 		VkQueueFamilyProperties prop = queue_properties[i];
-		if(prop.queueFlags == VK_QUEUE_GRAPHICS_BIT){
+		if((prop.queueFlags & VK_QUEUE_GRAPHICS_BIT)==VK_QUEUE_GRAPHICS_BIT){
 			indices.graphics = i;
 		}
-		if(prop.queueFlags == VK_QUEUE_COMPUTE_BIT){
+		if((prop.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT){
 			indices.compute = i;
 		}
-		if(prop.queueFlags == VK_QUEUE_TRANSFER_BIT){
+		if((prop.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT){
 			indices.transfer = i;
 		}
 
