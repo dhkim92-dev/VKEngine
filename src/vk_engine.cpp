@@ -33,11 +33,12 @@ namespace VKEngine{
 	}
 
 	void Engine::init(){
+		createInstance();
 		setupDebugMessenger();
 	}
 
 	void Engine::createInstance(){
-		if(instance != VK_NULL_HANDLE)
+		if(instance == VK_NULL_HANDLE)
 		{
 			_createInstance();
 		}
@@ -109,6 +110,10 @@ namespace VKEngine{
         }
 		LOG("Engine::setupDebugMessenger::createDebugUtilsMessengerEXT()\n");
     }
+
+	bool Engine::isValidated(){
+		return debug;
+	}
 
 	// setter
 	void Engine::setDebug(bool value){

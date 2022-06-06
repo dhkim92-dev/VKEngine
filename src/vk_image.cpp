@@ -60,7 +60,9 @@ VkResult Image::alloc(VkDeviceSize sz_mem, VkMemoryPropertyFlags flags){
 	VkBool32 found;
 	vkGetImageMemoryRequirements(device, image, &memory_requirements);
 	// LOG("Image::alloc GetMemoryRequirements\n");
-	info.memoryTypeIndex = context->getMemoryType(memory_requirements.memoryTypeBits, flags, &found);
+	info.memoryTypeIndex = context
+	->getPhysicalDevice()
+	->getMemoryType(memory_requirements.memoryTypeBits, flags, &found);
 	// LOG("Image::alloc getMemoryType done\n");
 	info.allocationSize = memory_requirements.size;
 	sz_memory = sz_mem;

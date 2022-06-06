@@ -37,6 +37,7 @@ MESSAGE("GLFW PATH : ${GLFW_PATH}")
 
 ADD_LIBRARY(VKEngine SHARED
 			src/vk_engine.cpp
+			src/vk_physicaldevice.cpp
 			src/vk_context.cpp
 			src/vk_swapchain.cpp
 			src/vk_buffer.cpp
@@ -53,6 +54,7 @@ ADD_LIBRARY(VKEngine SHARED
 
 ADD_LIBRARY(VKEngineStatic STATIC
 			src/vk_engine.cpp
+			src/vk_physicaldevice.cpp
 			src/vk_context.cpp
 			src/vk_swapchain.cpp
 			src/vk_buffer.cpp

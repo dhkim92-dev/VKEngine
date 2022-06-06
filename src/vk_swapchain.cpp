@@ -9,7 +9,9 @@ namespace VKEngine{
 
 	void SwapChain::connect(Engine *engine, Context *context, VkSurfaceKHR _surface){
 		ctx = context;
-		connect( engine->getInstance(), context->getPhysicalDevice(), context->getDevice(), _surface );
+		connect( engine->getInstance(), 
+			context->getPhysicalDevice()->getPhysicalDevice(), 
+			context->getDevice(), _surface);
 	}
 
 	void SwapChain::connect(VkInstance _instance, VkPhysicalDevice _gpu, VkDevice _device, VkSurfaceKHR _surface){
@@ -42,17 +44,18 @@ namespace VKEngine{
 		//QueueFamilyIndice indice = ctx->findQueueFamilies(gpu);
 		//ctx->setupPresentFamily();
 		uint32_t queue_family_indices[2];
-		if(ctx->queue_family_indices.graphics.has_value()){
-			queue_family_indices[0] = ctx->queue_family_indices.graphics.value();
+		QueueFamilyIndice ctx_qf = ctx->getQueueFamily();
+		if(ctx_qf.graphics.has_value()){
+			queue_family_indices[0] = ctx_qf.graphics.value();
 		}else{
 			std::runtime_error("Swapchain::create() No Graphics Queue Supported\n");
 		}
 
-		if(ctx->queue_family_indices.present.has_value()){
-			queue_family_indices[1] = ctx->queue_family_indices.present.value();
+		if(ctx_qf.present.has_value()){
+			queue_family_indices[1] = ctx_qf.present.value();
 		}else{
 			LOG("no present queue\n");
-			queue_family_indices[1] = ctx->queue_family_indices.graphics.value();
+			queue_family_indices[1] = ctx_qf.graphics.value();
 		}
 
 		if( queue_family_indices[0] != queue_family_indices[1]){

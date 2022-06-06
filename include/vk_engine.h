@@ -51,7 +51,7 @@ class Engine {
 	void setInstanceExtensions(vector<const char*> extensions);
 	void setDeviceExtensions(vector<const char *> extensions);
 
-
+	bool isValidated();
 	//getters
 	vector<VkQueueFamilyProperties> getQueueFamilyProperties();
 	vector<const char *> getDeviceExtensions();
