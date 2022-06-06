@@ -5,6 +5,11 @@
 
 namespace VKEngine{
 
+Context::Context()
+{
+
+}
+
 Context::Context(PhysicalDevice *pdevice, VkQueueFlags queue_flags) 
 : pdevice(pdevice), queue_flags(queue_flags)
 {
@@ -28,9 +33,9 @@ VkResult Context::initDevice()
 		LOG("Device already initialized");
 		return VK_SUCCESS;
 	}
+	float queue_priorities = 1.0f;
 	VkPhysicalDevice _pdevice = pdevice->getPhysicalDevice();
 	VkBool32 found = pdevice->findQueueFamilyIndice(&indice, queue_flags);
-	float queue_priorities = 1.0f;
 	if(found != VK_TRUE){
 		if(!indice.graphics.has_value())
 			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
@@ -146,7 +151,8 @@ void Context::destroyEvent(VkEvent *event)
 		vkDestroyEvent(device, *event, nullptr);
 }
 
-void Context::destroyFence(VkFence *fence){
+void Context::destroyFence(VkFence *fence)
+{
 	if(*fence != VK_NULL_HANDLE)
 		vkDestroyFence(device, *fence, nullptr);
 }
@@ -162,6 +168,28 @@ VkDevice Context::getDevice() const {
 QueueFamilyIndice Context::getQueueFamily() const
 {
 	return indice;
+}
+
+void Context::setQueueFlags(VkQueueFlags flags)
+{
+	if(device != VK_NULL_HANDLE) return;
+	queue_flags = flags;
+	setupQueueFamily();
+}
+
+void Context::setPhysicalDevice(PhysicalDevice *device)
+{
+	pdevice = device;
+}
+
+void Context::setDevice(VkDevice device)
+{
+	device = device;
+}
+
+void Context::setDeviceFeatures(VkPhysicalDeviceFeatures features)
+{
+	device_features = features;
 }
 
 vector<VkDeviceQueueCreateInfo> Context::createQueueCI(float *priorities)
@@ -188,6 +216,16 @@ vector<VkDeviceQueueCreateInfo> Context::createQueueCI(float *priorities)
 	}
 	return  qCI;
 }
-
+void Context::setupQueueFamily(){
+	VkBool32 found = pdevice->findQueueFamilyIndice(&indice, queue_flags);
+	if(found != VK_TRUE){
+		if(!indice.graphics.has_value())
+			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
+		if(!indice.compute.has_value())
+			indice.compute = indice.graphics.value();
+		if(!indice.transfer.has_value())
+			indice.transfer = indice.graphics.value();
+	}
+}
 }
 #endif

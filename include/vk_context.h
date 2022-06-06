@@ -23,7 +23,8 @@ private:
 
 vector<VkDeviceQueueCreateInfo> createQueueCI(float *priorities);
 public:
-explicit Context(PhysicalDevice *pdevice, VkQueueFlags flags);
+Context();
+Context(PhysicalDevice *pdevice, VkQueueFlags flags);
 ~Context();
 void destroy();
 
@@ -45,8 +46,10 @@ PhysicalDevice *getPhysicalDevice() const ;
 VkDevice getDevice() const ;
 QueueFamilyIndice getQueueFamily() const ;
 //setter
+void setQueueFlags(VkQueueFlags flags);
+void setPhysicalDevice(PhysicalDevice *device);
 void setDevice(VkDevice device);
-void setDeviceFeatures(VkPhysicalDevice features);
+void setDeviceFeatures(VkPhysicalDeviceFeatures features);
 
 
 //utils
