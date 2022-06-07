@@ -51,27 +51,39 @@ VkResult Context::initDevice()
 	Engine *engine = pdevice->getEngine();
 	VkDeviceCreateInfo device_CI = infos::deviceCreateInfo();
 	
-	vector<const char*> device_extensions = engine->getDeviceExtensions();
+	vector<const char*> device_extensions(engine->getDeviceExtensions());
+	vector<const char*> validation_layers(engine->getValidationLayers());
 	
 	for(int i = 0 ; i < device_extensions.size() ; i++)
 	{
 		if(pdevice->isSupportDeviceExtension(device_extensions[i])){
 			enabled_device_extensions.push_back(device_extensions[i]);
+		}else{
+			LOG("Device Extension %s not supported on this GPU.\n",device_extensions.data()+i);
 		}
 	}
 
 	device_CI.enabledExtensionCount=0;
 	device_CI.enabledLayerCount=0;
+	
 
-	LOG("Queue CI generate\n");
+	// LOG("Queue CI generate\n");
+	// LOG("validation layers size : %d\n", validation_layers.size());
 	if(engine->isValidated()){
-		device_CI.enabledLayerCount = engine->getValidationLayers().size();
-		device_CI.ppEnabledLayerNames = engine->getValidationLayers().data();
-	}
+		// for(int i = 0 ; i < validation_layers.size() ; i++){
+			// LOG("validation layer name : %s \n", (validation_layers[i]));
+		// }
 
+		device_CI.enabledLayerCount = validation_layers.size();
+		device_CI.ppEnabledLayerNames = validation_layers.data();
+	}
+	LOG("enabled_device_extension size : %d\n", enabled_device_extensions.size());
 	if(enabled_device_extensions.size() > 0){
+		for(int i = 0 ; i <enabled_device_extensions.size() ; i++){
+			LOG("device extension name : %s \n", (enabled_device_extensions[i]));
+		}
 		device_CI.enabledExtensionCount = engine->getDeviceExtensions().size();
-		device_CI.ppEnabledExtensionNames = engine->getDeviceExtensions().data();
+		device_CI.ppEnabledExtensionNames = enabled_device_extensions.data();
 	}
 	device_CI.pEnabledFeatures = &device_features;
 	device_CI.queueCreateInfoCount = dqueue_CI.size();

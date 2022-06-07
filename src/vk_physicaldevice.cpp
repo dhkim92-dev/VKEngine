@@ -58,15 +58,24 @@ void PhysicalDevice::prepareDeviceExtensions()
 	vector<VkExtensionProperties> props;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &nr_exts, nullptr);
 	props.resize(nr_exts);
+	LOG("This GPU has %d device extensions.\n", nr_exts);
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &nr_exts, props.data());
 
 	for(int i = 0 ; i< nr_exts ; i++){
+		// LOG("This GPU support extension name : %s\n", props[i].extensionName);
 		support_device_extensions.push_back(props[i].extensionName);
 	}
 }
 
 bool PhysicalDevice::isSupportDeviceExtension(const char *ext_name){
-	return (std::find(support_device_extensions.begin(), support_device_extensions.end(), ext_name) != support_device_extensions.end());
+	//return (std::find(support_device_extensions.begin(), support_device_extensions.end(), ext_name) != support_device_extensions.end());
+	for(int i = 0 ; i < support_device_extensions.size() ; i++){
+		if(strcmp(support_device_extensions[i],ext_name)==0){
+			return true;
+		}
+	}
+
+	return false;
 }
 
 VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQueueFlags flags)

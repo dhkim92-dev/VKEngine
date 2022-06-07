@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <cstring>
 #include "vk_engine.h"
 #include "vk_queue_family.h"
 #include "vk_utils.h"
