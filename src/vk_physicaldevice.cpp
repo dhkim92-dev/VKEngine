@@ -15,6 +15,7 @@ void PhysicalDevice::init()
 	prepareDeviceProperties();
 	prepareMemoryProperties();
 	prepareDeviceFeatures();
+	prepareDeviceExtensions();
 }
 
 
@@ -48,6 +49,24 @@ void PhysicalDevice::prepareMemoryProperties()
 void PhysicalDevice::prepareDeviceFeatures()
 {
 	vkGetPhysicalDeviceFeatures(device, &features);
+}
+
+void PhysicalDevice::prepareDeviceExtensions()
+{
+	uint32_t nr_exts;
+	
+	vector<VkExtensionProperties> props;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &nr_exts, nullptr);
+	props.resize(nr_exts);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &nr_exts, props.data());
+
+	for(int i = 0 ; i< nr_exts ; i++){
+		support_device_extensions.push_back(props[i].extensionName);
+	}
+}
+
+bool PhysicalDevice::isSupportDeviceExtension(const char *ext_name){
+	return (std::find(support_device_extensions.begin(), support_device_extensions.end(), ext_name) != support_device_extensions.end());
 }
 
 VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQueueFlags flags)

@@ -51,17 +51,32 @@ VkResult Context::initDevice()
 	Engine *engine = pdevice->getEngine();
 	VkDeviceCreateInfo device_CI = infos::deviceCreateInfo();
 	
+	vector<const char*> device_extensions = engine->getDeviceExtensions();
+	
+	for(int i = 0 ; i < device_extensions.size() ; i++)
+	{
+		if(pdevice->isSupportDeviceExtension(device_extensions[i])){
+			enabled_device_extensions.push_back(device_extensions[i]);
+		}
+	}
+
+	device_CI.enabledExtensionCount=0;
+	device_CI.enabledLayerCount=0;
+
 	LOG("Queue CI generate\n");
 	if(engine->isValidated()){
 		device_CI.enabledLayerCount = engine->getValidationLayers().size();
 		device_CI.ppEnabledLayerNames = engine->getValidationLayers().data();
 	}
 
-	if(engine->getDeviceExtensions().size() > 0){
+	if(enabled_device_extensions.size() > 0){
 		device_CI.enabledExtensionCount = engine->getDeviceExtensions().size();
 		device_CI.ppEnabledExtensionNames = engine->getDeviceExtensions().data();
 	}
 	device_CI.pEnabledFeatures = &device_features;
+	device_CI.queueCreateInfoCount = dqueue_CI.size();
+	device_CI.pQueueCreateInfos = dqueue_CI.data();
+
 	VkResult result = vkCreateDevice(pdevice->getPhysicalDevice(),
 		&device_CI,
 		nullptr,
@@ -210,7 +225,6 @@ vector<VkDeviceQueueCreateInfo> Context::createQueueCI(float *priorities)
 	}
 
 	if(queue_flags & VK_QUEUE_COMPUTE_BIT){
-		VkDeviceQueueCreateInfo info = infos::deviceQueueCreateInfo();
 		info.queueFamilyIndex = indice.compute.value();
 		qCI.push_back(info);
 	}

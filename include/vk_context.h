@@ -16,6 +16,7 @@ PhysicalDevice *pdevice = nullptr;
 VkQueueFlags queue_flags;
 VkPhysicalDeviceFeatures device_features={};
 QueueFamilyIndice indice;
+vector<const char*> enabled_device_extensions;
 public:
 
 //methods

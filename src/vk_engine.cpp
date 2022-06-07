@@ -11,9 +11,9 @@ namespace VKEngine{
 	}
 
 	Engine::Engine(string _name,
-				   vector<const char * > _instance_extensions,
+				   vector<const char*> _instance_extensions,
 				   vector<const char*> _device_extensions,
-				   vector<const char * > _validations
+				   vector<const char*> _validations
 	) : name(_name), instance_extensions(_instance_extensions), device_extensions(_device_extensions) ,validations(_validations) {};
 
 	Engine::~Engine(){
@@ -60,18 +60,23 @@ namespace VKEngine{
 
 		VkInstanceCreateInfo instance_info = infos::instanceCreateInfo();
 		instance_info.pApplicationInfo = &app_info;
+
+		if(debug){
+			instance_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		}
 		instance_info.ppEnabledExtensionNames = instance_extensions.data();
 		instance_info.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
 		VkDebugUtilsMessengerCreateInfoEXT debug_info{};
 
 		if(debug){
-			LOG("Enigne::createInstance() => validation setting\n");
+			LOG("Enigne::createInstance() => validation enabled\n");
 			instance_info.ppEnabledLayerNames = validations.data();
 			instance_info.enabledLayerCount = static_cast<uint32_t>(validations.size());
 			debug_info = infos::debugMessengerCreateInfo();
 			debug_info.pfnUserCallback = debugCallback;
 			instance_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debug_info;
 		}else{
+			LOG("Elngine::createInstance() => validation disabled\n");
 			instance_info.enabledLayerCount=0;
 			instance_info.pNext = nullptr;
 		}
@@ -81,19 +86,20 @@ namespace VKEngine{
 
 	bool Engine::checkValidationSupport(){
 		vector<VkLayerProperties> all_validations =  enumerateValidations();
-		bool res = true;
+		bool check = false;
 		for(const char* valid_name : validations){
-			bool check = false;
 			for(VkLayerProperties layer : all_validations){
-				if( !strcmp(valid_name, layer.layerName) ){
+				if( strcmp(valid_name, layer.layerName)  ==0){
 					check = true;
 					break;
 				}
 			}
-			res &= check;
+			if(!check){
+				return false;
+			}
 		}
 
-		return res;
+		return true;
 	}
 
 	void Engine::setupDebugMessenger() {

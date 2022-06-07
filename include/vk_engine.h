@@ -33,9 +33,9 @@ class Engine {
 	public :
 	explicit Engine(string _name);
 	explicit Engine(string _name,
-					vector< const char* > instance_extensions, 
-					vector <const char*> device_extensions,
-					vector< const char* > _validations
+					vector< const char*> _instance_extensions, 
+					vector <const char*> _device_extensions,
+					vector< const char*> _validations
 	);
 	~Engine();
 
