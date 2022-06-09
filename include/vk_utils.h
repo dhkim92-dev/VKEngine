@@ -11,10 +11,12 @@
 #include <cstdio>
 #include <cassert>
 #include <stdexcept>
+#include <chrono>
 
 using namespace std;
 
 #define LOG(...) printf(__VA_ARGS__)
+
 #define VK_CHECK_RESULT(f)																				\
 {																										\
 	VkResult res = (f);																					\
@@ -24,6 +26,15 @@ using namespace std;
 		assert(res == VK_SUCCESS);																		\
 	}																									\
 }																						
+
+#define PROFILING(FPTR, FNAME) ({ \
+		std::chrono::system_clock::time_point start = std::chrono::system_clock::now(); \
+		FPTR; \
+		std::chrono::duration<double> t = std::chrono::system_clock::now() - start; \
+		printf("%s operation time : %.4lf seconds\n",FNAME, t.count()); \
+})
+
+
 
 namespace VKEngine{
 	struct SwapChainSupportDetail{

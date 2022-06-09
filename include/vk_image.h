@@ -23,7 +23,6 @@ private :
 Context *context = nullptr;
 VkDevice device = VK_NULL_HANDLE;
 void *data = nullptr;
-public : 
 VkImage image = VK_NULL_HANDLE;
 VkDeviceMemory memory = VK_NULL_HANDLE;
 VkImageType type;
@@ -41,6 +40,7 @@ uint32_t height, width, channels;
 uint32_t mip_level, nr_layers;
 VkDeviceSize sz_memory = 0;
 
+public : 
 Image();
 Image(Context *ctx);
 ~Image();
@@ -89,6 +89,10 @@ VkImageMemoryBarrier barrier(
 
 	VkImageLayout getLayout() const {
 		return this->layout;
+	}
+
+	VkDescriptorImageInfo* getDescriptorInfoPtr(){
+		return &this->descriptor;
 	}
 };
 
