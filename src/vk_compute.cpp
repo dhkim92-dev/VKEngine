@@ -17,8 +17,9 @@ ComputePipelineBuilder::~ComputePipelineBuilder(){
 
 void ComputePipelineBuilder::setComputeShader(string file_path, VkSpecializationInfo *sinfo)
 {
-	if(compute_shader!=VK_NULL_HANDLE)
+	if(compute_shader==VK_NULL_HANDLE)
 		compute_shader = loadShader(file_path, context->getDevice());
+
 	VkPipelineShaderStageCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	info.stage = VK_SHADER_STAGE_COMPUTE_BIT;

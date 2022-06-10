@@ -33,7 +33,7 @@ class DescriptorSetBuilder
 {
 	private:
 	Context *ctx;
-	VkDescriptorPool pool;
+	VkDescriptorPool pool=VK_NULL_HANDLE;
 
 	public:
 	explicit DescriptorSetBuilder(Context *ctx);
@@ -44,6 +44,7 @@ class DescriptorSetBuilder
 	VkResult setDescriptorPool(VkDescriptorPoolSize * pool_sizes, size_t count,  uint32_t max_sets, VkDescriptorPoolCreateFlags flags=VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, void *pNext=nullptr);
 	VkResult build(VkDescriptorSet *dst, VkDescriptorSetLayout* layouts, int count, void *pNext=nullptr);
 	VkResult free(VkDescriptorSet *sets, uint32_t count);
+	VkDescriptorPool getPool() const {return pool;}
 };
 
 }

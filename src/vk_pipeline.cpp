@@ -51,26 +51,35 @@ void PipelineCacheBuilder::destroy(Context *ctx, VkPipelineCache *cache)
 }
 
 //Graphics Pipeline Builder
-GraphicsPipelineBuilder::GraphicsPipelineBuilder(Context *context) : context(context){};
+GraphicsPipelineBuilder::GraphicsPipelineBuilder(Context *context) : context(context){
+	vertex_shader = VK_NULL_HANDLE;
+	fragment_shader = VK_NULL_HANDLE;
+	geometry_shader = VK_NULL_HANDLE;
+	tesselation_control_shader = VK_NULL_HANDLE;
+	tesselation_evaluation_shader= VK_NULL_HANDLE;
+};
 
 void GraphicsPipelineBuilder::createVertexShader(const string file_path)
 {
-	if(vertex_shader != VK_NULL_HANDLE) throw std::runtime_error("Vertex shader already generated.\n");
+	LOG("create Vertex Shader called\n");
+	// if(vertex_shader != VK_NULL_HANDLE) return ;
 	vertex_shader = loadShader(file_path, context->getDevice());
-	if(vertex_shader != VK_NULL_HANDLE){
-		VkPipelineShaderStageCreateInfo info = infos::shaderStageCreateInfo("main", vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
-		stages.push_back(info);
-	}
+	LOG("vertex shader generate\n");
+	VkPipelineShaderStageCreateInfo info = infos::shaderStageCreateInfo("main", vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
+	stages.push_back(info);
+	LOG("stage size : %d\n",stages.size());
+
 }
 
 void GraphicsPipelineBuilder::createFragmentShader(const string file_path)
 {
-	if(fragment_shader != VK_NULL_HANDLE) throw std::runtime_error("Fragment Shader already generated.\n");
+	LOG("createFragmentShader called\n");
+	// if(fragment_shader != VK_NULL_HANDLE) return;
 	fragment_shader = loadShader(file_path, context->getDevice());
-	if(fragment_shader != VK_NULL_HANDLE){
-		VkPipelineShaderStageCreateInfo info = infos::shaderStageCreateInfo("main", fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
-		stages.push_back(info);
-	}
+	LOG("frag shader generate\n");
+	VkPipelineShaderStageCreateInfo info = infos::shaderStageCreateInfo("main", fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
+	stages.push_back(info);
+	LOG("stage size : %d\n",stages.size());
 }
 
 void GraphicsPipelineBuilder::createGeometryShader(const string file_path)
@@ -80,9 +89,10 @@ void GraphicsPipelineBuilder::createGeometryShader(const string file_path)
 	VkPhysicalDeviceFeatures features = context->getPhysicalDevice()->getDeviceFeatures();
 	if(features.geometryShader == VK_TRUE){
 		geometry_shader = loadShader(file_path, context->getDevice());
-		if(geometry_shader != VK_NULL_HANDLE){
+		if(geometry_shader == VK_NULL_HANDLE){
 			VkPipelineShaderStageCreateInfo info = infos::shaderStageCreateInfo("main", geometry_shader, VK_SHADER_STAGE_GEOMETRY_BIT);
 			stages.push_back(info);
+			LOG("stage size : %d\n",stages.size());
 		}
 	}else{
 		std::runtime_error("Your GPU does not support geometry shader.\n");
@@ -96,7 +106,7 @@ void GraphicsPipelineBuilder::createTesselationControlShader(const string file_p
 	VkPhysicalDeviceFeatures features = context->getPhysicalDevice()->getDeviceFeatures();
 	if(features.tessellationShader == VK_TRUE){
 		tesselation_control_shader= loadShader(file_path, context->getDevice());
-		if(tesselation_control_shader != VK_NULL_HANDLE){
+		if(tesselation_control_shader == VK_NULL_HANDLE){
 			VkPipelineShaderStageCreateInfo info = infos::shaderStageCreateInfo("main", tesselation_control_shader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 			stages.push_back(info);
 		}
@@ -121,6 +131,12 @@ void GraphicsPipelineBuilder::createTesselationEvaluationShader(const string fil
 	}
 }
 
+void GraphicsPipelineBuilder::setVertexInputState(VkPipelineVertexInputStateCreateInfo info)
+{
+	states.vertex = info;
+}
+
+
 VkResult GraphicsPipelineBuilder::build(VkPipeline *pipeline, VkRenderPass renderpass, VkPipelineLayout layout, VkPipelineCache cache, uint32_t subpass)
 {
 	VkGraphicsPipelineCreateInfo info={};
@@ -129,6 +145,7 @@ VkResult GraphicsPipelineBuilder::build(VkPipeline *pipeline, VkRenderPass rende
 	info.layout = layout;
 	info.stageCount = stages.size();
 	info.pStages = stages.data();
+	LOG("stage size : %d\n",stages.size());
 	info.pInputAssemblyState = &states.input_assembly;
 	info.pColorBlendState = &states.color_blend;
 	info.pRasterizationState = &states.rasterization;
@@ -256,10 +273,6 @@ void GraphicsPipelineBuilder::setDynamicState(uint32_t nr_dstates, VkDynamicStat
 	setDynamicState(info);
 }
 
-void GraphicsPipelineBuilder::setVertexInputState(VkPipelineVertexInputStateCreateInfo info)
-{
-	states.vertex = info;
-}
 
 GraphicsPipelineBuilder::~GraphicsPipelineBuilder()
 {

@@ -129,25 +129,21 @@ namespace VKEngine{
 
 	void SwapChain::destroy(){
 		assert(device);
-		LOG("SwapChain::destroy\n");
 		if(swapchain!=VK_NULL_HANDLE){
-			LOG("if(swapchain)\n");
 			for(auto buffer : buffers){
 				vkDestroyImageView(device, buffer.view, nullptr);
 			}
 		}
 
 		if(surface!=VK_NULL_HANDLE){
-			LOG("if(surface)\n");
 			vkDestroySwapchainKHR(device, swapchain, nullptr);
 			#ifndef GLFW_INCLUDE_VULKAN
 			vkDestroySurfaceKHR(instance, surface, nullptr);
 			#endif
 		}
 		swapchain = VK_NULL_HANDLE;
-		#ifndef GLFW_INCLUDE_VULKAN
 		surface = VK_NULL_HANDLE;
-		#endif
+		LOG("SwapChain::destroy\n");
 	}
 
 	VkResult SwapChain::acquiredNextImage(VkSemaphore present_complete_semaphore, uint32_t *image_index){

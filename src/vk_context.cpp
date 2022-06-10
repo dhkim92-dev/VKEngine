@@ -62,7 +62,7 @@ VkResult Context::initDevice()
 			LOG("Device Extension %s not supported on this GPU.\n",device_extensions.data()+i);
 		}
 	}
-
+	// enabled_device_extensions.push_back("VK_KHR_portability_subset");
 	device_CI.enabledExtensionCount=0;
 	device_CI.enabledLayerCount=0;
 	

@@ -61,6 +61,14 @@ void PhysicalDevice::prepareDeviceExtensions()
 	LOG("This GPU has %d device extensions.\n", nr_exts);
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &nr_exts, props.data());
 
+	for(int i = 0 ; i < props.size() ; i++){
+		if(strcmp(props[i].extensionName, "VK_KHR_portability_subset") == 0 )
+		{
+			support_device_extensions.push_back(props[i].extensionName);
+			break;
+		}
+	}
+
 	for(int i = 0 ; i< nr_exts ; i++){
 		// LOG("This GPU support extension name : %s\n", props[i].extensionName);
 		support_device_extensions.push_back(props[i].extensionName);
@@ -91,13 +99,26 @@ VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQue
 	for(int i = 0 ;  i < queue_properties.size() ; i++){
 		VkQueueFamilyProperties prop = queue_properties[i];
 		if((prop.queueFlags & VK_QUEUE_GRAPHICS_BIT)==VK_QUEUE_GRAPHICS_BIT){
-			indices.graphics = i;
+			if(!indices.graphics.has_value()) {
+				indices.graphics = i;
+				indices.present = i;
+				LOG("graphics queue index : %d\n", i);
+				continue;
+			}
 		}
 		if((prop.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT){
-			indices.compute = i;
+			if(!indices.compute.has_value()) {
+				indices.compute = i;
+				LOG("compute queue index : %d\n", i);
+				continue;
+			}
 		}
 		if((prop.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT){
-			indices.transfer = i;
+			if(!indices.transfer.has_value()) {
+				LOG("transfer queue index : %d\n", i);
+				indices.transfer = i;
+				continue;
+			}
 		}
 
 		if(indices.isSupport(flags)){
@@ -165,6 +186,11 @@ VkPhysicalDeviceMemoryProperties PhysicalDevice::getMemoryProperties(){
 
 Engine* PhysicalDevice::getEngine(){
 	return engine;
+}
+
+vector<const char*> PhysicalDevice::getSupportedExtensions() 
+{
+	return support_device_extensions;
 }
 
 }

@@ -44,6 +44,7 @@ public:
 	VkPhysicalDeviceFeatures getDeviceFeatures();
 	VkPhysicalDeviceProperties getDeviceProperties();
 	VkPhysicalDeviceMemoryProperties getMemoryProperties();
+	vector<const char*> getSupportedExtensions();
 	Engine* getEngine();
 
 };

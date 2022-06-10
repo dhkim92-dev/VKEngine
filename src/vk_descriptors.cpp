@@ -88,8 +88,7 @@ VkResult DescriptorSetBuilder::build(VkDescriptorSet *dst, VkDescriptorSetLayout
 	info.descriptorSetCount = count;
 	info.descriptorPool = pool;
 	info.pNext = pNext;
-
-	return vkAllocateDescriptorSets(ctx->getDevice(), nullptr, dst);
+	return vkAllocateDescriptorSets(ctx->getDevice(), &info, dst);
 }
 
 VkResult DescriptorSetBuilder::free(VkDescriptorSet *sets, uint32_t count){
@@ -118,7 +117,7 @@ VkWriteDescriptorSet DescriptorWriter::writeBuffer(VkDescriptorSet set, VkDescri
 	return info;
 }
 
-VkWriteDescriptorSet writeImage(VkDescriptorSet set, VkDescriptorType type, uint32_t binding, Image *image, uint32_t descriptor_count)
+VkWriteDescriptorSet DescriptorWriter::writeImage(VkDescriptorSet set, VkDescriptorType type, uint32_t binding, Image *image, uint32_t descriptor_count)
 {
 	VkWriteDescriptorSet info = {};
 	info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
