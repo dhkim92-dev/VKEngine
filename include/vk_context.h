@@ -52,7 +52,7 @@ void setQueueFlags(VkQueueFlags flags);
 void setPhysicalDevice(PhysicalDevice *device);
 void setDevice(VkDevice device);
 void setDeviceFeatures(VkPhysicalDeviceFeatures features);
-
+void setPresentQueueIndex(uint32_t value);
 
 //utils
 

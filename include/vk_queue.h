@@ -57,6 +57,7 @@ namespace VKEngine{
 		VkResult waitFences(VkFence* fences, uint32_t nr_fences, bool wait_all=true, uint64_t timeout = UINT64_MAX);
 		void destroyFence(VkFence fence);
 		VkResult waitIdle();
+		VkResult present(VkSwapchainKHR *swapchain, uint32_t swapchain_count, uint32_t *image_index, VkSemaphore* wait_smp);
 
 		void free(VkCommandBuffer *command_buffers, uint32_t nr_command_buffers);
 		void bindPipeline(VkCommandBuffer command_buffer, VkPipelineBindPoint bind_point, VkPipeline pipeline);

@@ -39,7 +39,7 @@ VkResult Context::initDevice()
 
 	LOG("Queue Family Found : %d\n", found);
 	if(found != VK_TRUE){
-		if(!indice.graphics.has_value())
+		if( (queue_flags & VK_QUEUE_GRAPHICS_BIT == VK_QUEUE_GRAPHICS_BIT) && !indice.graphics.has_value())
 			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
 		if(!indice.compute.has_value())
 			indice.compute = indice.graphics.value();
@@ -247,15 +247,34 @@ vector<VkDeviceQueueCreateInfo> Context::createQueueCI(float *priorities)
 	}
 	return  qCI;
 }
+
+void Context::setPresentQueueIndex(uint32_t value)
+{
+	indice.present = value;
+}
+
 void Context::setupQueueFamily(){
 	VkBool32 found = pdevice->findQueueFamilyIndice(&indice, queue_flags);
 	if(found != VK_TRUE){
-		if(!indice.graphics.has_value())
+		if((queue_flags & VK_QUEUE_GRAPHICS_BIT == VK_QUEUE_GRAPHICS_BIT) && !indice.graphics.has_value())
 			std::runtime_error("This Device has no Suitable Queue Family. Maybe not support Vulkan API.");
 		if(!indice.compute.has_value())
-			indice.compute = indice.graphics.value();
-		if(!indice.transfer.has_value())
-			indice.transfer = indice.graphics.value();
+		{
+			if(indice.graphics.has_value()){
+				indice.compute = indice.graphics.value();
+			}else{
+				LOG("No Compute Queue Support.\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+		if(!indice.transfer.has_value()){
+			if(indice.graphics.has_value()){
+				indice.transfer = indice.graphics.value();
+			}else{
+				LOG("No Transfer Queue Support.\n");
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
 }
 }

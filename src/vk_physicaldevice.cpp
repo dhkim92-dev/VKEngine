@@ -36,6 +36,16 @@ void PhysicalDevice::useGPU(int id)
 	device = pdevices[id];
 }
 
+void PhysicalDevice::useSwapchain(bool value)
+{
+	use_swapchain = value;
+}
+
+// bool PhysicalDevice::isSwapchainEnabled()
+// {
+	// return use_swapchain;
+// }
+
 void PhysicalDevice::prepareDeviceProperties()
 {
 	vkGetPhysicalDeviceProperties(device, &properties);
@@ -61,6 +71,22 @@ void PhysicalDevice::prepareDeviceExtensions()
 	LOG("This GPU has %d device extensions.\n", nr_exts);
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &nr_exts, props.data());
 
+	if(use_swapchain)
+	{
+		bool found = false;
+		for(int i = 0 ; i < props.size() ; ++i){
+			if(strcmp( props[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0){
+				found = true;
+				support_device_extensions.push_back(props[i].extensionName);
+				break;
+			}
+		}
+		if(!found){
+			LOG("Your GPU doesn't support VK_KHR_SWAPCHAIN_EXTENSION.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	for(int i = 0 ; i < props.size() ; i++){
 		if(strcmp(props[i].extensionName, "VK_KHR_portability_subset") == 0 )
 		{
@@ -70,10 +96,10 @@ void PhysicalDevice::prepareDeviceExtensions()
 	}
 
 	for(int i = 0 ; i< nr_exts ; i++){
-		// LOG("This GPU support extension name : %s\n", props[i].extensionName);
 		support_device_extensions.push_back(props[i].extensionName);
 	}
 }
+
 
 bool PhysicalDevice::isSupportDeviceExtension(const char *ext_name){
 	//return (std::find(support_device_extensions.begin(), support_device_extensions.end(), ext_name) != support_device_extensions.end());
@@ -184,13 +210,14 @@ VkPhysicalDeviceMemoryProperties PhysicalDevice::getMemoryProperties(){
 	return mem_properties;
 }
 
-Engine* PhysicalDevice::getEngine(){
-	return engine;
-}
 
 vector<const char*> PhysicalDevice::getSupportedExtensions() 
 {
 	return support_device_extensions;
+}
+
+Engine* PhysicalDevice::getEngine(){
+	return engine;
 }
 
 }

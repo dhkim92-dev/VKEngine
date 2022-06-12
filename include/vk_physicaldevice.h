@@ -23,6 +23,7 @@ private:
 	VkPhysicalDeviceFeatures features;
 	VkPhysicalDeviceMemoryProperties mem_properties;
 	vector<const char *> support_device_extensions;
+	bool use_swapchain =false;
 // methods
 private:
 	void prepareDeviceProperties();
@@ -33,12 +34,14 @@ public:
 	explicit PhysicalDevice(Engine* engine);
 	void init();
 	void useGPU(int id);
+	void useSwapchain(bool value);
 	VkBool32 findQueueFamilyIndice(QueueFamilyIndice *pindice,VkQueueFlags flags);
 	uint32_t getMemoryType(uint32_t type, VkMemoryPropertyFlags flags, VkBool32* found=nullptr);
 	bool isSupportDeviceExtension(const char *ext_name);
 	//setter
 	void setPhysicalDevice(VkPhysicalDevice pdevice);
 	void setQueueFlags(VkQueueFlags queue_flags);
+	// bool isSwapchainEnabled();
 	//getter
 	VkPhysicalDevice getPhysicalDevice();
 	VkPhysicalDeviceFeatures getDeviceFeatures();

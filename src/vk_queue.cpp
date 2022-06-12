@@ -119,6 +119,21 @@ namespace VKEngine{
 		info.pWaitDstStageMask = wait_signal_stage_mask;
 		return vkQueueSubmit(queue, 1, &info, fence);
 	}
+
+	VkResult CommandQueue::present(VkSwapchainKHR *swapchain, uint32_t swapchain_count, uint32_t *image_index, VkSemaphore* wait_smp)
+	{
+		VkPresentInfoKHR info ={};
+		info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		info.pSwapchains = swapchain;
+		info.swapchainCount = swapchain_count;
+		info.pWaitSemaphores = wait_smp;
+		info.waitSemaphoreCount = (wait_smp == nullptr) ? 0 : 1;
+		info.pImageIndices = image_index;
+		info.pResults=nullptr;
+		info.pNext=nullptr;
+		
+		return vkQueuePresentKHR(queue, &info);
+	}
 	
 	VkResult CommandQueue::resetFences(VkFence *fences, uint32_t nr_fences){
 		VkDevice device = context->getDevice();
