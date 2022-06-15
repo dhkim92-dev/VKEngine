@@ -146,14 +146,13 @@ VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQue
 				continue;
 			}
 		}
+	}
 
-		if(indices.isSupport(flags)){
-			found = VK_TRUE;
-			pindice->graphics = indices.graphics;
-			pindice->transfer = indices.transfer;
-			pindice->compute = indices.compute;	
-			break;
-		}
+	if(indices.isSupport(flags)){
+		found = VK_TRUE;
+		pindice->graphics = indices.graphics;
+		pindice->transfer = indices.transfer;
+		pindice->compute = indices.compute;	
 	}
 
 	return found;
