@@ -114,28 +114,29 @@ namespace VKEngine{
 		}
 	}
 
-	VkShaderModule loadShader(const string &file_path, VkDevice device){
+	VkShaderModule loadShader(const string file_path, VkDevice device){
 		//LOG("read file path : %s\n", file_path.c_str());
 		VkShaderModule shader_module = VK_NULL_HANDLE;
 		std::ifstream is(file_path, std::ios::binary | std::ios::in | std::ios::ate);
-			if (is.is_open())		{
-				size_t size = is.tellg();
-				is.seekg(0, std::ios::beg);
-				char* shader_code = new char[size];
-				is.read(shader_code, size);
-				is.close();
-				//LOG("shader read info : %s\n", file_path.c_str());
-				assert(size > 0);
-				VkShaderModuleCreateInfo moduleCreateInfo{};
-				moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-				moduleCreateInfo.codeSize = size;
-				moduleCreateInfo.pCode = (uint32_t*)shader_code;
-				VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shader_module));
-				delete[] shader_code;
-			}
-			else{
-				std::cerr << "Error: Could not open shader file \"" << file_path << "\"" << "\n";
-			}
+		if (is.is_open()){
+			size_t size = is.tellg();
+			LOG("shader code size : %d\n", size);
+			is.seekg(0, std::ios::beg);
+			char* shader_code = new char[size];
+			is.read(shader_code, size);
+			is.close();
+			LOG("shader read info : %s\n", file_path.c_str());
+			assert(size > 0);
+			VkShaderModuleCreateInfo moduleCreateInfo{};
+			moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			moduleCreateInfo.codeSize = size;
+			moduleCreateInfo.pCode = (uint32_t*)shader_code;
+			VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shader_module));
+			delete[] shader_code;
+		}
+		else{
+			std::cerr << "Error: Could not open shader file \"" << file_path << "\"" << "\n";
+		}
 		return shader_module;
 	}
 };

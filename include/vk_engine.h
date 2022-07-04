@@ -11,53 +11,63 @@
 #include <cstring>
 #include "vk_utils.h"
 #include "vk_infos.h"
+#include "vk_validations.h"
 
 using namespace std;
 
 namespace VKEngine{
+class Engine {
+	// fields
+	public :
+	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+	private :
+	VkInstance instance = VK_NULL_HANDLE;
+	vector<VkQueueFamilyProperties> queue_family_properties;
+	string name;
+	vector<const char *> validations;
+	vector<const char *> instance_extensions;
+	vector<const char*>  device_extensions;
+	bool debug = false;
 
-		class Engine {
-		public :
-		const string name;
-		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
-		vector<VkQueueFamilyProperties> queue_family_properties;
-		const vector<const char *> validations;
-		const vector<const char *> instance_extensions;
-		const vector<const char*>  device_extensions;
-		bool debug = false;
+	//methods
+	public :
+	explicit Engine(string _name);
+	explicit Engine(string _name,
+					vector< const char*> _instance_extensions, 
+					vector <const char*> _device_extensions,
+					vector< const char*> _validations
+	);
+	~Engine();
 
-		private :
-		VkInstance instance = VK_NULL_HANDLE;
-				
-		public :
-		explicit Engine(const string _name,
-						const vector< const char* > instance_extensions, 
-						const vector <const char*> device_extensions,
-						const vector< const char* > _validations
-		);
-		~Engine();
-		void init();
-		void destroy();
-		void setDebug(bool value);
+	void init();
+	void destroy();
+	void setDebug(bool value);
+	void createInstance();
 
-		VkInstance getInstance() const {
-			return this->instance;
-		}
+	//setters
+	void setInstance(VkInstance instance);
+	void setQueueFamilyProperties(vector<VkQueueFamilyProperties> properties);
+	void setValidationLayers(vector<const char*> vlayers);
+	void setInstanceExtensions(vector<const char*> extensions);
+	void setDeviceExtensions(vector<const char *> extensions);
 
-		private :
-		void createInstance();
-		bool checkValidationSupport();
-		bool checkDeviceFeaturesSupport();
-		void setupDebugMessenger();
+	bool isValidated();
+	//getters
+	vector<VkQueueFamilyProperties> getQueueFamilyProperties();
+	vector<const char *> getDeviceExtensions();
+	vector<const char *> getInstanceExtensions();
+	vector<const char *> getValidationLayers();
 
-		// 0.1.4 add
-		void setVkInstance(VkInstance *instance);
-		
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData){
-			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-			return VK_FALSE;
-		};
-	};
+	VkInstance getInstance() const {
+		return this->instance;
+	}
+
+	private :
+	void _createInstance();
+	bool checkValidationSupport();
+	bool checkDeviceFeaturesSupport();
+	void setupDebugMessenger();
+};
 }
 
 #endif

@@ -21,10 +21,10 @@ namespace VKEngine
 		VkBufferUsageFlags usage;
 		VkMemoryRequirements memory_requirements;
 		VkMemoryPropertyFlags memory_properties;
+		VkDescriptorBufferInfo descriptor;
 
 		public :
 		void *data = nullptr;
-		VkDescriptorBufferInfo descriptor;
 
 		private :
 		void allocate(VkDeviceSize offset = 0, VkDeviceSize size = 0);
@@ -63,6 +63,10 @@ namespace VKEngine
 
 		VkDeviceSize getSize() const {
 			return this->size;
+		}
+
+		VkDescriptorBufferInfo* getDescriptorInfoPtr(){
+			return &this->descriptor;
 		}
 	};
 };

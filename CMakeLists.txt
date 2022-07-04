@@ -37,6 +37,7 @@ MESSAGE("GLFW PATH : ${GLFW_PATH}")
 
 ADD_LIBRARY(VKEngine SHARED
 			src/vk_engine.cpp
+			src/vk_physicaldevice.cpp
 			src/vk_context.cpp
 			src/vk_swapchain.cpp
 			src/vk_buffer.cpp
@@ -45,14 +46,17 @@ ADD_LIBRARY(VKEngine SHARED
 			src/vk_queue_family.cpp
 			src/vk_utils.cpp
 			src/vk_compute.cpp
-			src/vk_program.cpp
+			src/vk_pipeline.cpp
 			src/vk_shader.cpp
 			src/vk_infos.cpp
-			src/vk_application.cpp)
-
+			src/vk_validations.cpp
+			src/vk_descriptors.cpp
+			src/vk_functions.cpp
+			)
 
 ADD_LIBRARY(VKEngineStatic STATIC
 			src/vk_engine.cpp
+			src/vk_physicaldevice.cpp
 			src/vk_context.cpp
 			src/vk_swapchain.cpp
 			src/vk_buffer.cpp
@@ -61,10 +65,13 @@ ADD_LIBRARY(VKEngineStatic STATIC
 			src/vk_queue_family.cpp
 			src/vk_utils.cpp
 			src/vk_compute.cpp
-			src/vk_program.cpp
+			src/vk_pipeline.cpp
 			src/vk_shader.cpp
 			src/vk_infos.cpp
-			src/vk_application.cpp)
+			src/vk_validations.cpp
+			src/vk_descriptors.cpp
+			src/vk_functions.cpp
+			)
 
 MESSAGE([ STATUS ]"PROJECT VERSION :  ${CMAKE_PROJECT_VERSION}")
 

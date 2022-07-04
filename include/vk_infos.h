@@ -433,13 +433,14 @@ namespace VKEngine
 		}
 
 		inline VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo(
-			const vector<VkDynamicState> & states,
+			VkDynamicState *p_dynamics,
+			size_t count,
 			VkPipelineDynamicStateCreateFlags flags = 0
 		){
 			VkPipelineDynamicStateCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-			info.pDynamicStates = states.data();
-			info.dynamicStateCount = states.size();
+			info.pDynamicStates = p_dynamics;
+			info.dynamicStateCount = count;
 			info.flags = flags;
 			return info;
 		}

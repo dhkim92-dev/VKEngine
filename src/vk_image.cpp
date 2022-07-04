@@ -30,11 +30,16 @@ void Image::create(Context *ctx){
 	device = ctx->getDevice();
 }
 
-VkResult Image::createImage(uint32_t w, uint32_t h, uint32_t ch,
-					VkImageType img_type, VkImageUsageFlags img_usage,
-					VkFormat img_format, VkImageTiling img_tiling, 
-					VkSampleCountFlagBits sample, uint32_t mip_level, uint32_t array_layer
-					){
+VkResult Image::createImage(
+	uint32_t w, uint32_t h, uint32_t ch,
+	VkImageType img_type, 
+	VkImageUsageFlags img_usage,
+	VkFormat img_format, 
+	VkImageTiling img_tiling, 
+	VkSampleCountFlagBits sample, 
+	uint32_t mip_level, 
+	uint32_t array_layer
+){
 	VkImageCreateInfo info = infos::imageCreateInfo();
 	info.imageType = img_type;
 	info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -60,7 +65,9 @@ VkResult Image::alloc(VkDeviceSize sz_mem, VkMemoryPropertyFlags flags){
 	VkBool32 found;
 	vkGetImageMemoryRequirements(device, image, &memory_requirements);
 	// LOG("Image::alloc GetMemoryRequirements\n");
-	info.memoryTypeIndex = context->getMemoryType(memory_requirements.memoryTypeBits, flags, &found);
+	info.memoryTypeIndex = context
+	->getPhysicalDevice()
+	->getMemoryType(memory_requirements.memoryTypeBits, flags, &found);
 	// LOG("Image::alloc getMemoryType done\n");
 	info.allocationSize = memory_requirements.size;
 	sz_memory = sz_mem;
@@ -77,7 +84,10 @@ VkResult Image::bind(VkDeviceSize offset){
 	return vkBindImageMemory(device, this->image, this->memory, offset);
 }
 
-VkResult Image::createImageView(VkImageViewType view_type, VkImageSubresourceRange range){
+VkResult Image::createImageView(
+	VkImageViewType view_type,  
+	VkImageSubresourceRange range
+){
 	VkImageViewCreateInfo view_CI = infos::imageViewCreateInfo();
 	view_CI.image = image;
 	view_CI.format = format;
@@ -91,6 +101,21 @@ VkResult Image::createImageView(VkImageViewType view_type, VkImageSubresourceRan
 	view_CI.subresourceRange = range;
 	return vkCreateImageView(device, &view_CI, nullptr, &view);
 }
+
+VkResult Image::createImageView(
+	VkImageViewType view_type,  
+	VkImageSubresourceRange range,
+	VkComponentMapping components
+){
+	VkImageViewCreateInfo view_CI = infos::imageViewCreateInfo();
+	view_CI.image = image;
+	view_CI.format = format;
+	view_CI.viewType = view_type;
+	view_CI.components = components;
+	view_CI.subresourceRange = range;
+	return vkCreateImageView(device, &view_CI, nullptr, &view);
+}
+
 
 VkResult Image::createSampler(VkSamplerCreateInfo *info){
 	return vkCreateSampler(device, info, nullptr, &sampler);	

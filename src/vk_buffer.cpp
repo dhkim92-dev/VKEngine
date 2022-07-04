@@ -49,7 +49,8 @@ namespace VKEngine{
 		VkMemoryAllocateInfo malloc_CI = infos::memoryAllocateInfo();		
 		vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
 		//malloc_CI.allocationSize = size;
-		malloc_CI.memoryTypeIndex=context->getMemoryType(memory_requirements.memoryTypeBits, memory_properties);
+		malloc_CI.memoryTypeIndex=context->getPhysicalDevice()
+			->getMemoryType(memory_requirements.memoryTypeBits, memory_properties, nullptr);
 		malloc_CI.allocationSize = memory_requirements.size;
 		VkMemoryAllocateFlagsInfoKHR malloc_FI = {};
 		if(usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT){

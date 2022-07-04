@@ -23,7 +23,6 @@ private :
 Context *context = nullptr;
 VkDevice device = VK_NULL_HANDLE;
 void *data = nullptr;
-public : 
 VkImage image = VK_NULL_HANDLE;
 VkDeviceMemory memory = VK_NULL_HANDLE;
 VkImageType type;
@@ -41,6 +40,7 @@ uint32_t height, width, channels;
 uint32_t mip_level, nr_layers;
 VkDeviceSize sz_memory = 0;
 
+public : 
 Image();
 Image(Context *ctx);
 ~Image();
@@ -55,6 +55,7 @@ VkResult alloc(VkDeviceSize sz_mem, VkMemoryPropertyFlags flags);
 void setMemory(VkDeviceMemory mem);
 VkResult bind(VkDeviceSize offset);
 VkResult createImageView(VkImageViewType view_type, VkImageSubresourceRange range);
+VkResult createImageView(VkImageViewType view_type, VkImageSubresourceRange range, VkComponentMapping components);
 VkResult createSampler(VkSamplerCreateInfo *info);
 void setupDescriptor();
 VkResult map(VkDeviceSize offset, VkDeviceSize size=VK_WHOLE_SIZE);
@@ -70,6 +71,8 @@ void setLayout(VkCommandBuffer command, VkImageAspectFlags aspect_mask,
 			   VkImageSubresourceRange subresource_range,
 			   VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage,
 			   VkAccessFlags src_mask, VkAccessFlags dst_mask);
+
+
 VkImageMemoryBarrier barrier(
 	VkImageLayout old_layout, VkImageLayout new_layout, 
 	VkImageSubresourceRange range, 
@@ -89,6 +92,10 @@ VkImageMemoryBarrier barrier(
 
 	VkImageLayout getLayout() const {
 		return this->layout;
+	}
+
+	VkDescriptorImageInfo* getDescriptorInfoPtr(){
+		return &this->descriptor;
 	}
 };
 
