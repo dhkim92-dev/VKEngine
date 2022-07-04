@@ -55,6 +55,7 @@ VkResult alloc(VkDeviceSize sz_mem, VkMemoryPropertyFlags flags);
 void setMemory(VkDeviceMemory mem);
 VkResult bind(VkDeviceSize offset);
 VkResult createImageView(VkImageViewType view_type, VkImageSubresourceRange range);
+VkResult createImageView(VkImageViewType view_type, VkImageSubresourceRange range, VkComponentMapping components);
 VkResult createSampler(VkSamplerCreateInfo *info);
 void setupDescriptor();
 VkResult map(VkDeviceSize offset, VkDeviceSize size=VK_WHOLE_SIZE);
@@ -70,6 +71,8 @@ void setLayout(VkCommandBuffer command, VkImageAspectFlags aspect_mask,
 			   VkImageSubresourceRange subresource_range,
 			   VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage,
 			   VkAccessFlags src_mask, VkAccessFlags dst_mask);
+
+
 VkImageMemoryBarrier barrier(
 	VkImageLayout old_layout, VkImageLayout new_layout, 
 	VkImageSubresourceRange range, 
