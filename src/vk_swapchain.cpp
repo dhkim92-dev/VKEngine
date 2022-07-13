@@ -10,6 +10,7 @@ namespace VKEngine{
 
 Swapchain::Swapchain(Context *ctx, VkSurfaceKHR surface) : ctx(ctx), surface(surface){
 	image_count=0;
+	fpVkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(vkGetDeviceProcAddr(ctx->getDevice(), "vkAcquireNextImageKHR"));
 }
 
 Swapchain::~Swapchain()
@@ -279,7 +280,17 @@ VkResult Swapchain::setupImageViews()
 	return VK_SUCCESS;
 }
 
+VkResult Swapchain::acquire(uint32_t *image_index, VkSemaphore present_complete_smp)
+{
+	return fpVkAcquireNextImageKHR(ctx->getDevice(), swapchain, UINT64_MAX, present_complete_smp, (VkFence)VK_NULL_HANDLE, image_index);
 }
 
+VkResult Swapchain::present(CommandQueue *queue, uint32_t *image_index, VkSemaphore *wait_smp)
+{
+	return queue->present(&swapchain, 1, image_index, wait_smp);
+}
+
+
+}
 
 #endif

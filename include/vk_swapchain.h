@@ -13,6 +13,8 @@ using namespace std;
 
 namespace VKEngine{
 
+// vkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(f->vkGetDeviceProcAddr(dev, "vkAcquireNextImageKHR"));
+// vkAcquireNextImageKHR = PFN_vkAcquireNextImageKHR()
 class Swapchain{
 	private:
 	Context *ctx;
@@ -29,8 +31,11 @@ class Swapchain{
 	bool vsync = false;
 	uint32_t image_count;
 
+    PFN_vkAcquireNextImageKHR fpVkAcquireNextImageKHR;
+
 	private:
 	VkBool32 getSurfaceSupport(uint32_t queue_index);
+	void initFPNFuncs();
 	void setupPresentQueue();
 	void setupSurfaceCapabilities();
 	void setupPresentMode();
@@ -41,6 +46,9 @@ class Swapchain{
 	VkResult setupImageViews();
 
 	public:
+	VkResult acquire(uint32_t *image_index, VkSemaphore present_complete_smp=VK_NULL_HANDLE);
+	VkResult present(CommandQueue *queue, uint32_t *image_index, VkSemaphore *wait_smp=nullptr);
+
 	explicit Swapchain(Context *ctx, VkSurfaceKHR surface);
 	~Swapchain();
 	void init();
@@ -58,19 +66,21 @@ class Swapchain{
 };
 
 
-class Presenter
-{
-	public:
-	static VkResult acquire(Context *ctx, Swapchain *swapchain, uint32_t *image_index, VkSemaphore *present_complete_smp=nullptr)
-	{
-		return vkAcquireNextImageKHR(ctx->getDevice(), *swapchain->getSwapchain(), UINT64_MAX, *present_complete_smp,(VkFence)nullptr, image_index );
-	}
+// class Presenter
+// {
+//     public:
+//     static PFN_vkAcquireNextImageKHR fpVkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(vkGetDeviceProcAddr(ctx->getDevice(), "vkGetAcquireNextImageKHR"));
+//     static VkResult acquire(Context *ctx, Swapchain *swapchain, uint32_t *image_index, VkSemaphore present_complete_smp=VK_NULL_HANDLE)
+//     {
+// //       return vkAcquireNextImageKHR(ctx->getDevice(), *swapchain->getSwapchain(), UINT64_MAX, present_complete_smp,(VkFence)VK_NULL_HANDLE, image_index );
+//         return fpVkAcquireNextImageKHR(ctx->getDevice(), *swapchain->getSwapchain(), UINT64_MAX, present_complete_smp,(VkFence)VK_NULL_HANDLE, image_index );
+// 	}
 
-	static VkResult present(CommandQueue *queue,Swapchain* swapchain, uint32_t *image_index, VkSemaphore *wait_smp=nullptr)
-	{
-		return queue->present(swapchain->getSwapchain(), 1, image_index, wait_smp);
-	}
-};
+//     static VkResult present(CommandQueue *queue,Swapchain *swapchain, uint32_t *image_index, VkSemaphore *wait_smp=nullptr)
+// 	{
+// 		return queue->present(swapchain->getSwapchain(), 1, image_index, wait_smp);
+// 	}
+// };
 
 
 }
