@@ -64,6 +64,17 @@ namespace VKEngine{
 		if(debug){
 			instance_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
+
+		// auto it = std::find("VK_KHR_portability_enumeration" ,instance_extensions.begin(), instance_extensions.end());
+
+		for(auto s : instance_extensions)
+		{
+			if(strcmp("VK_KHR_portability_enumeration", s) == 0){
+				instance_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+				break;
+			}
+		}
+
 		instance_info.ppEnabledExtensionNames = instance_extensions.data();
 		instance_info.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
 		VkDebugUtilsMessengerCreateInfoEXT debug_info{};

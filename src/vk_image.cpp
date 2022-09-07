@@ -75,6 +75,19 @@ VkResult Image::alloc(VkDeviceSize sz_mem, VkMemoryPropertyFlags flags){
 	return vkAllocateMemory(device, &info, nullptr, &memory);
 }
 
+VkResult Image::alloc(VkMemoryPropertyFlags flags)
+{
+	VkMemoryAllocateInfo info = infos::memoryAllocateInfo();
+	VkBool32 found;
+	vkGetImageMemoryRequirements(device, image, &memory_requirements);
+	info.memoryTypeIndex = context
+	->getPhysicalDevice()
+	->getMemoryType(memory_requirements.memoryTypeBits, flags, &found);
+	info.allocationSize = memory_requirements.size;
+	sz_memory = memory_requirements.size;
+	memory_properties = flags;
+	return vkAllocateMemory(device, &info, nullptr, &memory);
+}
 
 void Image::setMemory(VkDeviceMemory mem){
 	memory = mem;
@@ -153,6 +166,7 @@ VkResult Image::flush(VkDeviceSize offset, VkDeviceSize size){
 	return vkFlushMappedMemoryRanges(device, 1, &range);
 }
 
+
 void Image::copyFrom(void *src, VkDeviceSize size){
 	map(0, memory_requirements.size);
 	assert(data);
@@ -209,6 +223,8 @@ VkImageMemoryBarrier Image::barrier(
 	barrier.dstAccessMask = new_layout;
 	return barrier;
 }
+
+//getter setter
 
 
 }

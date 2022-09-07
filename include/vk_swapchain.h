@@ -20,6 +20,7 @@ class Swapchain{
 	Context *ctx;
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+	VkSwapchainKHR old_swapchain = VK_NULL_HANDLE;
 	VkSurfaceCapabilitiesKHR capabilities;
 	VkPresentModeKHR present_mode;
 	VkSurfaceFormatKHR format;
@@ -47,7 +48,7 @@ class Swapchain{
 
 	public:
 	VkResult acquire(uint32_t *image_index, VkSemaphore present_complete_smp=VK_NULL_HANDLE);
-	VkResult present(CommandQueue *queue, uint32_t *image_index, VkSemaphore *wait_smp=nullptr);
+	VkResult present(CommandQueue *queue, uint32_t *image_index, VkSemaphore wait_smp=nullptr);
 
 	explicit Swapchain(Context *ctx, VkSurfaceKHR surface);
 	~Swapchain();

@@ -31,11 +31,14 @@ namespace VKEngine{
 				break;
 			case VK_QUEUE_COMPUTE_BIT :
 				index = indices.compute.value();
-				break;
+                break;
+            case VK_QUEUE_TRANSFER_BIT :
+                index = indices.transfer.value();
+                break;
 			default :
 				index = 0;
-		}
-		vkGetDeviceQueue(device, index, 0, &queue);
+        }
+        vkGetDeviceQueue(device, index, 0, &queue);
 	}
 
 	void CommandQueue::free( VkCommandBuffer command_buffer ){

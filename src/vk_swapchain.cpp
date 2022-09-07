@@ -22,10 +22,10 @@ Swapchain::~Swapchain()
 		views.clear();
 	}
 
-	if(swapchain != VK_NULL_HANDLE){
-		vkDestroySwapchainKHR(ctx->getDevice(), swapchain, nullptr);
-		swapchain = VK_NULL_HANDLE;
-	}
+    if(swapchain != VK_NULL_HANDLE){
+        vkDestroySwapchainKHR(ctx->getDevice(), swapchain, nullptr);
+        swapchain = VK_NULL_HANDLE;
+    }
 }
 
 void Swapchain::setSwapchain(VkSwapchainKHR _swapchain)
@@ -52,7 +52,7 @@ void Swapchain::init()
 
 VkResult Swapchain::create(uint32_t *width, uint32_t *height)
 {
-	VkSwapchainKHR old_swapchain = swapchain;
+	old_swapchain = swapchain;
 	setupSurfaceCapabilities();
 	setupExtent(width, height);
 	setupPresentMode();
@@ -251,6 +251,14 @@ void Swapchain::selectFormat(vector<VkSurfaceFormatKHR>& _formats)
 
 VkResult Swapchain::setupImageViews()
 {
+	if(old_swapchain != VK_NULL_HANDLE){
+		for(int i = 0 ; i < views.size() ; i++){
+			vkDestroyImageView(ctx->getDevice(), views[i], nullptr);
+			views[i] = VK_NULL_HANDLE;
+		}
+		vkDestroySwapchainKHR(ctx->getDevice(), old_swapchain, nullptr);
+	}
+
 	views.resize(image_count);
 	vector<VkImage> swapchain_images(image_count);
 	vkGetSwapchainImagesKHR(ctx->getDevice(), swapchain, &image_count, swapchain_images.data());
@@ -279,15 +287,18 @@ VkResult Swapchain::setupImageViews()
 	}
 	return VK_SUCCESS;
 }
-
 VkResult Swapchain::acquire(uint32_t *image_index, VkSemaphore present_complete_smp)
 {
-	return fpVkAcquireNextImageKHR(ctx->getDevice(), swapchain, UINT64_MAX, present_complete_smp, (VkFence)VK_NULL_HANDLE, image_index);
+//    VkResult res = fpVkAcquireNextImageKHR(ctx->getDevice(), swapchain, UINT64_MAX, present_complete_smp, (VkFence)VK_NULL_HANDLE, image_index);
+//    LOG("image index : %d\n", *image_index);
+//    return res;
+    return fpVkAcquireNextImageKHR(ctx->getDevice(), swapchain, INT64_MAX, present_complete_smp, (VkFence)VK_NULL_HANDLE, image_index);
 }
 
-VkResult Swapchain::present(CommandQueue *queue, uint32_t *image_index, VkSemaphore *wait_smp)
+VkResult Swapchain::present(CommandQueue *queue, uint32_t *image_index, VkSemaphore wait_smp)
 {
-	return queue->present(&swapchain, 1, image_index, wait_smp);
+    VkResult result = queue->present(&swapchain, 1, image_index, &wait_smp);
+     return result;
 }
 
 

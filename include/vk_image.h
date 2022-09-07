@@ -52,6 +52,7 @@ VkResult createImage(uint32_t w, uint32_t h, uint32_t ch,
 					VkSampleCountFlagBits sample, uint32_t mip_level, uint32_t array_layer);
 
 VkResult alloc(VkDeviceSize sz_mem, VkMemoryPropertyFlags flags);
+VkResult alloc(VkMemoryPropertyFlags flags);
 void setMemory(VkDeviceMemory mem);
 VkResult bind(VkDeviceSize offset);
 VkResult createImageView(VkImageViewType view_type, VkImageSubresourceRange range);
@@ -97,6 +98,17 @@ VkImageMemoryBarrier barrier(
 	VkDescriptorImageInfo* getDescriptorInfoPtr(){
 		return &this->descriptor;
 	}
+
+	VkFormat getFormat()
+	{
+		return format;
+	}
+
+	void setFormat(VkFormat format)
+	{
+		this->format = format;
+	}
+
 };
 
 

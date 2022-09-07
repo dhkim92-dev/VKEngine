@@ -130,7 +130,8 @@ VkResult Context::createCommandPool(
 	VkQueueFlags type, 
 	VkCommandPoolCreateFlags flags)
 {
-	uint32_t queue_index = 255;
+    uint32_t queue_index = 255;
+    LOG("g : %d, c : %d , t : %d\n", indice.graphics.value(), indice.compute.value(), indice.transfer.value());
 	switch(type){
 		case VK_QUEUE_GRAPHICS_BIT : 
 			queue_index = indice.graphics.value();
