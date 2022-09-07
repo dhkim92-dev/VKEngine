@@ -118,6 +118,8 @@ VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQue
 	vector<VkQueueFamilyProperties> queue_properties = enumerateQueueFamilyProperties(device);
 	VkBool32 found = VK_FALSE;
 
+	flags |= VK_QUEUE_GRAPHICS_BIT;
+
 	if(queue_properties.size() <= 0){
 		throw runtime_error("VkPhysicalDevice has no queue_properties.\n");
 	}
@@ -148,11 +150,24 @@ VkBool32 PhysicalDevice::findQueueFamilyIndice(QueueFamilyIndice *pindice, VkQue
 		}
 	}
 
+	if(flags && VK_QUEUE_COMPUTE_BIT){
+		if(!indices.compute.has_value()){
+			indices.compute = indices.graphics.value();
+		}
+	}
+
+	if(flags && VK_QUEUE_TRANSFER_BIT) {
+		if(!indices.transfer.has_value()){
+			indices.transfer = indices.graphics.value();
+		}
+	}
+
+
 	if(indices.isSupport(flags)){
 		found = VK_TRUE;
-		pindice->graphics = indices.graphics;
-		pindice->transfer = indices.transfer;
-		pindice->compute = indices.compute;	
+		pindice->graphics = indices.graphics.value();
+		pindice->transfer = indices.transfer.value();
+		pindice->compute = indices.compute.value();	
 	}
 
 	return found;
