@@ -106,7 +106,8 @@ void Swapchain::setupExtent(uint32_t *width, uint32_t* height)
 	}
 
 	image_count = capabilities.minImageCount+1;
-	image_count = (image_count > capabilities.maxImageCount) ? capabilities.maxImageCount : image_count;
+	if(capabilities.maxImageCount > 0) 
+		image_count = (image_count > capabilities.maxImageCount) ? capabilities.maxImageCount : image_count;
 }
 
 void Swapchain::setupPresentQueue()
